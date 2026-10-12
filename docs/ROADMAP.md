@@ -16,8 +16,14 @@ Offline-first, Malayalam-first, C core + Kotlin Android.
 - Keep train and evaluation data strictly separate.
 - Offline by default; no network use in the core.
 
+## Phase 3.1 - evaluation foundation (done, synthetic-tested)
+Dataset spec/consent (docs/DATASET.md), schemas (data/schema), validator `s2w_dataset_check`, harness `s2w_eval` (docs/EVALUATION.md). No real Malayalam data or accuracy numbers exist yet.
+
 ## Next
-Collect real Malayalam recordings (speaker-disjoint enrolment / calibration / test splits), run `make test-real`, tune DTW defaults and thresholds on held-out data, then Phase 4.
+1. Native-speaker review of the word list (two reviewers) and minimal pairs.
+2. Collect pilot recordings (30-50 words, 10-20 speakers, 3 reps) with consent; validate with `s2w_dataset_check`.
+3. Run the untouched baseline on calib, record it; then compare normalisations, tune on calib only, freeze, evaluate test once.
+4. Phase 4 (better matcher or pretrained Malayalam acoustic model) only after the measured baseline.
 
 ## Phase 1 CLI
 `make test && build/s2w_inspect file.wav` prints deterministic key=value lines.
