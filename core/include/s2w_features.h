@@ -42,6 +42,11 @@ typedef enum {
     S2W_NORM_MEANVAR = 2   /* CMN + divide by per-dimension std (CMVN) */
 } s2w_norm_mode;
 
+typedef enum {
+    S2W_DENOISE_NONE = 0,     /* default: baseline behaviour, bit-identical to baseline-v0.3.0 */
+    S2W_DENOISE_SPECSUB = 1   /* power spectral subtraction with a per-utterance noise estimate (see below) */
+} s2w_denoise_mode;
+
 typedef struct {
     int sample_rate;     /* 8000..48000; audio must already be at this rate */
     int frame_ms;        /* 10..100, default 25 */
@@ -53,6 +58,16 @@ typedef struct {
     double f_max_hz;     /* > f_min, <= sample_rate/2; 0 means sample_rate/2 */
     double preemph;      /* 0..0.99, 0 disables; default 0.97 */
     s2w_norm_mode norm;  /* default S2W_NORM_MEAN */
+    /* ---- opt-in acoustic-compensation techniques (all OFF by default; defaults leave features bit-identical) ---- */
+    s2w_denoise_mode denoise;  /* spectral subtraction: noise power per bin = mean over the quietest 10% of frames of this utterance;
+                                  P' = max(P - denoise_oversub * N, denoise_floor * P). Assumes the recording contains some non-speech frames
+                                  and stationary noise; it can also remove weak speech energy, so check minimal pairs. */
+    double denoise_oversub;    /* 1..4, default 1.5 (untuned) */
+    double denoise_floor;      /* 0..0.5, default 0.05 (untuned) */
+    double warp_alpha;         /* 0.7..1.4, default 1.0 = off. Piecewise-linear frequency-axis warp of the Mel filterbank (VTLN-style):
+                                  f' = alpha*f up to a breakpoint, then linear to f_max (continuous, monotonic, endpoint-preserving).
+                                  Meant for QUERY-side use with a per-utterance search; templates are normally alpha = 1 (the matcher
+                                  ignores warp_alpha when checking that features are compatible). */
 } s2w_feat_config;
 
 void s2w_feat_config_default(s2w_feat_config *c);
@@ -69,6 +84,9 @@ typedef struct {
     float *logmel, *logmel_norm;  /* n_frames x n_mels, row-major */
     float *mfcc, *mfcc_norm;      /* n_frames x n_mfcc, row-major */
 } s2w_features;
+
+/* The frequency warp used when warp_alpha != 1 (identity when warp_alpha == 1). Exposed for tests and plotting. */
+double s2w_feat_warp_hz(const s2w_feat_config *c, double f_hz);
 
 /* Frames produced for n samples (0 if shorter than one frame). */
 size_t s2w_feat_num_frames(const s2w_feat_config *c, size_t n_samples);

@@ -158,7 +158,8 @@ static int cfg_equal(const s2w_feat_config *a, const s2w_feat_config *b) {
     return a->sample_rate == b->sample_rate && a->frame_ms == b->frame_ms && a->hop_ms == b->hop_ms &&
            a->fft_size == b->fft_size && a->n_mels == b->n_mels && a->n_mfcc == b->n_mfcc &&
            a->f_min_hz == b->f_min_hz && a->f_max_hz == b->f_max_hz && a->preemph == b->preemph &&
-           a->norm == b->norm;
+           a->norm == b->norm && a->denoise == b->denoise && a->denoise_oversub == b->denoise_oversub &&
+           a->denoise_floor == b->denoise_floor;   /* warp_alpha is deliberately NOT compared: it is a query-side normalisation */
 }
 
 static const float *rep_data(const s2w_matcher *m, const s2w_features *f, size_t *dim) {

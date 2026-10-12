@@ -13,6 +13,8 @@ typedef struct {
     s2w_dtw_config dtw;
     s2w_reject_config rej;
     int protocol;                 /* 0 = speaker_independent (default), 1 = personalised; must match the dataset */
+    int n_warp;                   /* query-side warp search: number of alpha values (0 = off, default) */
+    double warp_grid[9];          /* alphas tried per query; the one giving the smallest best-candidate distance is used (templates stay alpha = 1) */
     int frozen;
     char calibration_source[256];
     char settings_sha256[65];
@@ -39,6 +41,7 @@ typedef struct {
     double cand_dist[S2W_EVAL_K];
     double margin;              /* INFINITY if < 2 candidates */
     unsigned quality;
+    double warp;                /* warp alpha used for this query (1.0 when the search is off) */
     int decision;               /* s2w_decision */
     int reason;                 /* s2w_reject_reason or S2W_REASON_EXTRACT_FAIL */
 } s2w_query;

@@ -23,6 +23,10 @@ void s2w_feat_config_default(s2w_feat_config *c) {
     c->f_max_hz = 0.0;
     c->preemph = 0.97;
     c->norm = S2W_NORM_MEAN;
+    c->denoise = S2W_DENOISE_NONE;
+    c->denoise_oversub = 1.5;
+    c->denoise_floor = 0.05;
+    c->warp_alpha = 1.0;
 }
 
 static size_t frame_len(const s2w_feat_config *c) {
@@ -51,6 +55,10 @@ s2w_status s2w_feat_config_validate(const s2w_feat_config *c) {
     if (!isfinite(c->preemph) || c->preemph < 0.0 || c->preemph > 0.99) return S2W_ERR_BAD_PARAMS;
     if (c->norm != S2W_NORM_NONE && c->norm != S2W_NORM_MEAN && c->norm != S2W_NORM_MEANVAR)
         return S2W_ERR_BAD_PARAMS;
+    if (c->denoise != S2W_DENOISE_NONE && c->denoise != S2W_DENOISE_SPECSUB) return S2W_ERR_BAD_PARAMS;
+    if (!isfinite(c->denoise_oversub) || c->denoise_oversub < 1.0 || c->denoise_oversub > 4.0) return S2W_ERR_BAD_PARAMS;
+    if (!isfinite(c->denoise_floor) || c->denoise_floor < 0.0 || c->denoise_floor > 0.5) return S2W_ERR_BAD_PARAMS;
+    if (!isfinite(c->warp_alpha) || c->warp_alpha < 0.7 || c->warp_alpha > 1.4) return S2W_ERR_BAD_PARAMS;
     return S2W_OK;
 }
 
@@ -62,6 +70,16 @@ size_t s2w_feat_num_frames(const s2w_feat_config *c, size_t n) {
 
 static double hz_to_mel(double f) { return 2595.0 * log10(1.0 + f / 700.0); }
 static double mel_to_hz(double m) { return 700.0 * (pow(10.0, m / 2595.0) - 1.0); }
+
+double s2w_feat_warp_hz(const s2w_feat_config *c, double f) {
+    double a = c->warp_alpha;
+    if (a == 1.0) return f;                                   /* exact identity: baseline features are untouched */
+    double fmax = c->f_max_hz == 0.0 ? c->sample_rate / 2.0 : c->f_max_hz;
+    double fb = 0.8 * fmax * (a > 1.0 ? 1.0 / a : 1.0);        /* breakpoint */
+    if (f <= fb) return a * f;
+    if (f >= fmax) return f;
+    return a * fb + (fmax - a * fb) * (f - fb) / (fmax - fb);
+}
 
 double s2w_feat_mel_center_hz(const s2w_feat_config *c, int band) {
     double fmax = c->f_max_hz == 0.0 ? c->sample_rate / 2.0 : c->f_max_hz;
@@ -171,6 +189,7 @@ s2w_status s2w_features_extract(const s2w_audio *a, const s2w_feat_config *cfg, 
             double sum = 0;
             for (int k = 0; k < nb; k++) {
                 double f = (double)k * c.sample_rate / nfft, w = 0;
+                if (c.warp_alpha != 1.0) f = s2w_feat_warp_hz(&c, f);
                 if (f > fl_hz && f <= fc_hz) w = (f - fl_hz) / (fc_hz - fl_hz);
                 else if (f > fc_hz && f < fr_hz) w = (fr_hz - f) / (fr_hz - fc_hz);
                 fb[(size_t)m * nb + k] = w;
@@ -183,6 +202,13 @@ s2w_status s2w_features_extract(const s2w_audio *a, const s2w_feat_config *cfg, 
         for (int m = 0; m < nm; m++)
             dct[(size_t)k * nm + m] = sqrt((k == 0 ? 1.0 : 2.0) / nm) * cos(M_PI * k * (m + 0.5) / nm);
 
+    int sub = c.denoise == S2W_DENOISE_SPECSUB;
+    double *ps = sub ? malloc(nf * (size_t)nb * sizeof *ps) : NULL;
+    double *noise = sub ? calloc((size_t)nb, sizeof *noise) : NULL;
+    double *fen = sub ? calloc(nf, sizeof *fen) : NULL;
+    size_t *order = sub ? malloc(nf * sizeof *order) : NULL;
+    if (sub && (!ps || !noise || !fen || !order)) { free(ps); free(noise); free(fen); free(order); goto done; }
+
     for (size_t f = 0; f < nf; f++) {
         const float *x = a->samples + f * hl;
         memset(re, 0, (size_t)nfft * sizeof *re);
@@ -192,6 +218,14 @@ s2w_status s2w_features_extract(const s2w_audio *a, const s2w_feat_config *cfg, 
             re[i] = (x[i] - c.preemph * prev) * win[i];
         }
         fft(re, im, nfft, twc, tws);
+        if (sub) {                                  /* keep the power spectrum; Mel/DCT happen after the noise estimate */
+            for (int k = 0; k < nb; k++) {
+                double p = (re[k] * re[k] + im[k] * im[k]) / nfft;
+                ps[f * (size_t)nb + k] = p;
+                fen[f] += p;
+            }
+            continue;
+        }
         for (int m = 0; m < nm; m++) {
             double e = 0;
             const double *w = fb + (size_t)m * nb;
@@ -205,6 +239,38 @@ s2w_status s2w_features_extract(const s2w_audio *a, const s2w_feat_config *cfg, 
             for (int m = 0; m < nm; m++) acc += dct[(size_t)k * nm + m] * mel[m];
             out->mfcc[f * nc + k] = (float)acc;
         }
+    }
+    if (sub) {
+        /* noise PSD: mean power spectrum of the quietest 10% of frames (at least one), then oversubtract with a spectral floor */
+        for (size_t i = 0; i < nf; i++) order[i] = i;
+        for (size_t i = 1; i < nf; i++) {          /* insertion sort by frame energy; stable, deterministic */
+            size_t v = order[i], j = i;
+            while (j > 0 && (fen[order[j - 1]] > fen[v])) { order[j] = order[j - 1]; j--; }
+            order[j] = v;
+        }
+        size_t nq = nf / 10 ? nf / 10 : 1;
+        for (size_t q = 0; q < nq; q++)
+            for (int k = 0; k < nb; k++) noise[k] += ps[order[q] * (size_t)nb + k] / (double)nq;
+        for (size_t f = 0; f < nf; f++) {
+            double *p = ps + f * (size_t)nb;
+            for (int k = 0; k < nb; k++) {
+                double d = p[k] - c.denoise_oversub * noise[k], fl_ = c.denoise_floor * p[k];
+                p[k] = d > fl_ ? d : fl_;
+            }
+            for (int m = 0; m < nm; m++) {
+                double e = 0;
+                const double *w = fb + (size_t)m * nb;
+                for (int k = 0; k < nb; k++) if (w[k] != 0.0) e += w[k] * p[k];
+                mel[m] = log(e > S2W_LOG_FLOOR ? e : S2W_LOG_FLOOR);
+                out->logmel[f * nm + m] = (float)mel[m];
+            }
+            for (int k = 0; k < nc; k++) {
+                double acc = 0;
+                for (int m = 0; m < nm; m++) acc += dct[(size_t)k * nm + m] * mel[m];
+                out->mfcc[f * nc + k] = (float)acc;
+            }
+        }
+        free(ps); free(noise); free(fen); free(order);
     }
     normalise(out->logmel, out->logmel_norm, nf, nm, c.norm);
     normalise(out->mfcc, out->mfcc_norm, nf, nc, c.norm);
@@ -238,6 +304,8 @@ s2w_status s2w_features_write_text(FILE *fp, const s2w_features *f, unsigned whi
             c->sample_rate, c->frame_ms, c->hop_ms, c->fft_size, c->n_mels, c->n_mfcc);
     fprintf(fp, "f_min_hz=%.3f\nf_max_hz=%.3f\npreemph=%.3f\nnorm=%s\n", c->f_min_hz, c->f_max_hz,
             c->preemph, NORM[c->norm]);
+    if (c->denoise != S2W_DENOISE_NONE) fprintf(fp, "denoise=specsub\ndenoise_oversub=%.3f\ndenoise_floor=%.3f\n", c->denoise_oversub, c->denoise_floor);
+    if (c->warp_alpha != 1.0) fprintf(fp, "warp_alpha=%.4f\n", c->warp_alpha);
     fprintf(fp, "source_samples=%zu\nn_frames=%zu\n", f->source_samples, f->n_frames);
     fprintf(fp, "quality_duration_s=%.3f\nquality_peak=%.4f\nquality_rms_dbfs=%.2f\n"
                 "quality_clipped_samples=%zu\nquality_silence_ratio=%.3f\nquality_warnings=0x%02x\n",

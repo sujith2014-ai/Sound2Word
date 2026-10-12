@@ -160,7 +160,7 @@ s2w_status s2w_eval_collect(const s2w_dataset *ds, const s2w_settings *st, int s
         const s2w_rec *rec = &ds->r[i];
         if (rec->split != split) continue;
         s2w_query *q = &run->q[run->nq++];
-        q->rec = i; q->known = ds->w[rec->word].role == S2W_ROLE_VOCAB; q->true_word = rec->word; q->margin = INFINITY;
+        q->rec = i; q->known = ds->w[rec->word].role == S2W_ROLE_VOCAB; q->true_word = rec->word; q->margin = INFINITY; q->warp = 1.0;
         s2w_matcher *m = pool_find(&pool, rec->speaker);
         if (!m) { snprintf(err, en, "%s: no templates available for this query (participant '%s' has no enrolment recordings)", rec->id, rec->speaker); pool_free(&pool); s2w_run_free(run); return S2W_ERR_EMPTY; }
         s2w_audio a; s2w_features f;
@@ -171,16 +171,33 @@ s2w_status s2w_eval_collect(const s2w_dataset *ds, const s2w_settings *st, int s
             double f0;
             if (s2w_median_f0(&a, &f0) == S2W_OK) sp->f0[sp->nf0++] = f0;
         }
-        s = s2w_features_extract(&a, &st->feat, &f);
+        /* Query-side warp search (VTLN-style): try each alpha, keep the one whose best candidate is closest. Templates stay at alpha = 1.
+         * With the search off this is exactly the previous behaviour (one extraction, alpha = 1). */
+        int ngrid = st->n_warp > 0 ? st->n_warp : 1;
+        int have = 0;
+        s2w_match_result best_res;
+        memset(&best_res, 0, sizeof best_res);
+        double best_alpha = 1.0;
+        unsigned best_quality = 0;
+        for (int g = 0; g < ngrid; g++) {
+            s2w_feat_config fc = st->feat;
+            if (st->n_warp > 0) fc.warp_alpha = st->warp_grid[g];
+            s = s2w_features_extract(&a, &fc, &f);
+            if (s != S2W_OK) continue;
+            s2w_match_result res;
+            s = s2w_matcher_match(m, &f, S2W_EVAL_K, &res);
+            unsigned qual = f.quality.warnings;
+            s2w_features_free(&f);
+            if (s != S2W_OK) { snprintf(err, en, "%s: match failed: %s", rec->id, s2w_status_str(s)); s2w_audio_free(&a); pool_free(&pool); s2w_run_free(run); return s; }
+            if (!have || (res.n_candidates > 0 && (best_res.n_candidates == 0 || res.cand[0].distance < best_res.cand[0].distance))) {
+                best_res = res; best_alpha = st->n_warp > 0 ? st->warp_grid[g] : 1.0; best_quality = qual; have = 1;
+            }
+        }
         s2w_audio_free(&a);
-        if (s != S2W_OK) { q->usable = 0; continue; }
-        q->usable = 1; q->quality = f.quality.warnings;
-        s2w_match_result res;
-        s = s2w_matcher_match(m, &f, S2W_EVAL_K, &res);
-        s2w_features_free(&f);
-        if (s != S2W_OK) { snprintf(err, en, "%s: match failed: %s", rec->id, s2w_status_str(s)); pool_free(&pool); s2w_run_free(run); return s; }
-        q->n_cand = res.n_candidates; q->margin = res.margin_ratio;
-        for (size_t c = 0; c < res.n_candidates; c++) { q->cand_word[c] = s2w_dataset_find_word(ds, res.cand[c].label); q->cand_dist[c] = res.cand[c].distance; }
+        if (!have) { q->usable = 0; continue; }
+        q->usable = 1; q->quality = best_quality; q->warp = best_alpha;
+        q->n_cand = best_res.n_candidates; q->margin = best_res.margin_ratio;
+        for (size_t c = 0; c < best_res.n_candidates; c++) { q->cand_word[c] = s2w_dataset_find_word(ds, best_res.cand[c].label); q->cand_dist[c] = best_res.cand[c].distance; }
     }
     for (size_t i = 0; i < run->nsp; i++) {
         s2w_speaker_pitch *sp = &run->sp[i];
@@ -386,6 +403,12 @@ static void j_common(s2w_json *j, const s2w_dataset *ds, const s2w_settings *st,
     js_int(j, "sample_rate", st->feat.sample_rate); js_int(j, "frame_ms", st->feat.frame_ms); js_int(j, "hop_ms", st->feat.hop_ms);
     js_int(j, "fft_size", st->feat.fft_size); js_int(j, "n_mels", st->feat.n_mels); js_int(j, "n_mfcc", st->feat.n_mfcc);
     js_num(j, "f_min_hz", st->feat.f_min_hz); js_num(j, "f_max_hz", st->feat.f_max_hz); js_num(j, "preemph", st->feat.preemph);
+    js_obj_end(j);
+    js_obj(j, "techniques");
+    js_str(j, "denoise", st->feat.denoise == S2W_DENOISE_SPECSUB ? "specsub" : "none");
+    js_arr(j, "warp_grid");
+    for (int i = 0; i < st->n_warp; i++) js_num(j, NULL, st->warp_grid[i]);
+    js_arr_end(j);
     js_obj_end(j);
     js_obj(j, "dtw");
     js_num(j, "band_ratio", st->dtw.band_ratio); js_num(j, "min_len_ratio", st->dtw.min_len_ratio);
@@ -691,7 +714,7 @@ void s2w_eval_write_summary(FILE *f, const s2w_dataset *ds, const s2w_settings *
 }
 
 void s2w_eval_write_queries_csv(FILE *f, const s2w_dataset *ds, const s2w_run *r) {
-    fprintf(f, "recording_id,split,word_id,role,speaker_id,device_id,environment,usable,decision,reason,top1,top1_distance,top2,top2_distance,top3,top3_distance,margin_ratio,quality_warnings\n");
+    fprintf(f, "recording_id,split,word_id,role,speaker_id,device_id,environment,usable,decision,reason,top1,top1_distance,top2,top2_distance,top3,top3_distance,margin_ratio,quality_warnings,warp_alpha\n");
     for (size_t i = 0; i < r->nq; i++) {
         const s2w_query *q = &r->q[i];
         const s2w_rec *rec = &ds->r[q->rec];
@@ -702,6 +725,6 @@ void s2w_eval_write_queries_csv(FILE *f, const s2w_dataset *ds, const s2w_run *r
             else fprintf(f, ",,");
         }
         if (isfinite(q->margin)) fprintf(f, ",%.6f", q->margin); else fprintf(f, ",");
-        fprintf(f, ",0x%02x\n", q->quality);
+        fprintf(f, ",0x%02x,%.4f\n", q->quality, q->warp);
     }
 }

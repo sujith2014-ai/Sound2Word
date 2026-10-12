@@ -261,9 +261,159 @@ static void test_alt_configs(void) {
     s2w_features_free(&f); s2w_audio_free(&a);
 }
 
+/* ---- opt-in acoustic-compensation techniques ------------------------------------------------ */
+static uint64_t fnv64(uint64_t h, const void *d, size_t n) { const unsigned char *p = d; for (size_t i = 0; i < n; i++) { h ^= p[i]; h *= 1099511628211ULL; } return h; }
+
+static void test_baseline_unchanged(void) {
+    /* Golden fingerprint of the default-config features for a fixed signal. The same value was produced by a fresh build of the
+     * baseline-v0.3.0 source tree (commit de08d46), so the new options cannot silently change default behaviour. */
+    s2w_audio a = {0};
+    a.n_samples = 16000; a.sample_rate = 16000; a.samples = calloc(a.n_samples, sizeof(float));
+    unsigned sd = 12345;
+    for (size_t i = 0; i < a.n_samples; i++) {
+        double t = (double)i / 16000.0, env = (i > 3000 && i < 12000) ? 1.0 : 0.0;
+        sd = sd * 1664525u + 1013904223u;
+        a.samples[i] = (float)(env * (0.3 * sin(2 * M_PI * 600 * t) + 0.2 * sin(2 * M_PI * 1700 * t + 1.0) + 0.1 * sin(2 * M_PI * 2900 * t)) + 0.001 * (((sd >> 8) / 16777216.0) - 0.5));
+    }
+    s2w_feat_config c; s2w_feat_config_default(&c);
+    CHECK(c.denoise == S2W_DENOISE_NONE && c.warp_alpha == 1.0);
+    s2w_status st; s2w_features f = extract(&a, &c, &st);
+    CHECK(st == S2W_OK && f.n_frames == 98);
+    uint64_t h = 14695981039346656037ULL;
+    h = fnv64(h, f.logmel, f.n_frames * f.n_mels * sizeof(float));
+    h = fnv64(h, f.mfcc, f.n_frames * f.n_mfcc * sizeof(float));
+    h = fnv64(h, f.logmel_norm, f.n_frames * f.n_mels * sizeof(float));
+    h = fnv64(h, f.mfcc_norm, f.n_frames * f.n_mfcc * sizeof(float));
+    CHECK(h == 0x45d19694078a4d1fULL);
+    /* explicitly setting the options to their "off" values changes nothing */
+    s2w_feat_config c2 = c; c2.denoise = S2W_DENOISE_NONE; c2.warp_alpha = 1.0; c2.denoise_oversub = 3.0; c2.denoise_floor = 0.3;
+    s2w_features g = extract(&a, &c2, &st);
+    CHECK(st == S2W_OK && memcmp(f.mfcc, g.mfcc, f.n_frames * f.n_mfcc * sizeof(float)) == 0 && memcmp(f.logmel, g.logmel, f.n_frames * f.n_mels * sizeof(float)) == 0);
+    /* default text output does not mention the new options */
+    FILE *x = tmpfile();
+    s2w_features_write_text(x, &f, S2W_OUT_MFCC_RAW);
+    long l = ftell(x); char *b = malloc((size_t)l + 1); rewind(x); CHECK(fread(b, 1, (size_t)l, x) == (size_t)l); b[l] = 0;
+    CHECK(strstr(b, "denoise") == NULL && strstr(b, "warp_alpha") == NULL);
+    free(b); fclose(x);
+    s2w_features_free(&f); s2w_features_free(&g); s2w_audio_free(&a);
+}
+
+static double mean_frame_dist(const float *a, const float *b, size_t rows, size_t cols, size_t lo, size_t hi) {
+    double acc = 0;
+    for (size_t r = lo; r < hi; r++) {
+        double s = 0;
+        for (size_t j = 0; j < cols; j++) { double d = (double)a[r * cols + j] - b[r * cols + j]; s += d * d; }
+        acc += sqrt(s);
+    }
+    (void)rows;
+    return acc / (double)(hi - lo);
+}
+
+static void test_warp(void) {
+    s2w_feat_config c; s2w_feat_config_default(&c);
+    CHECK(s2w_feat_warp_hz(&c, 1234.5) == 1234.5);                              /* alpha = 1 is the exact identity */
+    for (double alpha = 0.7; alpha <= 1.4001; alpha += 0.05) {                  /* continuous, monotonic, endpoint-preserving */
+        c.warp_alpha = alpha;
+        double prev = -1;
+        for (double f = 0; f <= 8000.0; f += 10.0) {
+            double w = s2w_feat_warp_hz(&c, f);
+            CHECK(w >= prev - 1e-9);
+            prev = w;
+        }
+        CHECK(fabs(s2w_feat_warp_hz(&c, 8000.0) - 8000.0) < 1e-9 && s2w_feat_warp_hz(&c, 0.0) == 0.0);
+        CHECK(fabs(s2w_feat_warp_hz(&c, 500.0) - alpha * 500.0) < 1e-9);          /* plain scaling in the low band */
+        double fb = 0.8 * 8000.0 * (alpha > 1.0 ? 1.0 / alpha : 1.0);
+        CHECK(fabs(s2w_feat_warp_hz(&c, fb - 1e-6) - s2w_feat_warp_hz(&c, fb + 1e-6)) < 1e-3);   /* continuous at the breakpoint */
+    }
+    /* validation */
+    s2w_feat_config d; s2w_feat_config_default(&d);
+    d.warp_alpha = 0.69; CHECK(s2w_feat_config_validate(&d) == S2W_ERR_BAD_PARAMS);
+    d.warp_alpha = 1.41; CHECK(s2w_feat_config_validate(&d) == S2W_ERR_BAD_PARAMS);
+    d.warp_alpha = NAN; CHECK(s2w_feat_config_validate(&d) == S2W_ERR_BAD_PARAMS);
+    d.warp_alpha = 0.7; CHECK(s2w_feat_config_validate(&d) == S2W_OK);
+
+    /* Mechanism: a tone 10% higher in frequency (a "shorter vocal tract" analogue) looks closer to the reference tone once warped by 1/1.1 */
+    s2w_feat_config n; s2w_feat_config_default(&n); n.norm = S2W_NORM_NONE;
+    s2w_audio ref = tone(1000, 0.3, 0.6), hi = tone(1100, 0.3, 0.6);
+    s2w_status st;
+    s2w_features fr = extract(&ref, &n, &st), fh = extract(&hi, &n, &st);
+    s2w_feat_config w = n; w.warp_alpha = 1.0 / 1.1;
+    s2w_features fw = extract(&hi, &w, &st);
+    CHECK(st == S2W_OK);
+    double before = mean_frame_dist(fr.logmel, fh.logmel, fr.n_frames, fr.n_mels, 5, fr.n_frames - 5);
+    double after = mean_frame_dist(fr.logmel, fw.logmel, fr.n_frames, fr.n_mels, 5, fr.n_frames - 5);
+    CHECK(after < 0.6 * before);
+    /* the wrong direction makes it worse, so the effect is the warp and not an accident */
+    w.warp_alpha = 1.1;
+    s2w_features fx = extract(&hi, &w, &st);
+    CHECK(mean_frame_dist(fr.logmel, fx.logmel, fr.n_frames, fr.n_mels, 5, fr.n_frames - 5) > before);
+    /* duration is untouched by warping: same frame count */
+    CHECK(fw.n_frames == fh.n_frames && fx.n_frames == fh.n_frames);
+    /* text output records the non-default setting */
+    FILE *xf = tmpfile();
+    s2w_features_write_text(xf, &fw, S2W_OUT_MFCC_RAW);
+    long l = ftell(xf); char *b = malloc((size_t)l + 1); rewind(xf); CHECK(fread(b, 1, (size_t)l, xf) == (size_t)l); b[l] = 0;
+    CHECK(strstr(b, "warp_alpha=") != NULL);
+    free(b); fclose(xf);
+    s2w_features_free(&fr); s2w_features_free(&fh); s2w_features_free(&fw); s2w_features_free(&fx); s2w_audio_free(&ref); s2w_audio_free(&hi);
+}
+
+static void test_denoise(void) {
+    s2w_feat_config d; s2w_feat_config_default(&d);
+    d.denoise = (s2w_denoise_mode)7; CHECK(s2w_feat_config_validate(&d) == S2W_ERR_BAD_PARAMS);
+    d.denoise = S2W_DENOISE_SPECSUB; d.denoise_oversub = 0.9; CHECK(s2w_feat_config_validate(&d) == S2W_ERR_BAD_PARAMS);
+    d.denoise_oversub = 4.1; CHECK(s2w_feat_config_validate(&d) == S2W_ERR_BAD_PARAMS);
+    d.denoise_oversub = 1.5; d.denoise_floor = -0.1; CHECK(s2w_feat_config_validate(&d) == S2W_ERR_BAD_PARAMS);
+    d.denoise_floor = 0.51; CHECK(s2w_feat_config_validate(&d) == S2W_ERR_BAD_PARAMS);
+    d.denoise_floor = 0.05; CHECK(s2w_feat_config_validate(&d) == S2W_OK);
+
+    /* tone bursts in a silent file, then the same file with stationary white noise (about 10 dB SNR) */
+    s2w_audio clean = mk(16000, 16000);
+    for (size_t i = 5000; i < 11000; i++) clean.samples[i] = (float)(0.3 * sin(2 * M_PI * 900.0 * (double)i / 16000.0));
+    s2w_audio noisy = mk(16000, 16000);
+    unsigned sd = 99;
+    for (size_t i = 0; i < noisy.n_samples; i++) {
+        double u = 0; for (int k = 0; k < 12; k++) { sd = sd * 1664525u + 1013904223u; u += (sd >> 8) / 16777216.0; }
+        noisy.samples[i] = clean.samples[i] + (float)(0.1 * (u - 6.0));
+    }
+    for (size_t i = 0; i < clean.n_samples; i++) clean.samples[i] += 1e-5f * (float)sin(0.77 * (double)i);   /* avoid exact digital silence in the reference */
+    s2w_feat_config off; s2w_feat_config_default(&off); off.norm = S2W_NORM_NONE;
+    s2w_feat_config on = off; on.denoise = S2W_DENOISE_SPECSUB;
+    s2w_status st;
+    s2w_features rc = extract(&clean, &off, &st), rn = extract(&noisy, &off, &st), dn = extract(&noisy, &on, &st);
+    CHECK(st == S2W_OK && dn.n_frames == rn.n_frames && finite_all(dn.logmel, dn.n_frames * dn.n_mels) && finite_all(dn.mfcc, dn.n_frames * dn.n_mfcc));
+    /* What spectral subtraction can and cannot do: it lowers the noise floor by at most ~13 dB (floor 0.05), so noisy features never
+     * become the clean ones; it should (a) push noise-only frames down and (b) raise the speech-vs-noise contrast in the speech band. */
+    size_t speech_row = 5500 / 160 + 2, noise_row = 2000 / 160;
+    size_t band = 0;
+    for (size_t j = 1; j < rc.n_mels; j++) if (rc.logmel[speech_row * rc.n_mels + j] > rc.logmel[speech_row * rc.n_mels + band]) band = j;   /* tone's band in the clean reference */
+    double floor_raw = 0, floor_dn = 0;
+    for (size_t r = 2; r < 25; r++)
+        for (size_t j = 0; j < dn.n_mels; j++) { floor_raw += rn.logmel[r * rn.n_mels + j]; floor_dn += dn.logmel[r * dn.n_mels + j]; }
+    floor_raw /= 23.0 * (double)dn.n_mels; floor_dn /= 23.0 * (double)dn.n_mels;
+    CHECK(floor_dn < floor_raw - 1.0);                                                               /* noise floor lowered by > 1 nat on average */
+    double contrast_raw = rn.logmel[speech_row * rn.n_mels + band] - rn.logmel[noise_row * rn.n_mels + band];
+    double contrast_dn = dn.logmel[speech_row * dn.n_mels + band] - dn.logmel[noise_row * dn.n_mels + band];
+    CHECK(contrast_dn > contrast_raw + 1.0);                                                         /* tone stands out more against the noise floor */
+    CHECK(contrast_dn > 0 && contrast_raw > 0);
+    /* duration untouched; pure silence and a deterministic rerun are safe */
+    s2w_audio z = mk(16000, 16000);
+    s2w_features fz = extract(&z, &on, &st);
+    CHECK(st == S2W_OK && finite_all(fz.logmel, fz.n_frames * fz.n_mels));
+    s2w_features dn2 = extract(&noisy, &on, &st);
+    CHECK(memcmp(dn.logmel, dn2.logmel, dn.n_frames * dn.n_mels * sizeof(float)) == 0);
+    FILE *xf = tmpfile();
+    s2w_features_write_text(xf, &dn, S2W_OUT_LOGMEL_RAW);
+    long l = ftell(xf); char *b = malloc((size_t)l + 1); rewind(xf); CHECK(fread(b, 1, (size_t)l, xf) == (size_t)l); b[l] = 0;
+    CHECK(strstr(b, "denoise=specsub") != NULL);
+    free(b); fclose(xf);
+    s2w_features_free(&rc); s2w_features_free(&rn); s2w_features_free(&dn); s2w_features_free(&dn2); s2w_features_free(&fz);
+    s2w_audio_free(&clean); s2w_audio_free(&noisy); s2w_audio_free(&z);
+}
+
 int main(void) {
     test_config(); test_inputs(); test_signals(); test_normalisation();
-    test_metadata_and_output(); test_alt_configs();
+    test_metadata_and_output(); test_alt_configs(); test_baseline_unchanged(); test_warp(); test_denoise();
     puts(failures ? "FAILED" : "features: all tests passed");
     return failures ? 1 : 0;
 }

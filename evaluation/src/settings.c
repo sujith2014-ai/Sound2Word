@@ -24,6 +24,12 @@ static void canon(char *buf, size_t n, const s2w_settings *s) {
     P("norm=%s\nrep=%s\nsample_rate=%d\nframe_ms=%d\nhop_ms=%d\nfft_size=%d\nn_mels=%d\nn_mfcc=%d\n", NORM[s->feat.norm],
       REP[s->rep], s->feat.sample_rate, s->feat.frame_ms, s->feat.hop_ms, s->feat.fft_size, s->feat.n_mels, s->feat.n_mfcc);
     P("f_min_hz=%.9g\nf_max_hz=%.9g\npreemph=%.9g\n", s->feat.f_min_hz, s->feat.f_max_hz, s->feat.preemph);
+    if (s->feat.denoise == S2W_DENOISE_SPECSUB) P("denoise=specsub\ndenoise_oversub=%.9g\ndenoise_floor=%.9g\n", s->feat.denoise_oversub, s->feat.denoise_floor);
+    if (s->n_warp > 0) {
+        P("warp_grid=");
+        for (int i = 0; i < s->n_warp; i++) P("%s%.9g", i ? "," : "", s->warp_grid[i]);
+        P("\n");
+    }
     P("band_ratio=%.9g\nmin_len_ratio=%.9g\nmax_len_ratio=%.9g\nwarp_penalty=%.9g\n", s->dtw.band_ratio, s->dtw.min_len_ratio,
       s->dtw.max_len_ratio, s->dtw.warp_penalty);
     if (isfinite(s->rej.max_distance)) P("max_distance=%.9g\n", s->rej.max_distance); else P("max_distance=off\n");
@@ -110,6 +116,22 @@ s2w_status s2w_settings_load(const char *path, s2w_settings *s, char *err, size_
         else if (!strcmp(k, "max_distance")) { if (!strcmp(v, "off")) s->rej.max_distance = INFINITY; else { ok = parse_double(v, &dv); s->rej.max_distance = dv; } }
         else if (!strcmp(k, "min_margin_ratio")) { ok = parse_double(v, &dv); s->rej.min_margin_ratio = dv; }
         else if (!strcmp(k, "quality_mask")) { ok = parse_int(v, &iv) && iv >= 0; s->rej.quality_mask = (unsigned)iv; }
+        else if (!strcmp(k, "denoise")) { ok = 0; if (!strcmp(v, "none")) { s->feat.denoise = S2W_DENOISE_NONE; ok = 1; } else if (!strcmp(v, "specsub")) { s->feat.denoise = S2W_DENOISE_SPECSUB; ok = 1; } }
+        else if (!strcmp(k, "denoise_oversub")) { ok = parse_double(v, &dv); s->feat.denoise_oversub = dv; }
+        else if (!strcmp(k, "denoise_floor")) { ok = parse_double(v, &dv); s->feat.denoise_floor = dv; }
+        else if (!strcmp(k, "warp_grid")) {
+            s->n_warp = 0;
+            if (strcmp(v, "off")) {
+                char tmp[256];
+                snprintf(tmp, sizeof tmp, "%s", v);
+                for (char *t = strtok(tmp, ","); t; t = strtok(NULL, ",")) {
+                    double a;
+                    if (s->n_warp >= 9 || !parse_double(t, &a) || a < 0.7 || a > 1.4) { ok = 0; break; }
+                    s->warp_grid[s->n_warp++] = a;
+                }
+                if (s->n_warp == 0) ok = 0;
+            }
+        }
         else if (!strcmp(k, "protocol")) { ok = 0; if (!strcmp(v, "speaker_independent")) { s->protocol = 0; ok = 1; } else if (!strcmp(v, "personalised")) { s->protocol = 1; ok = 1; } }
         else if (!strcmp(k, "calibration_source")) { ok = strlen(v) < sizeof s->calibration_source; if (ok) strcpy(s->calibration_source, v); }
         else if (!strcmp(k, "frozen")) { seen_frozen = 1; if (!strcmp(v, "yes")) s->frozen = 1; else if (strcmp(v, "no")) ok = 0; }
