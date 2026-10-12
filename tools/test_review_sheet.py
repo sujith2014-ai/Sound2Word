@@ -305,8 +305,13 @@ class Workbooks(unittest.TestCase):
 
 class AiDraft(unittest.TestCase):
     """The AI-generated draft is UNVERIFIED by construction. These checks verify only that it is
-    labelled as such, cannot be mistaken for a real word list, and that its pair claims are at least
-    structurally what they say (code points). They say NOTHING about meaning, dialect or phonology."""
+    labelled as such, cannot be mistaken for a real word list, and that its written data is internally
+    consistent (the two spellings of a pair differ by the Unicode change the label claims).
+
+    A PASS IS NOT EVIDENCE of a genuine vowel-length or gemination contrast, of valid or familiar words,
+    or of anything about pronunciation: Malayalam orthography does not map to phonology by a simple
+    character rule, and a pair differing by a vowel sign or a doubled letter may still not be a valid,
+    familiar minimal pair. Only native-speaker review can establish that."""
 
     CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "drafts", "ai_draft_candidates.csv")
     XLSX = CSV.replace(".csv", ".xlsx")
@@ -335,7 +340,7 @@ class AiDraft(unittest.TestCase):
             self.assertNotIn("_meta", wb.sheetnames)
             ws = wb["AI draft (UNVERIFIED)"]
             self.assertEqual(ws.max_row, 1 + len(rows))
-            self.assertTrue(all(ws.cell(row=r, column=12).value == "UNVERIFIED" for r in range(2, ws.max_row + 1)))
+            self.assertTrue(all(ws.cell(row=r, column=13).value == "UNVERIFIED" for r in range(2, ws.max_row + 1)))
 
     def test_counts_and_text_hygiene(self):
         _, rows = self.load()
@@ -355,7 +360,8 @@ class AiDraft(unittest.TestCase):
         for r in oov:
             self.assertEqual((r["proposed_pair_id"], r["proposed_contrast"]), ("", "none"))
 
-    def test_pair_claims_are_structurally_true(self):
+    def test_pair_unicode_transformation_matches_label(self):
+        # Consistency of the written data ONLY - see class docstring. Not a linguistic check.
         _, rows = self.load()
         pairs = {}
         for r in rows:
@@ -375,15 +381,27 @@ class AiDraft(unittest.TestCase):
                 short, long_ = sorted((a, b), key=len)
                 virama = "\u0d4d"
                 ok = any(short[:i + 1] + virama + short[i] + short[i + 1:] == long_ for i in range(len(short)))
-                self.assertTrue(ok, "%s: %s / %s is not a doubled consonant" % (pid, a, b))
+                self.assertTrue(ok, "%s: %s / %s spellings do not differ by the doubled-letter Unicode change the label claims" % (pid, a, b))
             elif ct == "vowel_length":
                 short, long_ = sorted((a, b), key=len)
                 inserted = any(short[:i] + "\u0d3e" + short[i:] == long_ for i in range(1, len(short) + 1))
                 swapped = len(a) == len(b) and [(x, y) for x, y in zip(a, b) if x != y] and all(
                     self.LONG_FOR_SHORT.get(x) == y or self.LONG_FOR_SHORT.get(y) == x for x, y in zip(a, b) if x != y)
-                self.assertTrue(inserted or swapped, "%s: %s / %s is not a vowel-length change" % (pid, a, b))
+                self.assertTrue(inserted or swapped, "%s: %s / %s spellings do not differ by the vowel-sign change the label claims" % (pid, a, b))
             else:
                 self.fail("unexpected contrast " + ct)
+
+    def test_priority_rows_are_kept_not_removed(self):
+        _, rows = self.load()
+        prio = [r for r in rows if r["review_priority"].startswith("PRIORITY")]
+        self.assertEqual({r["proposed_pair_id"] for r in prio}, {"GP05", "GP06"})     # the two pairs the AI is least sure of
+        self.assertEqual(len(prio), 4)                                                # both members of each pair stay in the list
+        self.assertTrue(all(r["ai_self_rating"] == "less sure" and r["status"] == "UNVERIFIED" for r in prio))
+        self.assertTrue(all(r["review_priority"] == "standard" for r in rows if r not in prio))
+        if os.path.exists(self.XLSX):
+            ws = load_workbook(self.XLSX)["AI draft (UNVERIFIED)"]
+            self.assertEqual(sum(1 for r in range(2, ws.max_row + 1) if str(ws.cell(row=r, column=10).value).startswith("PRIORITY")), 4)
+            self.assertEqual(ws.cell(row=2, column=13).value, "UNVERIFIED")
 
     def test_generator_output_is_current(self):
         d = tempfile.mkdtemp()

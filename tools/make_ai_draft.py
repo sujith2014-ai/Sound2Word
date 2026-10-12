@@ -13,9 +13,16 @@ import sys
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "drafts")
 TAG = "#s2w-ai-draft v1 UNVERIFIED - NOT A WORD LIST - DO NOT IMPORT AS VERIFIED"
 COLS = ["draft_id", "role", "malayalam_ai_draft", "romanisation_approx", "english_meaning_ai", "proposed_pair_id",
-        "proposed_contrast", "proposed_contrast_detail", "ai_self_rating", "ai_concerns", "oov_closeness_guess", "status"]
+        "proposed_contrast", "proposed_contrast_detail", "ai_self_rating", "review_priority", "ai_concerns", "oov_closeness_guess", "status"]
 
 MORE, LESS = "more sure", "less sure"
+PRIORITY, STANDARD = "PRIORITY - confirm or reject", "standard"
+
+
+def priority(rating):
+    """Rows the AI is least sure about get reviewed first. They are NOT removed or pre-rejected."""
+    return PRIORITY if rating == LESS else STANDARD
+
 V = "vowel_length"
 G = "gemination"
 
@@ -73,12 +80,12 @@ def rows():
     for pid, ct, detail, rating, concern, a, b in PAIRS:
         for w in (a, b):
             n += 1
-            out.append(["DRAFT-V%02d" % n, "vocab", w[0], w[1], w[2], pid, ct, detail, rating, concern, "", "UNVERIFIED"])
+            out.append(["DRAFT-V%02d" % n, "vocab", w[0], w[1], w[2], pid, ct, detail, rating, priority(rating), concern, "", "UNVERIFIED"])
     for w, r, m in SINGLES:
         n += 1
-        out.append(["DRAFT-V%02d" % n, "vocab", w, r, m, "", "none", "", MORE, SINGLE_CONCERN[w], "", "UNVERIFIED"])
+        out.append(["DRAFT-V%02d" % n, "vocab", w, r, m, "", "none", "", MORE, priority(MORE), SINGLE_CONCERN[w], "", "UNVERIFIED"])
     for i, (w, r, m, close) in enumerate(OOV, start=1):
-        out.append(["DRAFT-U%02d" % i, "oov", w, r, m, "", "none", "", MORE, "Must NOT be enrolled; unknown-word test only.", close, "UNVERIFIED"])
+        out.append(["DRAFT-U%02d" % i, "oov", w, r, m, "", "none", "", MORE, priority(MORE), "Must NOT be enrolled; unknown-word test only.", close, "UNVERIFIED"])
     return out
 
 
@@ -101,6 +108,8 @@ README = [
     ("t", "2. Reviewers must NOT see this file's 'AI self-rating' as evidence. It is the model's own guess, not a measurement."),
     ("t", "3. Check each word independently: spelling (incl. any ZWJ/ZWNJ), meaning, familiarity, pronunciation and regional variants, and for each pair whether the stated contrast is genuine and is the only audible difference."),
     ("t", "4. A word can be perfectly good Malayalam and still not form a useful minimal pair."),
+    ("t", "5. Rows marked PRIORITY are the ones the AI was least sure about. They are kept in the list and reviewed first; a reviewer may confirm or reject them like any other row. Nothing is pre-rejected."),
+    ("t", "6. Automated checks in this repository only confirm the written data is internally consistent (e.g. that two spellings differ by the intended Unicode change). They are NOT evidence that a pair is a genuine vowel-length or gemination contrast, or that the words are familiar."),
     ("s", "Design choices (not linguistic claims)"),
     ("t", "36 vocab candidates: 6 'vowel length' pairs, 6 'gemination' pairs, 12 single words; 10 unknown-word (oov) candidates that must never be enrolled. "
           "No chillu letters are used on purpose, to avoid ZWJ encoding ambiguity. Romanisation is approximate, NOT IPA. "
@@ -136,8 +145,8 @@ def write_xlsx(path):
     d = wb.create_sheet("AI draft (UNVERIFIED)")
     thin = Side(style="thin", color="BFBFBF")
     heads = ["Draft ID", "Role", "Malayalam (AI draft)", "Romanisation (approx., not IPA)", "English meaning (AI)", "Proposed pair ID",
-             "Proposed contrast", "Contrast detail (AI)", "AI self-rating (a guess, not evidence)", "AI concerns", "Unknown-word closeness to enrolled (AI guess)", "Status"]
-    widths = [12, 8, 20, 20, 28, 12, 16, 24, 16, 52, 30, 14]
+             "Proposed contrast", "Contrast detail (AI)", "AI self-rating (a guess, not evidence)", "Review priority", "AI concerns", "Unknown-word closeness to enrolled (AI guess)", "Status"]
+    widths = [12, 8, 20, 20, 28, 12, 16, 24, 16, 18, 52, 30, 14]
     for i, (h, w) in enumerate(zip(heads, widths), start=1):
         c = d.cell(row=1, column=i, value=h)
         c.font = Font(name="Arial", size=10, bold=True, color="FFFFFF")
@@ -148,12 +157,14 @@ def write_xlsx(path):
     for ri, row in enumerate(rows(), start=2):
         for ci, v in enumerate(row, start=1):
             c = d.cell(row=ri, column=ci, value=v)
-            c.font = Font(name="Arial", size=10, bold=(ci == 12))
+            c.font = Font(name="Arial", size=10, bold=(ci in (10, 13)))
             c.alignment = Alignment(wrap_text=True, vertical="top")
             c.border = Border(left=thin, right=thin, top=thin, bottom=thin)
             c.number_format = "@"
-            if ci == 12:
+            if ci == 13:
                 c.fill = PatternFill("solid", fgColor="FFC7CE")
+            if ci == 10 and v == PRIORITY:
+                c.fill = PatternFill("solid", fgColor="F4B183")
     d.freeze_panes = "D2"
     wb.save(path)
 

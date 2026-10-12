@@ -10,7 +10,10 @@ with `tools/review_sheet.py template OUT.xlsx --vocab-slots N --oov-slots M`). N
 Tests: `make test-review` (runs inside `make test`).
 
 Optional starting point (UNVERIFIED, AI-generated, deliberately not importable): `data/drafts/ai_draft_candidates.xlsx`.
-It is a prompt for the proposer, never a source of ground truth.
+It is a prompt for the proposer, never a source of ground truth. Rows marked PRIORITY are the ones the AI was
+least sure of: they stay in the list and are reviewed first, and are confirmed or rejected like any other row.
+The repository's automated checks on the draft only confirm the written data is consistent; they are not
+evidence of a genuine contrast, valid words or familiarity.
 
 ## Roles
 - **Proposer** (native speaker): fills the yellow columns: word, meaning, optional romanisation, IPA only
