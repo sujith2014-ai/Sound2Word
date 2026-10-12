@@ -1,14 +1,24 @@
 CC ?= cc
 CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Wpedantic -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE
-INC = -Icore/include
+INC = -Icore/include -Ievaluation/include
 BUILD = build
 OBJS = $(BUILD)/audio.o $(BUILD)/features.o $(BUILD)/dtw.o
-TESTS = $(BUILD)/test_audio $(BUILD)/test_features $(BUILD)/test_dtw
+EVOBJS = $(BUILD)/sha256.o $(BUILD)/csv.o $(BUILD)/dataset.o
+TESTS = $(BUILD)/test_audio $(BUILD)/test_features $(BUILD)/test_dtw $(BUILD)/test_dataset
 
-all: $(BUILD)/s2w_inspect $(BUILD)/s2w_features $(BUILD)/s2w_match $(TESTS)
+all: $(BUILD)/s2w_dataset_check $(BUILD)/s2w_make_fixture $(BUILD)/s2w_inspect $(BUILD)/s2w_features $(BUILD)/s2w_match $(TESTS)
 
 $(BUILD)/%.o: core/src/%.c core/include/*.h | $(BUILD)
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
+
+$(BUILD)/%.o: evaluation/src/%.c core/include/*.h evaluation/include/*.h | $(BUILD)
+	$(CC) $(CFLAGS) $(INC) -c $< -o $@
+
+$(BUILD)/s2w_dataset_check: tools/s2w_dataset_check.c $(OBJS) $(EVOBJS)
+	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
+
+$(BUILD)/s2w_make_fixture: tools/s2w_make_fixture.c $(OBJS) $(EVOBJS)
+	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
 
 $(BUILD)/s2w_inspect: tools/s2w_inspect.c $(OBJS)
 	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
@@ -19,14 +29,17 @@ $(BUILD)/s2w_features: tools/s2w_features.c $(OBJS)
 $(BUILD)/s2w_match: tools/s2w_match.c $(OBJS)
 	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
 
-$(BUILD)/test_%: core/tests/test_%.c $(OBJS)
+$(BUILD)/test_audio $(BUILD)/test_features $(BUILD)/test_dtw: $(BUILD)/test_%: core/tests/test_%.c $(OBJS)
 	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
+
+$(BUILD)/test_dataset: evaluation/tests/test_dataset.c $(OBJS) $(EVOBJS) $(BUILD)/s2w_make_fixture
+	$(CC) $(CFLAGS) $(INC) evaluation/tests/test_dataset.c $(OBJS) $(EVOBJS) -o $@ -lm
 
 $(BUILD):
 	mkdir -p $@
 
 test: $(TESTS)
-	@for t in $(TESTS); do $$t || exit 1; done
+	@for t in $(TESTS); do $$t $(BUILD) || exit 1; done
 
 # Same suite under AddressSanitizer + UndefinedBehaviorSanitizer (leaks fail the run).
 test-asan:
