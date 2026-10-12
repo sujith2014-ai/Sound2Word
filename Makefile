@@ -2,11 +2,11 @@ CC ?= cc
 CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Wpedantic -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE
 INC = -Icore/include -Ievaluation/include
 BUILD = build
-OBJS = $(BUILD)/audio.o $(BUILD)/features.o $(BUILD)/dtw.o
+OBJS = $(BUILD)/audio.o $(BUILD)/features.o $(BUILD)/dtw.o $(BUILD)/resample.o $(BUILD)/qa.o
 EVOBJS = $(BUILD)/sha256.o $(BUILD)/csv.o $(BUILD)/dataset.o $(BUILD)/json.o $(BUILD)/pitch.o $(BUILD)/settings.o $(BUILD)/eval.o
-TESTS = $(BUILD)/test_audio $(BUILD)/test_features $(BUILD)/test_dtw $(BUILD)/test_dataset $(BUILD)/test_eval
+TESTS = $(BUILD)/test_audio $(BUILD)/test_features $(BUILD)/test_dtw $(BUILD)/test_recording $(BUILD)/test_dataset $(BUILD)/test_eval
 
-all: $(BUILD)/s2w_eval $(BUILD)/s2w_dataset_check $(BUILD)/s2w_make_fixture $(BUILD)/s2w_inspect $(BUILD)/s2w_features $(BUILD)/s2w_match $(TESTS)
+all: $(BUILD)/s2w_qa $(BUILD)/s2w_ingest $(BUILD)/s2w_eval $(BUILD)/s2w_dataset_check $(BUILD)/s2w_make_fixture $(BUILD)/s2w_inspect $(BUILD)/s2w_features $(BUILD)/s2w_match $(TESTS)
 
 $(BUILD)/%.o: core/src/%.c core/include/*.h | $(BUILD)
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
@@ -15,6 +15,12 @@ $(BUILD)/%.o: evaluation/src/%.c core/include/*.h evaluation/include/*.h | $(BUI
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 
 $(BUILD)/s2w_dataset_check: tools/s2w_dataset_check.c $(OBJS) $(EVOBJS)
+	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
+
+$(BUILD)/s2w_qa: tools/s2w_qa.c $(OBJS)
+	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
+
+$(BUILD)/s2w_ingest: tools/s2w_ingest.c $(OBJS) $(EVOBJS)
 	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
 
 $(BUILD)/s2w_eval: tools/s2w_eval.c $(OBJS) $(EVOBJS)
@@ -32,7 +38,7 @@ $(BUILD)/s2w_features: tools/s2w_features.c $(OBJS)
 $(BUILD)/s2w_match: tools/s2w_match.c $(OBJS)
 	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
 
-$(BUILD)/test_audio $(BUILD)/test_features $(BUILD)/test_dtw: $(BUILD)/test_%: core/tests/test_%.c $(OBJS)
+$(BUILD)/test_audio $(BUILD)/test_features $(BUILD)/test_dtw $(BUILD)/test_recording: $(BUILD)/test_%: core/tests/test_%.c $(OBJS)
 	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
 
 $(BUILD)/test_dataset: evaluation/tests/test_dataset.c $(OBJS) $(EVOBJS) $(BUILD)/s2w_make_fixture
@@ -49,8 +55,9 @@ test: $(TESTS)
 	@$(MAKE) --no-print-directory test-review BUILD=$(BUILD)
 
 # Word-list review tooling (skipped automatically without python3 + openpyxl)
-test-review: $(BUILD)/s2w_make_fixture $(BUILD)/s2w_dataset_check
+test-review: $(BUILD)/s2w_make_fixture $(BUILD)/s2w_dataset_check $(BUILD)/s2w_ingest $(BUILD)/s2w_qa $(BUILD)/s2w_eval
 	@S2W_BUILD=$(BUILD) python3 -I tools/test_review_sheet.py
+	@S2W_BUILD=$(BUILD) python3 -I tools/test_ingest.py
 
 # Same suite under AddressSanitizer + UndefinedBehaviorSanitizer (leaks fail the run).
 test-asan:
