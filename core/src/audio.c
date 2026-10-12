@@ -26,6 +26,7 @@ const char *s2w_status_str(s2w_status s) {
     case S2W_ERR_TOO_SHORT: return "audio shorter than one analysis frame";
     case S2W_ERR_RATE_MISMATCH: return "audio sample rate does not match feature config";
     case S2W_ERR_NONFINITE: return "non-finite value encountered";
+    case S2W_ERR_INCOMPATIBLE: return "features incompatible with template library";
     }
     return "unknown error";
 }

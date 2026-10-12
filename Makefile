@@ -2,10 +2,10 @@ CC ?= cc
 CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Wpedantic -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE
 INC = -Icore/include
 BUILD = build
-OBJS = $(BUILD)/audio.o $(BUILD)/features.o
-TESTS = $(BUILD)/test_audio $(BUILD)/test_features
+OBJS = $(BUILD)/audio.o $(BUILD)/features.o $(BUILD)/dtw.o
+TESTS = $(BUILD)/test_audio $(BUILD)/test_features $(BUILD)/test_dtw
 
-all: $(BUILD)/s2w_inspect $(BUILD)/s2w_features $(TESTS)
+all: $(BUILD)/s2w_inspect $(BUILD)/s2w_features $(BUILD)/s2w_match $(TESTS)
 
 $(BUILD)/%.o: core/src/%.c core/include/*.h | $(BUILD)
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
@@ -14,6 +14,9 @@ $(BUILD)/s2w_inspect: tools/s2w_inspect.c $(OBJS)
 	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
 
 $(BUILD)/s2w_features: tools/s2w_features.c $(OBJS)
+	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
+
+$(BUILD)/s2w_match: tools/s2w_match.c $(OBJS)
 	$(CC) $(CFLAGS) $(INC) $^ -o $@ -lm
 
 $(BUILD)/test_%: core/tests/test_%.c $(OBJS)

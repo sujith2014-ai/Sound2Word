@@ -5,8 +5,8 @@ Offline-first, Malayalam-first, C core + Kotlin Android.
 | Milestone | Scope | Status |
 |-----------|-------|--------|
 | M1 | Phase 1: audio inspector (WAV read/validate, stats, warnings) | done |
-| M2 | Phase 2: feature engine (log-Mel / MFCC, normalisation) | next |
-| M3 | Phase 3: constrained DTW matcher with rejection | planned |
+| M2 | Phase 2: feature engine (log-Mel / MFCC, normalisation) | done (docs/FEATURES.md) |
+| M3 | Phase 3: constrained DTW matcher, top-k, rejection | done, synthetic-tested only (docs/DTW.md) |
 | M4-M9 | Later phases per the program model | planned |
 
 ## Rules carried from the blueprint
@@ -15,6 +15,9 @@ Offline-first, Malayalam-first, C core + Kotlin Android.
 - No fake probabilities: report scores as scores, with an explicit reject path.
 - Keep train and evaluation data strictly separate.
 - Offline by default; no network use in the core.
+
+## Next
+Collect real Malayalam recordings (speaker-disjoint enrolment / calibration / test splits), run `make test-real`, tune DTW defaults and thresholds on held-out data, then Phase 4.
 
 ## Phase 1 CLI
 `make test && build/s2w_inspect file.wav` prints deterministic key=value lines.

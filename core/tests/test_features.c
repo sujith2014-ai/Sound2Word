@@ -94,7 +94,7 @@ static void test_inputs(void) {
         a = mk(n, 16000);
         for (size_t i = 0; i < n; i++) a.samples[i] = 0.1f * sinf(0.05f * (float)i);
         f = extract(&a, &c, &st);
-        if (n < 400) CHECK(st == S2W_ERR_TOO_SHORT || (n == 0 && st == S2W_ERR_BAD_PARAMS) || st == S2W_ERR_TOO_SHORT);
+        if (n < 400) CHECK(st == S2W_ERR_TOO_SHORT);
         else CHECK(st == S2W_OK && f.n_frames == (n >= 560 ? 2u : 1u));
         s2w_features_free(&f);
         s2w_audio_free(&a);
