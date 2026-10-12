@@ -9,3 +9,5 @@ consent/
 evaluation/runs/
 evaluation/test_ledger.txt
 !data/schema/*
+__pycache__/
+*.pyc
