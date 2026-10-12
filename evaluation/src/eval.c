@@ -62,44 +62,110 @@ static s2w_speaker_pitch *speaker_slot(s2w_run *r, const char *id, size_t *cap) 
 }
 static int cmpd(const void *a, const void *b) { double x = *(const double *)a, y = *(const double *)b; return (x > y) - (x < y); }
 
+/* Template pools. Speaker-independent: ONE pool built from every enrolment speaker.
+ * Personalised: one pool PER participant, built only from that participant's own enrolment recordings,
+ * and each query is matched only against its own participant's pool. */
+typedef struct { s2w_matcher **m; char (*spk)[S2W_ID_MAX]; size_t n, cap; int personalised; const s2w_settings *st; s2w_reject_config off; } mpool;
+
+static s2w_matcher *pool_get(mpool *p, const char *speaker) {
+    const char *key = p->personalised ? speaker : "";
+    for (size_t i = 0; i < p->n; i++) if (!strcmp(p->spk[i], key)) return p->m[i];
+    if (p->n == p->cap) {
+        size_t nc = p->cap ? p->cap * 2 : 8;
+        s2w_matcher **nm = realloc(p->m, nc * sizeof *nm);
+        char (*ns)[S2W_ID_MAX] = realloc(p->spk, nc * sizeof *ns);
+        if (nm) p->m = nm;
+        if (ns) p->spk = ns;
+        if (!nm || !ns) return NULL;
+        p->cap = nc;
+    }
+    s2w_matcher *m = s2w_matcher_new(p->st->rep, &p->st->dtw, &p->off);
+    if (!m) return NULL;
+    snprintf(p->spk[p->n], S2W_ID_MAX, "%s", key);
+    p->m[p->n++] = m;
+    return m;
+}
+static s2w_matcher *pool_find(const mpool *p, const char *speaker) {
+    const char *key = p->personalised ? speaker : "";
+    for (size_t i = 0; i < p->n; i++) if (!strcmp(p->spk[i], key)) return p->m[i];
+    return NULL;
+}
+static void pool_free(mpool *p) {
+    for (size_t i = 0; i < p->n; i++) s2w_matcher_free(p->m[i]);
+    free(p->m); free(p->spk);
+    memset(p, 0, sizeof *p);
+}
+
 s2w_status s2w_eval_collect(const s2w_dataset *ds, const s2w_settings *st, int split, s2w_run *run, char *err, size_t en) {
     memset(run, 0, sizeof *run);
     if (split != S2W_SPLIT_CALIB && split != S2W_SPLIT_TEST) { snprintf(err, en, "query split must be calib or test"); return S2W_ERR_BAD_PARAMS; }
-    s2w_reject_config off;
-    s2w_reject_config_default(&off);
-    s2w_matcher *m = s2w_matcher_new(st->rep, &st->dtw, &off);
-    if (!m) { snprintf(err, en, "invalid matcher settings"); return S2W_ERR_BAD_PARAMS; }
+    if (st->protocol != ds->personalised) {
+        snprintf(err, en, "settings protocol (%s) does not match the dataset protocol (%s): the two tracks use separate settings and thresholds",
+                 st->protocol ? "personalised" : "speaker_independent", ds->personalised ? "personalised" : "speaker_independent");
+        return S2W_ERR_INCOMPATIBLE;
+    }
+    mpool pool;
+    memset(&pool, 0, sizeof pool);
+    pool.personalised = ds->personalised;
+    pool.st = st;
+    s2w_reject_config_default(&pool.off);
+    s2w_matcher *probe = s2w_matcher_new(st->rep, &st->dtw, &pool.off);
+    if (!probe) { snprintf(err, en, "invalid matcher settings"); return S2W_ERR_BAD_PARAMS; }
+    s2w_matcher_free(probe);
     s2w_status s;
+    /* Personalised: only participants who have queries in THIS split get a template pool, so evaluating (or calibrating on)
+     * the calib split never opens the enrolment audio of locked-test participants. */
+    char (*qspk)[S2W_ID_MAX] = NULL;
+    size_t nqs = 0;
+    if (ds->personalised) {
+        qspk = calloc(ds->nr ? ds->nr : 1, sizeof *qspk);
+        if (!qspk) { snprintf(err, en, "out of memory"); return S2W_ERR_NOMEM; }
+        for (size_t i = 0; i < ds->nr; i++) {
+            if (ds->r[i].split != split) continue;
+            size_t k;
+            for (k = 0; k < nqs; k++) if (!strcmp(qspk[k], ds->r[i].speaker)) break;
+            if (k == nqs) snprintf(qspk[nqs++], S2W_ID_MAX, "%s", ds->r[i].speaker);
+        }
+    }
     for (size_t i = 0; i < ds->nr; i++) {
         const s2w_rec *rec = &ds->r[i];
         if (rec->split != S2W_SPLIT_ENROL) continue;
+        if (ds->personalised) {
+            size_t k;
+            for (k = 0; k < nqs; k++) if (!strcmp(qspk[k], rec->speaker)) break;
+            if (k == nqs) continue;
+        }
         s2w_audio a; s2w_features f;
         s = load_audio(ds, rec, &st->feat, &a, err, en);
-        if (s != S2W_OK) { s2w_matcher_free(m); return s; }
+        if (s != S2W_OK) { free(qspk); pool_free(&pool); return s; }
         s = s2w_features_extract(&a, &st->feat, &f);
         s2w_audio_free(&a);
-        if (s != S2W_OK) { snprintf(err, en, "%s: enrolment feature extraction failed: %s", rec->id, s2w_status_str(s)); s2w_matcher_free(m); return s; }
-        s = s2w_matcher_add(m, ds->w[rec->word].id, &f);
+        if (s != S2W_OK) { snprintf(err, en, "%s: enrolment feature extraction failed: %s", rec->id, s2w_status_str(s)); free(qspk); pool_free(&pool); return s; }
+        s2w_matcher *m = pool_get(&pool, rec->speaker);
+        s = m ? s2w_matcher_add(m, ds->w[rec->word].id, &f) : S2W_ERR_NOMEM;
         s2w_features_free(&f);
-        if (s != S2W_OK) { snprintf(err, en, "%s: cannot add template: %s", rec->id, s2w_status_str(s)); s2w_matcher_free(m); return s; }
+        if (s != S2W_OK) { snprintf(err, en, "%s: cannot add template: %s", rec->id, s2w_status_str(s)); free(qspk); pool_free(&pool); return s; }
         run->n_templates++;
     }
-    if (run->n_templates == 0) { snprintf(err, en, "no enrolment recordings"); s2w_matcher_free(m); return S2W_ERR_EMPTY; }
+    free(qspk);
+    if (run->n_templates == 0) { snprintf(err, en, "no enrolment recordings"); pool_free(&pool); return S2W_ERR_EMPTY; }
 
     size_t nq = 0;
     for (size_t i = 0; i < ds->nr; i++) nq += ds->r[i].split == split;
     run->split = split;
     run->q = calloc(nq ? nq : 1, sizeof *run->q);
-    if (!run->q) { s2w_matcher_free(m); return S2W_ERR_NOMEM; }
+    if (!run->q) { pool_free(&pool); return S2W_ERR_NOMEM; }
     size_t spcap = 0;
     for (size_t i = 0; i < ds->nr; i++) {
         const s2w_rec *rec = &ds->r[i];
         if (rec->split != split) continue;
         s2w_query *q = &run->q[run->nq++];
         q->rec = i; q->known = ds->w[rec->word].role == S2W_ROLE_VOCAB; q->true_word = rec->word; q->margin = INFINITY;
+        s2w_matcher *m = pool_find(&pool, rec->speaker);
+        if (!m) { snprintf(err, en, "%s: no templates available for this query (participant '%s' has no enrolment recordings)", rec->id, rec->speaker); pool_free(&pool); s2w_run_free(run); return S2W_ERR_EMPTY; }
         s2w_audio a; s2w_features f;
         s = load_audio(ds, rec, &st->feat, &a, err, en);
-        if (s != S2W_OK) { s2w_matcher_free(m); s2w_run_free(run); return s; }
+        if (s != S2W_OK) { pool_free(&pool); s2w_run_free(run); return s; }
         s2w_speaker_pitch *sp = speaker_slot(run, rec->speaker, &spcap);
         if (sp && sp->nf0 < 5) {
             double f0;
@@ -112,7 +178,7 @@ s2w_status s2w_eval_collect(const s2w_dataset *ds, const s2w_settings *st, int s
         s2w_match_result res;
         s = s2w_matcher_match(m, &f, S2W_EVAL_K, &res);
         s2w_features_free(&f);
-        if (s != S2W_OK) { snprintf(err, en, "%s: match failed: %s", rec->id, s2w_status_str(s)); s2w_matcher_free(m); s2w_run_free(run); return s; }
+        if (s != S2W_OK) { snprintf(err, en, "%s: match failed: %s", rec->id, s2w_status_str(s)); pool_free(&pool); s2w_run_free(run); return s; }
         q->n_cand = res.n_candidates; q->margin = res.margin_ratio;
         for (size_t c = 0; c < res.n_candidates; c++) { q->cand_word[c] = s2w_dataset_find_word(ds, res.cand[c].label); q->cand_dist[c] = res.cand[c].distance; }
     }
@@ -120,7 +186,7 @@ s2w_status s2w_eval_collect(const s2w_dataset *ds, const s2w_settings *st, int s
         s2w_speaker_pitch *sp = &run->sp[i];
         if (sp->nf0 >= 2) { qsort(sp->f0, sp->nf0, sizeof(double), cmpd); sp->median_f0 = sp->f0[sp->nf0 / 2]; }
     }
-    s2w_matcher_free(m);
+    pool_free(&pool);
     s2w_run_redecide(run, &st->rej);
     return S2W_OK;
 }
@@ -262,6 +328,11 @@ static size_t count_simulated(const s2w_dataset *ds) {
     return n;
 }
 
+static const char *protocol_note(const s2w_dataset *ds) {
+    return ds->personalised ? "PERSONALISED protocol: templates come from the same participant's earlier session. This says nothing about recognising unfamiliar speakers."
+                            : "Speaker-independent protocol: templates come only from enrolment speakers disjoint from the query speakers.";
+}
+
 static const char *scope_statement(const s2w_dataset *ds, int verified) {
     if (count_simulated(ds)) return "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.";
     if (ds->synthetic) return "SYNTHETIC FIXTURE: software validation only. These numbers say nothing about Malayalam recognition accuracy.";
@@ -286,6 +357,7 @@ static void j_common(s2w_json *j, const s2w_dataset *ds, const s2w_settings *st,
     js_int(j, "unverified_labels", (long long)ul);
     js_int(j, "simulated_recordings", (long long)count_simulated(ds));
     js_str(j, "scope_statement", scope_statement(ds, verified));
+    js_str(j, "protocol_note", protocol_note(ds));
     js_obj_end(j);
     js_obj(j, "code");
     js_str(j, "git_commit", c->git_commit);
@@ -299,6 +371,7 @@ static void j_common(s2w_json *j, const s2w_dataset *ds, const s2w_settings *st,
     js_str(j, "dataset_id", ds->dataset_id);
     js_str(j, "dataset_version", ds->dataset_version);
     js_str(j, "manifest_sha256", ds->manifest_sha256);
+    js_str(j, "protocol", ds->personalised ? "personalised" : "speaker_independent");
     size_t cnt[3] = {0, 0, 0};
     for (size_t i = 0; i < ds->nr; i++) cnt[ds->r[i].split]++;
     js_obj(j, "recordings_per_split");
@@ -593,6 +666,7 @@ void s2w_eval_write_summary(FILE *f, const s2w_dataset *ds, const s2w_settings *
     if (count_simulated(ds)) fprintf(f, "*** SIMULATED CONDITIONS (%zu recordings degraded by software): software validation only. NOT evidence about real speakers, rooms or microphones. ***\n", count_simulated(ds));
     if (ds->synthetic) fprintf(f, "*** SYNTHETIC FIXTURE RUN: software validation only. NOT Malayalam recognition accuracy. ***\n");
     else if (uw || ul) fprintf(f, "*** PROVISIONAL: %zu used word(s) not verified, %zu recording label(s) not verified. ***\n", uw, ul);
+    fprintf(f, "protocol: %s\n", protocol_note(ds));
     fprintf(f, "code: %s%s (%s)\ndataset: %s v%s  manifest_sha256=%.16s...\n", c->git_commit, c->git_dirty ? " (dirty tree)" : "", c->git_describe,
             ds->dataset_id, ds->dataset_version, ds->manifest_sha256);
     char h[65];

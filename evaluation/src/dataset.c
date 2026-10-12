@@ -89,8 +89,12 @@ static int yesno(const char *s, int *out) {
 }
 static int plain_text(const char *s, size_t max) { return strlen(s) < max && valid_utf8(s); }
 
-static void require_cols(const s2w_csv *c, const char *file, const char *const *req, size_t nreq, s2w_issues *iss, int *ok) {
+static void require_cols(const s2w_csv *c, const char *file, const char *const *req, size_t nreq, const char *const *opt, size_t nopt, s2w_issues *iss, int *ok) {
     int *used = calloc(c->n_cols, sizeof *used);
+    for (size_t k = 0; k < nopt; k++) {
+        int j = s2w_csv_col(c, opt[k]);
+        if (j >= 0) used[j] = 1;
+    }
     for (size_t k = 0; k < nreq; k++) {
         int j = s2w_csv_col(c, req[k]);
         if (j < 0) { ERR(file, 2, "missing column '%s'", req[k]); *ok = 0; }
@@ -173,8 +177,9 @@ static void parse_meta(const char *dir, s2w_dataset *ds, s2w_issues *iss) {
             if (!valid_id(v) || !cpy(ds->dataset_version, sizeof ds->dataset_version, v)) ERR("dataset_meta", ln, "invalid dataset_version");
         } else if (!strcmp(k, "protocol")) {
             if (seen_proto++) ERR("dataset_meta", ln, "duplicate key protocol");
-            if (strcmp(v, "speaker_independent")) ERR("dataset_meta", ln, "unsupported protocol '%s' (supported: speaker_independent)", v);
-            else cpy(ds->protocol, sizeof ds->protocol, v);
+            if (!strcmp(v, "speaker_independent")) cpy(ds->protocol, sizeof ds->protocol, v);
+            else if (!strcmp(v, "personalised")) { cpy(ds->protocol, sizeof ds->protocol, v); ds->personalised = 1; }
+            else ERR("dataset_meta", ln, "unsupported protocol '%s' (supported: speaker_independent, personalised)", v);
         } else ERR("dataset_meta", ln, "unknown key '%s'", k);
     }
     if (!seen_schema) ERR("dataset_meta", 0, "missing schema_version");
@@ -193,7 +198,7 @@ static void parse_words(const char *dir, s2w_dataset *ds, s2w_issues *iss) {
     static const char *req[] = {"word_id", "label", "romanisation", "meaning_en", "role", "pair_id", "contrast_type",
                                 "review_status", "reviewer_1", "reviewer_2", "variants"};
     int ok = 1;
-    require_cols(&c, "wordlist", req, 11, iss, &ok);
+    require_cols(&c, "wordlist", req, 11, NULL, 0, iss, &ok);
     if (!ok) { s2w_csv_free(&c); return; }
     int col[11];
     for (int k = 0; k < 11; k++) col[k] = s2w_csv_col(&c, req[k]);
@@ -273,18 +278,21 @@ static void parse_participants(const char *dir, s2w_dataset *ds, s2w_issues *iss
     FILE *f = fopen(path, "rb");
     if (!f) {
         if (opt && opt->require_participants) ERR("participants", 0, "participants.csv missing but required");
-        else if (!ds->synthetic) WARN("participants", 0, "participants.csv missing: no consent record, no group breakdowns");
+        else if (!ds->synthetic) ERR("participants", 0, "participants.csv missing: a real dataset must carry a consent record for every speaker (consent_status)");
         return;
     }
     fclose(f);
     s2w_csv c;
     if (s2w_csv_load(path, "#s2w-participants v1", &c, e, sizeof e) != S2W_OK) { ERR("participants", 0, "%s", e); return; }
     static const char *req[] = {"speaker_id", "consent_version", "consent_date", "group_reporting_ok", "sex_self_report", "age_band", "accent_region"};
+    static const char *optcols[] = {"consent_status"};
     int ok = 1;
-    require_cols(&c, "participants", req, 7, iss, &ok);
+    require_cols(&c, "participants", req, 7, optcols, 1, iss, &ok);
     if (!ok) { s2w_csv_free(&c); return; }
     int col[7];
     for (int k = 0; k < 7; k++) col[k] = s2w_csv_col(&c, req[k]);
+    int status_col = s2w_csv_col(&c, "consent_status");
+    if (status_col < 0 && !ds->synthetic) ERR("participants", 2, "missing column 'consent_status' (required for real datasets: every speaker must be recorded as consented)");
     ds->has_participants = 1;
     ds->p = calloc(c.n_rows, sizeof *ds->p);
     for (size_t r = 1; r < c.n_rows; r++) {
@@ -301,12 +309,20 @@ static void parse_participants(const char *dir, s2w_dataset *ds, s2w_issues *iss
         if (!yesno(v[3], &p->group_ok)) ERR("participants", ln, "group_reporting_ok must be yes or no");
         for (int k = 4; k <= 6; k++) if (!plain_text(v[k], S2W_ID_MAX)) ERR("participants", ln, "attribute too long or invalid text");
         cpy(p->sex, sizeof p->sex, v[4]); cpy(p->age, sizeof p->age, v[5]); cpy(p->accent, sizeof p->accent, v[6]);
+        if (status_col >= 0) {
+            const char *cs = s2w_csv_at(&c, r, (size_t)status_col);
+            if (!strcmp(cs, "consented")) p->consent_status = 1;
+            else if (!strcmp(cs, "withdrawn")) {
+                p->consent_status = 2;
+                ERR("participants", ln, "participant '%s' has WITHDRAWN consent: their recordings must not be in a dataset (see consent_gate.py withdrawals / build-eligible)", p->id);
+            } else ERR("participants", ln, "consent_status must be 'consented' or 'withdrawn' (got '%s')", cs);
+        }
         ds->np++;
     }
     s2w_csv_free(&c);
 }
 
-typedef struct { char id[S2W_ID_MAX]; char owner[S2W_ID_MAX]; int split; size_t line; } seen_t;
+typedef struct { char id[S2W_ID_MAX]; char owner[S2W_ID_MAX]; int split; unsigned mask; size_t line; } seen_t;
 
 static void cb_dup_id(void *cx, size_t a, size_t b) {
     struct { s2w_dataset *d; s2w_issues *i; const char *what; } *c = cx;
@@ -321,7 +337,7 @@ static void parse_recordings(const char *dir, s2w_dataset *ds, s2w_issues *iss, 
     static const char *req[] = {"recording_id", "path", "word_id", "speaker_id", "session_id", "repetition", "split", "device_id",
                                 "environment", "noise_condition", "speaking_style", "label_verified", "audio_sha256"};
     int ok = 1;
-    require_cols(&c, "recordings", req, 13, iss, &ok);
+    require_cols(&c, "recordings", req, 13, NULL, 0, iss, &ok);
     if (!ok) { s2w_csv_free(&c); return; }
     int col[13];
     for (int k = 0; k < 13; k++) col[k] = s2w_csv_col(&c, req[k]);
@@ -389,7 +405,8 @@ static void parse_recordings(const char *dir, s2w_dataset *ds, s2w_issues *iss, 
         if (!x->id[0]) continue;
         size_t j;
         for (j = 0; j < nspk; j++) if (!strcmp(spk[j].id, x->speaker)) break;
-        if (j == nspk) { snprintf(spk[nspk].id, S2W_ID_MAX, "%s", x->speaker); spk[nspk].split = x->split; spk[nspk++].line = x->line; }
+        if (j == nspk) { snprintf(spk[nspk].id, S2W_ID_MAX, "%s", x->speaker); spk[nspk].split = x->split; spk[nspk].mask = 1u << x->split; spk[nspk++].line = x->line; }
+        else if (ds->personalised) spk[j].mask |= 1u << x->split;      /* personalised: a participant legitimately has enrolment AND query rows */
         else if (spk[j].split != x->split)
             ERR("recordings", x->line, "LEAKAGE: speaker '%s' appears in splits '%s' and '%s' (first at line %zu)", x->speaker, S2W_SPLIT_NAME[spk[j].split], S2W_SPLIT_NAME[x->split], spk[j].line);
         for (j = 0; j < nses; j++) if (!strcmp(ses[j].id, x->session)) break;
@@ -400,6 +417,27 @@ static void parse_recordings(const char *dir, s2w_dataset *ds, s2w_issues *iss, 
         }
         const s2w_word *w = &ds->w[x->word];
         if (x->split == S2W_SPLIT_ENROL && w->role == S2W_ROLE_OOV) ERR("recordings", x->line, "OOV word '%s' must not appear in the enrol split", w->id);
+    }
+    if (ds->personalised) {
+        /* Personalised rules: (1) a participant is a calibration participant OR a test participant, never both;
+         * (2) query rows need the participant's OWN enrolment rows; (3) every queried vocab word needs that participant's own template. */
+        const unsigned E = 1u << S2W_SPLIT_ENROL, C = 1u << S2W_SPLIT_CALIB, T = 1u << S2W_SPLIT_TEST;
+        for (size_t j = 0; j < nspk; j++) {
+            if ((spk[j].mask & C) && (spk[j].mask & T))
+                ERR("recordings", spk[j].line, "LEAKAGE: participant '%s' has both calib and test query recordings (calibration and test participants must be disjoint)", spk[j].id);
+            if ((spk[j].mask & (C | T)) && !(spk[j].mask & E))
+                ERR("recordings", spk[j].line, "PERSONALISED: participant '%s' has query recordings but no enrolment recordings of their own", spk[j].id);
+            if (spk[j].mask == E)
+                WARN("recordings", spk[j].line, "participant '%s' has enrolment recordings but no queries", spk[j].id);
+        }
+        for (size_t i = 0; i < n; i++) {
+            const s2w_rec *q = &ds->r[i];
+            if (!q->id[0] || q->split == S2W_SPLIT_ENROL || ds->w[q->word].role != S2W_ROLE_VOCAB) continue;
+            int own = 0;
+            for (size_t k = 0; k < n && !own; k++)
+                own = ds->r[k].id[0] && ds->r[k].split == S2W_SPLIT_ENROL && ds->r[k].word == q->word && !strcmp(ds->r[k].speaker, q->speaker);
+            if (!own) ERR("recordings", q->line, "PERSONALISED: participant '%s' is queried on word '%s' but has no enrolment recording of it", q->speaker, ds->w[q->word].id);
+        }
     }
     free(spk); free(ses);
 

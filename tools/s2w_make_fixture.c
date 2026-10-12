@@ -1,5 +1,7 @@
 /* s2w_make_fixture: write a SYNTHETIC dataset (tone "words") for software tests only.
- * usage: s2w_make_fixture OUTDIR [wide]
+ * usage: s2w_make_fixture OUTDIR [wide|personalised]
+ * "personalised" writes a protocol=personalised dataset: 4 calibration participants and 2 test participants, each with
+ * an enrolment session (S1, vocab words only) and a later query session (S2, vocab + unknown words).
  * "wide" gives calib/test speakers much larger synthetic pitch (0.70-1.45x) and tempo (0.70-1.40x)
  * offsets than the enrolled speakers, to exercise mismatch handling. Scaling tone frequencies and
  * durations is NOT a model of real vocal tracts or speaking styles; it says nothing about real speakers.
@@ -52,8 +54,9 @@ static const W WORDS[] = {
 #define NW ((int)(sizeof WORDS / sizeof *WORDS))
 
 int main(int argc, char **argv) {
-    if (argc != 2 && !(argc == 3 && !strcmp(argv[2], "wide"))) { fprintf(stderr, "usage: %s OUTDIR [wide]\n", argv[0]); return 2; }
-    int wide = argc == 3;
+    if (argc != 2 && !(argc == 3 && (!strcmp(argv[2], "wide") || !strcmp(argv[2], "personalised")))) { fprintf(stderr, "usage: %s OUTDIR [wide|personalised]\n", argv[0]); return 2; }
+    int wide = argc == 3 && !strcmp(argv[2], "wide");
+    int pers = argc == 3 && !strcmp(argv[2], "personalised");
     char p[1024];
     snprintf(p, sizeof p, "%s", argv[1]); mkdir(p, 0755);
     snprintf(p, sizeof p, "%s/audio", argv[1]); mkdir(p, 0755);
@@ -61,7 +64,8 @@ int main(int argc, char **argv) {
     snprintf(p, sizeof p, "%s/dataset_meta.txt", argv[1]);
     FILE *f = fopen(p, "w");
     if (!f) { perror(p); return 2; }
-    fprintf(f, "schema_version=1\nkind=synthetic\ndataset_id=%s\ndataset_version=1\nprotocol=speaker_independent\n", wide ? "synthetic-fixture-wide" : "synthetic-fixture");
+    fprintf(f, "schema_version=1\nkind=synthetic\ndataset_id=%s\ndataset_version=1\nprotocol=%s\n", pers ? "synthetic-fixture-pers" : wide ? "synthetic-fixture-wide" : "synthetic-fixture",
+            pers ? "personalised" : "speaker_independent");
     fclose(f);
 
     snprintf(p, sizeof p, "%s/wordlist.csv", argv[1]);
@@ -79,6 +83,14 @@ int main(int argc, char **argv) {
         {"spkC1", 1, 1.03, 1.05, "dev-a", "f"}, {"spkC2", 1, 0.92, 0.95, "dev-b", "m"}, {"spkC3", 1, 1.08, 1.00, "dev-a", "f"},
         {"spkT1", 2, 0.97, 1.02, "dev-a", "m"}, {"spkT2", 2, 1.06, 0.97, "dev-b", "f"}, {"spkT3", 2, 0.93, 1.08, "dev-a", "m"},
     };
+    int nspk = 10;
+    if (pers) {   /* participant groups: split field is the QUERY split (S2); S1 is always enrolment */
+        static const struct { const char *id; int split; double pitch, tempo; const char *dev; const char *sex; } P[] = {
+            {"pC1", 1, 1.00, 1.00, "dev-a", "f"}, {"pC2", 1, 0.85, 1.10, "dev-a", "m"}, {"pC3", 1, 1.20, 0.95, "dev-a", "f"}, {"pC4", 1, 0.95, 1.05, "dev-a", "m"},
+            {"pT1", 2, 1.05, 1.00, "dev-a", "f"}, {"pT2", 2, 0.90, 0.97, "dev-a", "m"}};
+        for (int k = 0; k < 6; k++) { S[k].id = P[k].id; S[k].split = P[k].split; S[k].pitch = P[k].pitch; S[k].tempo = P[k].tempo; S[k].dev = P[k].dev; S[k].sex = P[k].sex; }
+        nspk = 6;
+    }
     if (wide) {   /* calib/test speakers far from the enrolled range */
         static const double PW[6] = {0.70, 1.45, 0.78, 1.30, 0.85, 1.38}, TW[6] = {0.72, 1.38, 1.25, 0.80, 1.40, 0.70};
         for (int k = 0; k < 6; k++) { S[4 + k].pitch = PW[k]; S[4 + k].tempo = TW[k]; }
@@ -88,14 +100,16 @@ int main(int argc, char **argv) {
     fprintf(rf, "#s2w-recordings v1\nrecording_id,path,word_id,speaker_id,session_id,repetition,split,device_id,environment,noise_condition,speaking_style,label_verified,audio_sha256\n");
     snprintf(p, sizeof p, "%s/participants.csv", argv[1]);
     FILE *pf = fopen(p, "w");
-    fprintf(pf, "#s2w-participants v1\nspeaker_id,consent_version,consent_date,group_reporting_ok,sex_self_report,age_band,accent_region\n");
+    fprintf(pf, "#s2w-participants v1\nspeaker_id,consent_version,consent_date,group_reporting_ok,sex_self_report,age_band,accent_region,consent_status\n");
     static const char *SPLIT[] = {"enrol", "calib", "test"};
     int count = 0;
-    for (int s = 0; s < 10; s++) {
-        fprintf(pf, "%s,synthetic-v1,2000-01-01,yes,%s,declined,declined\n", S[s].id, S[s].sex);
+    for (int s = 0; s < nspk; s++) {
+        fprintf(pf, "%s,synthetic-v1,2000-01-01,yes,%s,declined,declined,consented\n", S[s].id, S[s].sex);
+        for (int sess = pers ? 1 : 0; sess <= (pers ? 2 : 0); sess++)
         for (int w = 0; w < NW; w++) {
-            if (S[s].split == 0 && WORDS[w].oov) continue;
-            for (int rep = 1; rep <= 3; rep++) {
+            if (!pers && S[s].split == 0 && WORDS[w].oov) continue;
+            if (pers && sess == 1 && WORDS[w].oov) continue;
+            for (int rep = 1; rep <= (pers ? (sess == 1 ? 3 : 2) : 3); rep++) {
                 int nseg = 3;
                 double jitter = 0.97 + 0.06 * urand();
                 size_t tot = 0, seglen[3];
@@ -115,13 +129,16 @@ int main(int argc, char **argv) {
                 }
                 for (size_t i = 0; i < n; i++) x[i] += (float)(0.002 * (urand() - 0.5));
                 char rel[200], full[1200], hex[65];
-                snprintf(rel, sizeof rel, "audio/%s_%s_%d.wav", S[s].id, WORDS[w].id, rep);
+                if (pers) snprintf(rel, sizeof rel, "audio/%s_S%d_%s_%d.wav", S[s].id, sess, WORDS[w].id, rep);
+                else snprintf(rel, sizeof rel, "audio/%s_%s_%d.wav", S[s].id, WORDS[w].id, rep);
                 snprintf(full, sizeof full, "%s/%s", argv[1], rel);
                 if (write_wav(full, x, n) != 0) { perror(full); return 2; }
                 free(x);
                 s2w_sha256_file_hex(full, hex);
-                fprintf(rf, "rec%04d,%s,%s,%s,%s-s1,%d,%s,%s,clean,,normal,yes,%s\n", ++count, rel, WORDS[w].id, S[s].id, S[s].id, rep,
-                        SPLIT[S[s].split], S[s].dev, hex);
+                char sid[64];
+                if (pers) snprintf(sid, sizeof sid, "%s-S%d", S[s].id, sess); else snprintf(sid, sizeof sid, "%s-s1", S[s].id);
+                fprintf(rf, "rec%04d,%s,%s,%s,%s,%d,%s,%s,clean,,normal,yes,%s\n", ++count, rel, WORDS[w].id, S[s].id, sid, rep,
+                        pers ? (sess == 1 ? "enrol" : SPLIT[S[s].split]) : SPLIT[S[s].split], S[s].dev, hex);
             }
         }
     }

@@ -9,7 +9,8 @@
 static int failures;
 #define CHECK(c) do { if (!(c)) { printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #c); failures++; } } while (0)
 
-static char FX[200], WORK[220];
+static char FX[200], FXP[200], WORK[220];
+static const char *SRC;
 
 static char *slurp(const char *path, size_t *n) {
     FILE *f = fopen(path, "rb");
@@ -28,8 +29,9 @@ static void spit(const char *path, const char *data, size_t n) {
 /* Fresh working copy of the fixture: CSVs copied, audio symlinked. */
 static void fresh(const char *name) {
     char cmd[2048];
-    snprintf(WORK, sizeof WORK, "%s_%s", FX, name);
-    snprintf(cmd, sizeof cmd, "rm -rf '%s' && mkdir '%s' && cp '%s'/*.csv '%s'/dataset_meta.txt '%s'/ && ln -s \"$(cd '%s' && pwd)/audio\" '%s/audio'", WORK, WORK, FX, FX, WORK, FX, WORK);
+    snprintf(WORK, sizeof WORK, "%s_%s", SRC ? SRC : FX, name);
+    const char *src = SRC ? SRC : FX;
+    snprintf(cmd, sizeof cmd, "rm -rf '%s' && mkdir '%s' && cp '%s'/*.csv '%s'/dataset_meta.txt '%s'/ && ln -s \"$(cd '%s' && pwd)/audio\" '%s/audio'", WORK, WORK, src, src, WORK, src, WORK);
     if (system(cmd)) { puts("fixture copy failed"); exit(2); }
 }
 /* Replace first occurrence of find in WORK/file. */
@@ -202,6 +204,50 @@ static void test_options(void) {
     CHECK(load_has("zzz", NULL, &st) == 0 && st == S2W_OK); /* synthetic: no warning-as-error */
 }
 
+
+static void test_personalised_rules(void) {
+    SRC = FXP;
+    fresh("pvalid");
+    s2w_dataset ds; s2w_issues iss = {0};
+    CHECK(s2w_dataset_load(WORK, NULL, &ds, &iss) == S2W_OK && ds.personalised && ds.nr == 276 && !strcmp(ds.protocol, "personalised"));
+    s2w_dataset_free(&ds); s2w_issues_free(&iss);
+
+    fresh("p1"); edit("recordings.csv", ",pT1,pT1-S2,1,test,", ",pT1,pT1-S2,1,calib,"); EXPECT_ERR("participant both calib and test", "has both calib and test query recordings");
+    fresh("p2"); drop_lines("recordings.csv", "pC4_S1"); EXPECT_ERR("query participant without own enrolment", "no enrolment recordings of their own");
+    fresh("p3"); drop_lines("recordings.csv", "pC1_S1_SYNTH_V3"); EXPECT_ERR("queried word without own template", "no enrolment recording of it");
+    fresh("p4"); { char cmd[600]; snprintf(cmd, sizeof cmd, "sed -i 's/,pC2,pC2-S2,/,pC2,pC2-S1,/' '%s/recordings.csv'", WORK); CHECK(system(cmd) == 0); }
+    EXPECT_ERR("query session equals enrolment session", "LEAKAGE: session 'pC2-S1' appears in splits");
+    fresh("p5"); edit("recordings.csv", ",SYNTH_V1,pC1,pC1-S1,1,enrol", ",SYNTH_O1,pC1,pC1-S1,1,enrol"); EXPECT_ERR("OOV enrolled", "must not appear in the enrol split");
+    fresh("p6"); edit("dataset_meta.txt", "protocol=personalised", "protocol=speaker_independent"); EXPECT_ERR("personalised pattern under SI rules", "LEAKAGE: speaker");
+    fresh("p7"); edit("dataset_meta.txt", "protocol=personalised", "protocol=hybrid"); EXPECT_ERR("unknown protocol", "unsupported protocol");
+
+    /* the other direction: a speaker-independent layout is not a valid personalised dataset */
+    SRC = FX;
+    fresh("s1"); edit("dataset_meta.txt", "protocol=speaker_independent", "protocol=personalised"); EXPECT_ERR("SI layout under personalised rules", "no enrolment recordings of their own");
+    /* and the speaker-independent leakage rules still hold */
+    fresh("s2"); edit("recordings.csv", ",spkC1,spkC1-s1,1,calib", ",spkE1,spkC1-s1,1,calib"); EXPECT_ERR("SI speaker in two splits", "LEAKAGE: speaker 'spkE1'");
+    SRC = NULL;
+}
+
+static void test_consent_status(void) {
+    SRC = FX;
+    s2w_status st;
+    fresh("c1"); edit("participants.csv", "spkE1,synthetic-v1,2000-01-01,yes,f,declined,declined,consented", "spkE1,synthetic-v1,2000-01-01,yes,f,declined,declined,withdrawn");
+    CHECK(load_has("WITHDRAWN consent", NULL, &st) && st != S2W_OK);
+    fresh("c2"); edit("participants.csv", "declined,declined,consented", "declined,declined,pending");
+    CHECK(load_has("consent_status must be", NULL, &st) && st != S2W_OK);
+    /* synthetic fixtures may omit the column; real datasets may not */
+    fresh("c3"); { char cmd[600]; snprintf(cmd, sizeof cmd, "sed -i 's/,consent_status//; s/,consented$//' '%s/participants.csv'", WORK); CHECK(system(cmd) == 0); }
+    CHECK(load_has("zzz", NULL, &st) == 0 && st == S2W_OK);
+    edit("dataset_meta.txt", "kind=synthetic", "kind=real");
+    CHECK(load_has("missing column 'consent_status'", NULL, &st) && st != S2W_OK);
+    fresh("c4"); edit("dataset_meta.txt", "kind=synthetic", "kind=real");
+    CHECK(load_has("zzz", NULL, &st) == 0 && st == S2W_OK);                              /* real + all consented: structurally fine (provisional warnings only) */
+    { char p[700]; snprintf(p, sizeof p, "%s/participants.csv", WORK); remove(p); }
+    CHECK(load_has("must carry a consent record", NULL, &st) && st != S2W_OK);          /* real dataset without participants file */
+    SRC = NULL;
+}
+
 static void test_audio(void) {
     char p[800];
     fresh("au1");
@@ -273,10 +319,13 @@ static void test_audio(void) {
 int main(int argc, char **argv) {
     const char *build = argc > 1 ? argv[1] : "build";
     snprintf(FX, sizeof FX, "%s/fx_dataset", build);
+    snprintf(FXP, sizeof FXP, "%s/fx_dataset_pers", build);
     char cmd[1024];
     snprintf(cmd, sizeof cmd, "rm -rf '%s' && '%s/s2w_make_fixture' '%s' >/dev/null", FX, build, FX);
     if (system(cmd)) { puts("cannot generate fixture"); return 2; }
-    test_sha256(); test_csv(); test_valid(); test_structure_errors(); test_wordlist_errors(); test_options(); test_audio();
+    snprintf(cmd, sizeof cmd, "rm -rf '%s' && '%s/s2w_make_fixture' '%s' personalised >/dev/null", FXP, build, FXP);
+    if (system(cmd)) { puts("cannot generate personalised fixture"); return 2; }
+    test_sha256(); test_csv(); test_valid(); test_structure_errors(); test_wordlist_errors(); test_options(); test_personalised_rules(); test_consent_status(); test_audio();
     puts(failures ? "FAILED" : "dataset: all tests passed");
     return failures ? 1 : 0;
 }

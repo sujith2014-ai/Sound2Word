@@ -3,7 +3,11 @@
  *   s2w_ingest --in FILE.wav --dataset-dir DIR --recording-id ID --word-id ID --speaker-id ID --session-id ID
  *              --repetition N --split enrol|calib|test --device-id ID --environment clean|noisy
  *              [--noise-condition TEXT] [--style TEXT] [--label-verified yes|no]
- *              [--append-manifest] [--keep-rejected] [--created-utc STAMP]
+ *              [--append-manifest] [--keep-rejected] [--created-utc STAMP] [--consent-register FILE]
+ *
+ * Consent gate: with --consent-register the participant (= --speaker-id) must have status "consented" and
+ * recording_and_analysis "yes" in the private consent register (#s2w-consent-register v1), otherwise nothing is
+ * written (exit 2). A dataset whose dataset_meta.txt says kind=real REQUIRES the flag.
  *
  * Writes (never overwrites; originals/derived are made read-only):
  *   DIR/audio/<id>.wav      byte-for-byte copy of the input (verified by SHA-256)  <- manifest path
@@ -23,6 +27,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "s2w_csv.h"
 #include "s2w_json.h"
 #include "s2w_qa.h"
 #include "s2w_resample.h"
@@ -44,6 +49,37 @@ static int valid_text(const char *s) {   /* conservative: printable ASCII except
     for (; *s; s++) if ((unsigned char)*s < 0x20 || (unsigned char)*s > 0x7e || *s == ',' || *s == '"') return 0;
     return 1;
 }
+/* 0 = ok, otherwise a message in msg. */
+static int consent_check(const char *reg, const char *speaker, char *msg, size_t n) {
+    s2w_csv c;
+    char err[200];
+    if (s2w_csv_load(reg, "#s2w-consent-register v1", &c, err, sizeof err) != S2W_OK) { snprintf(msg, n, "cannot use consent register: %s", err); return 1; }
+    int jp = s2w_csv_col(&c, "participant_code"), js = s2w_csv_col(&c, "status"), jr = s2w_csv_col(&c, "recording_and_analysis");
+    if (jp < 0 || js < 0 || jr < 0) { s2w_csv_free(&c); snprintf(msg, n, "consent register lacks participant_code/status/recording_and_analysis columns"); return 1; }
+    int rc = 1;
+    snprintf(msg, n, "participant '%s' is not in the consent register: not eligible for recording", speaker);
+    for (size_t r = 1; r < c.n_rows; r++) {
+        if (strcmp(s2w_csv_at(&c, r, (size_t)jp), speaker)) continue;
+        const char *st = s2w_csv_at(&c, r, (size_t)js);
+        if (!strcmp(st, "consented") && !strcmp(s2w_csv_at(&c, r, (size_t)jr), "yes")) rc = 0;
+        else snprintf(msg, n, "participant '%s' is not eligible for recording (consent status '%s', recording_and_analysis '%s')", speaker, st, s2w_csv_at(&c, r, (size_t)jr));
+        break;
+    }
+    s2w_csv_free(&c);
+    return rc;
+}
+
+static int dataset_is_real(const char *dir) {
+    char p[800], line[256];
+    snprintf(p, sizeof p, "%s/dataset_meta.txt", dir);
+    FILE *f = fopen(p, "r");
+    if (!f) return 0;
+    int real = 0;
+    while (fgets(line, sizeof line, f)) if (!strncmp(line, "kind=real", 9)) real = 1;
+    fclose(f);
+    return real;
+}
+
 static int exists(const char *p) { struct stat st; return stat(p, &st) == 0; }
 static void mkdirs(const char *dir, const char *sub, char *out, size_t n) {
     snprintf(out, n, "%s/%s", dir, sub);
@@ -104,7 +140,7 @@ static int manifest_conflict(const char *path, const char *id, const char *rel, 
 
 int main(int argc, char **argv) {
     const char *in = NULL, *dir = NULL, *id = NULL, *word = NULL, *spk = NULL, *ses = NULL, *split = NULL, *dev = NULL, *env = NULL;
-    const char *noise = "", *style = "normal", *lv = "yes", *created = NULL;
+    const char *noise = "", *style = "normal", *lv = "yes", *created = NULL, *consent = NULL;
     int rep = 0, append = 0, keep_rejected = 0;
     for (int i = 1; i < argc; i++) {
         const char *k = argv[i];
@@ -117,6 +153,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(k, "--split")) split = v; else if (!strcmp(k, "--device-id")) dev = v; else if (!strcmp(k, "--environment")) env = v;
         else if (!strcmp(k, "--noise-condition")) noise = v; else if (!strcmp(k, "--style")) style = v; else if (!strcmp(k, "--label-verified")) lv = v;
         else if (!strcmp(k, "--created-utc")) created = v;
+        else if (!strcmp(k, "--consent-register")) consent = v;
         else if (!strcmp(k, "--repetition")) { char *e; rep = (int)strtol(v, &e, 10); if (!*v || *e) rep = 0; }
         else return die("unknown option %s", k);
     }
@@ -132,6 +169,11 @@ int main(int argc, char **argv) {
 
     struct stat sd;
     if (stat(dir, &sd) != 0 || !S_ISDIR(sd.st_mode)) return die("dataset directory does not exist: %s", dir);
+    if (dataset_is_real(dir) && !consent) return die("this dataset is kind=real: --consent-register is required (no recording without a verified consent record)%s", "");
+    if (consent) {
+        char cm[400];
+        if (consent_check(consent, spk, cm, sizeof cm)) return die("%s", cm);
+    }
     char audio_dir[700], derived_dir[700], meta_dir[700], quar_dir[700];
     mkdirs(dir, "audio", audio_dir, sizeof audio_dir); mkdirs(dir, "derived16k", derived_dir, sizeof derived_dir);
     mkdirs(dir, "meta", meta_dir, sizeof meta_dir);

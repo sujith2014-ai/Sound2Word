@@ -12,6 +12,7 @@ typedef struct {
     s2w_rep rep;
     s2w_dtw_config dtw;
     s2w_reject_config rej;
+    int protocol;                 /* 0 = speaker_independent (default), 1 = personalised; must match the dataset */
     int frozen;
     char calibration_source[256];
     char settings_sha256[65];

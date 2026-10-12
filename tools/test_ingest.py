@@ -218,6 +218,64 @@ class Ingest(Base):
         self.assertEqual(self.listing(), {})
 
 
+
+REG_HEADER = ("#s2w-consent-register v1\nparticipant_code,consent_version,information_sheet_version,consent_date,recording_and_analysis,retention_until,"
+              "future_experiments,public_release,group_reporting_ok,optional_attributes_ok,status,withdrawal_date,withdrawal_action\n")
+
+
+def register(path, rows):
+    """rows: (code, status, recording_and_analysis)"""
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(REG_HEADER)
+        for code, status, rec in rows:
+            f.write("%s,TEST-v1,TEST-v1,2000-01-01,%s,2001-01-01,no,no,no,no,%s,,\n" % (code, rec, status))
+
+
+class Consent(Base):
+    """Nobody can enter the dataset without a verified consent record. Synthetic ids only; no real consent data."""
+
+    def setUp(self):
+        super().setUp()
+        self.reg = os.path.join(self.d, "consent.csv")
+        register(self.reg, [("spkOK", "consented", "yes"), ("spkPend", "pending", "yes"), ("spkWd", "withdrawn", "yes"), ("spkNoRec", "consented", "no")])
+
+    def go(self, spk, rid="r1", reg=None, ds=None):
+        return ingest(self.src, ds or self.ds, rid=rid, spk=spk, ses=spk + "-S1", extra=("--consent-register", reg or self.reg))
+
+    def test_only_consented_participants_are_ingested(self):
+        code, _, err = self.go("spkOK")
+        self.assertEqual(code, 0, err)
+        self.assertTrue(os.path.exists(os.path.join(self.ds, "audio", "r1.wav")))
+        before = self.listing()
+        for spk, expect in (("spkPend", "pending"), ("spkWd", "withdrawn"), ("spkNoRec", "recording_and_analysis"), ("spkMissing", "not in the consent register")):
+            code, _, err = self.go(spk, rid="x_" + spk)
+            self.assertEqual(code, 2, spk)
+            self.assertIn(expect, err)
+        self.assertEqual(self.listing(), before)                               # refusals write nothing at all
+
+    def test_register_problems_refuse(self):
+        self.assertEqual(self.go("spkOK", reg="/nonexistent.csv")[0], 2)
+        bad = os.path.join(self.d, "bad.csv")
+        with open(bad, "w") as f:
+            f.write("participant_code,status\nspkOK,consented\n")            # missing tag line
+        self.assertEqual(self.go("spkOK", reg=bad)[0], 2)
+        nocols = os.path.join(self.d, "nocols.csv")
+        with open(nocols, "w") as f:
+            f.write("#s2w-consent-register v1\nparticipant_code,whatever\nspkOK,yes\n")
+        self.assertEqual(self.go("spkOK", reg=nocols)[0], 2)
+        self.assertEqual(self.listing(), {})
+
+    def test_real_dataset_requires_the_register(self):
+        with open(os.path.join(self.ds, "dataset_meta.txt"), "w") as f:
+            f.write("schema_version=1\nkind=real\ndataset_id=x\ndataset_version=1\nprotocol=speaker_independent\n")
+        code, _, err = ingest(self.src, self.ds, spk="spkOK", ses="spkOK-S1")
+        self.assertEqual(code, 2)
+        self.assertIn("--consent-register is required", err)
+        self.assertEqual([k for k in self.listing() if k.startswith("audio")], [])
+        self.assertEqual(self.go("spkOK")[0], 0)                              # with a valid register it proceeds
+        self.assertEqual(self.go("spkWd", rid="r2")[0], 2)
+
+
 class Pipeline(Base):
     """ingest -> dataset validator -> evaluator, on the synthetic fixture's audio"""
 

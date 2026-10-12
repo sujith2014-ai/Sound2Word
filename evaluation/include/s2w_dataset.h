@@ -37,6 +37,7 @@ typedef struct {
     char id[S2W_ID_MAX], consent_version[S2W_ID_MAX], consent_date[16];
     char sex[S2W_ID_MAX], age[S2W_ID_MAX], accent[S2W_ID_MAX];
     int group_ok;
+    int consent_status;   /* 0 = column absent, 1 = consented, 2 = withdrawn (withdrawn always fails validation) */
     size_t line;
 } s2w_participant;
 
@@ -44,6 +45,7 @@ typedef struct {
     char dir[512];
     char dataset_id[S2W_ID_MAX], dataset_version[S2W_ID_MAX], protocol[S2W_ID_MAX];
     int synthetic;     /* kind=synthetic */
+    int personalised;  /* protocol=personalised (templates come from the same participant's own earlier session); else speaker_independent */
     s2w_word *w; size_t nw;
     s2w_rec *r; size_t nr;
     s2w_participant *p; size_t np;

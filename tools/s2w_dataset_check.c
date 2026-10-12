@@ -47,8 +47,8 @@ int main(int argc, char **argv) {
     print_issues(&iss);
     size_t per_split[3] = {0, 0, 0};
     for (size_t i = 0; i < ds.nr; i++) per_split[ds.r[i].split]++;
-    printf("dataset_id=%s\ndataset_version=%s\nkind=%s\nmanifest_sha256=%s\n", ds.dataset_id, ds.dataset_version,
-           ds.synthetic ? "synthetic" : "real", ds.manifest_sha256);
+    printf("dataset_id=%s\ndataset_version=%s\nkind=%s\nprotocol=%s\nmanifest_sha256=%s\n", ds.dataset_id, ds.dataset_version,
+           ds.synthetic ? "synthetic" : "real", ds.protocol, ds.manifest_sha256);
     printf("words=%zu recordings=%zu (enrol=%zu calib=%zu test=%zu) participants=%zu\n", ds.nw, ds.nr, per_split[0],
            per_split[1], per_split[2], ds.np);
     if (audio)

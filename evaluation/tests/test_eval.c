@@ -203,6 +203,62 @@ static void test_tuning_never_reads_test(void) {
     s2w_dataset_free(&ds); s2w_issues_free(&iss);
 }
 
+
+static void test_personalised_protocol(void) {
+    char fxp[230], work[260], out[260], si_cfg[260], pers_cfg[260];
+    snprintf(fxp, sizeof fxp, "%s/fx_eval_pers", BUILD);
+    snprintf(work, sizeof work, "%s_swap", fxp);
+    snprintf(out, sizeof out, "%s_runs", fxp);
+    snprintf(si_cfg, sizeof si_cfg, "%s_si.cfg", fxp);
+    snprintf(pers_cfg, sizeof pers_cfg, "%s_pers.cfg", fxp);
+    sh("rm -rf '%s' '%s' '%s_runs' && '%s/s2w_make_fixture' '%s' personalised >/dev/null", fxp, work, fxp, BUILD, fxp);
+    spit(si_cfg, "#s2w-settings v1\nnorm=mean\n");
+    spit(pers_cfg, "#s2w-settings v1\nprotocol=personalised\nnorm=mean\n");
+    char eval[300]; snprintf(eval, sizeof eval, "'%s/s2w_eval'", BUILD);
+
+    /* the two tracks use separate settings: a protocol mismatch is refused in both directions, before any audio is read */
+    CHECK(sh("%s run --dataset '%s' --settings '%s' --split calib --out-dir '%s' --run-id a >/dev/null 2>&1", eval, fxp, si_cfg, out) != 0);
+    CHECK(sh("%s run --dataset '%s' --settings '%s' --split calib --out-dir '%s' --run-id b >/dev/null 2>&1", eval, FX, pers_cfg, out) != 0);
+    CHECK(sh("test ! -d '%s/a' && test ! -d '%s/b'", out, out) == 0);
+    CHECK(sh("%s run --dataset '%s' --settings '%s' --split calib --out-dir '%s' --run-id ok --min-group-queries 1 --min-group-speakers 1 >/dev/null", eval, fxp, pers_cfg, out) == 0);
+    char q[400]; snprintf(q, sizeof q, "%s/ok/result.json", out);
+    char *j = slurp(q);
+    CHECK(j && strstr(j, "\"protocol\": \"personalised\"") && strstr(j, "says nothing about recognising unfamiliar speakers"));
+    free(j);
+    snprintf(q, sizeof q, "%s/ok/summary.txt", out);
+    j = slurp(q); CHECK(j && strstr(j, "PERSONALISED protocol")); free(j);
+
+    /* separate settings hash per protocol (so thresholds/frozen files cannot be swapped) */
+    s2w_settings a, b; char err[200];
+    CHECK(s2w_settings_load(si_cfg, &a, err, sizeof err) == S2W_OK && s2w_settings_load(pers_cfg, &b, err, sizeof err) == S2W_OK && a.protocol == 0 && b.protocol == 1);
+    char ha[65], hb[65]; s2w_settings_hash(&a, ha); s2w_settings_hash(&b, hb);
+    CHECK(strcmp(ha, hb) != 0);
+    spit(si_cfg, "#s2w-settings v1\nprotocol=speaker_independent\nnorm=mean\n");
+    CHECK(s2w_settings_load(si_cfg, &a, err, sizeof err) == S2W_OK && a.protocol == 0);
+    spit(si_cfg, "#s2w-settings v1\nprotocol=hybrid\n");
+    CHECK(s2w_settings_load(si_cfg, &a, err, sizeof err) != S2W_OK);
+
+    /* Locked-test participants' audio is never opened by calibration-split work: delete ALL of it (templates and queries) and calibrate */
+    {
+        char blind[260];
+        snprintf(blind, sizeof blind, "%s_blind", fxp);
+        sh("rm -rf '%s' && cp -r '%s' '%s' && rm -f '%s'/audio/pT*", blind, fxp, blind, blind);
+        CHECK(sh("%s run --dataset '%s' --settings '%s' --split calib --out-dir '%s' --run-id blind --min-group-queries 1 --min-group-speakers 1 >/dev/null 2>&1", eval, blind, pers_cfg, out) == 0);
+        CHECK(sh("%s run --dataset '%s' --settings '%s' --split test --out-dir '%s' --run-id blindtest >/dev/null 2>&1", eval, blind, pers_cfg, out) != 0);   /* and test is locked without frozen settings anyway */
+        char qb[400]; snprintf(qb, sizeof qb, "%s/blind/queries.csv", out);
+        CHECK(sh("! grep -q ',test,' '%s'", qb) == 0);
+    }
+
+    /* Each participant is matched ONLY against their own templates: swap the labels of pC1's own V1/V2 enrolment;
+     * pC1's V1 queries must now be answered V2 (own templates), although every other participant enrolled V1 correctly. */
+    sh("cp -r '%s' '%s' && sed -i '/,pC1,pC1-S1,/ { s/,SYNTH_V1,pC1/,SYNTH_TMP,pC1/; s/,SYNTH_V2,pC1/,SYNTH_V1,pC1/; s/,SYNTH_TMP,pC1/,SYNTH_V2,pC1/ }' '%s/recordings.csv'", fxp, work, work);
+    CHECK(sh("%s run --dataset '%s' --settings '%s' --split calib --out-dir '%s' --run-id swap --min-group-queries 1 --min-group-speakers 1 >/dev/null", eval, work, pers_cfg, out) == 0);
+    snprintf(q, sizeof q, "%s/swap/queries.csv", out);
+    CHECK(sh("test \"$(awk -F, '$3==\"SYNTH_V1\" && $5==\"pC1\" && $11==\"SYNTH_V2\"' '%s' | wc -l)\" -eq 2", q) == 0);
+    CHECK(sh("test \"$(awk -F, '$3==\"SYNTH_V1\" && $5==\"pC1\" && $11==\"SYNTH_V1\"' '%s' | wc -l)\" -eq 0", q) == 0);
+    CHECK(sh("test \"$(awk -F, '$3==\"SYNTH_V1\" && $5==\"pC2\" && $11==\"SYNTH_V1\"' '%s' | wc -l)\" -eq 2", q) == 0);      /* others unaffected */
+}
+
 static int json_valid(const char *path) {
     return sh("python3 -I -c \"import json,sys; json.load(open(sys.argv[1]))\" '%s' 2>/dev/null", path) == 0;
 }
@@ -290,7 +346,7 @@ int main(int argc, char **argv) {
     snprintf(FX, sizeof FX, "%s/fx_eval", BUILD);
     snprintf(TMP, sizeof TMP, "%s/ev_tmp", BUILD);
     sh("rm -rf '%s' && '%s/s2w_make_fixture' '%s' >/dev/null", FX, BUILD, FX);
-    test_settings(); test_decide(); test_pitch(); test_collect_and_metrics(); test_tuning_never_reads_test(); test_cli();
+    test_settings(); test_decide(); test_pitch(); test_collect_and_metrics(); test_tuning_never_reads_test(); test_cli(); test_personalised_protocol();
     puts(failures ? "FAILED" : "eval: all tests passed");
     return failures ? 1 : 0;
 }
