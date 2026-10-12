@@ -4,9 +4,16 @@ No Malayalam vocabulary is created here and no hardware is needed. See docs/PILO
 
   pilot_plan.py write-spec OUTDIR                       default pilot_conditions.csv + pilot_matrix.csv
   pilot_plan.py check   --conditions F --matrix F       validate both against the dataset schema rules
-  pilot_plan.py plan    --speakers F --conditions F --splits 8,4,4 --seed N --out allocation.csv
+  pilot_plan.py plan    --speakers F --conditions F --matrix F --splits 8,4,4 --seed N --out allocation.csv
+                        --consent-register F --participants-register F [--with all|ID,ID]
   pilot_plan.py prompts --wordlist F --conditions F --allocation F --speaker ID --out prompts.csv [--with-labels]
-  pilot_plan.py budget  --conditions F --splits 8,4,4 --vocab-words 40 --oov-words 10 [--matrix F]
+                        --consent-register F --participants-register F
+  pilot_plan.py budget  --conditions F --matrix F --splits 8,4,4 --wordlist F [--with all|ID,ID]
+  pilot_plan.py views   --pool DIR --allocation F --out-dir OUT      # speaker-independent AND personalised datasets from one pool
+
+Default plan = the single-device CLEAN pilot (C0, C0-R). Optional conditions (noise, distance, room) are switched on with --with
+once their equipment and procedure exist; the second device (C0-DEVB) is disabled until gap G2 is closed. plan/prompts refuse any
+participant who is not consent-eligible (synthetic software tests may use --synthetic-no-consent-check).
 
 Every identifier it emits satisfies the dataset schema (ids [A-Za-z0-9._-]{1,40}); conditions map onto the
 recordings.csv fields environment / noise_condition / device_id; repetition numbers never collide within a
@@ -20,35 +27,37 @@ import math
 import os
 import random
 import re
+import shutil
 import sys
 
 ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,40}$")
 COND_TAG = "#s2w-pilot-conditions v1"
 MATRIX_TAG = "#s2w-pilot-matrix v1"
-COND_COLS = ["condition_id", "environment", "noise_condition", "device_id", "qa_limits", "session", "repetitions", "include_oov", "role", "optional", "simultaneous_with", "recipe"]
+COND_COLS = ["condition_id", "environment", "noise_condition", "device_id", "qa_limits", "session", "repetitions", "include_oov", "role", "optional", "enabled", "requires", "simultaneous_with", "recipe"]
+REQUIRES = {"none", "tape_measure", "documented_room", "loudspeaker", "loudspeaker+spl_meter", "second_device"}
 MATRIX_COLS = ["cell_id", "enrol_set", "enrol_conditions", "query_condition", "category"]
 ROLES = {"baseline", "repeat", "noise", "distance", "room", "device"}
 
 
 # ---------------------------------------------------------------- default spec -----------------------
 DEFAULT_CONDITIONS = [
-    # id, env, noise_condition, device, qa, session, reps, oov, role, optional, simultaneous_with, recipe
-    ("C0", "clean", "", "DEV-A", "clean", "S1", 3, "yes", "baseline", "no", "",
-     "Quiet room (background below ~35 dBA if measurable). Primary device at about 20 cm, off-axis. Gain fixed; automatic gain control, noise suppression and echo cancellation OFF."),
-    ("C0-DEVB", "clean", "", "DEV-B", "clean", "S1", 3, "yes", "device", "yes", "C0",
-     "Second recorder capturing the SAME utterances as C0 at the same time. Needs the utterance-grouping extension (gap G2) or sequential recording as a separate session. Drop if no second device."),
-    ("C0-R", "clean", "", "DEV-A", "clean", "S2", 1, "yes", "repeat", "no", "",
-     "Same setup as C0, recorded again in session 2 (ideally at least a day later; if not possible, after a real break with the setup re-done). Supports session-variability and the personalised-protocol queries. First block of session 2."),
-    ("N-FAN", "noisy", "real:fan-60dBA", "DEV-A", "noisy", "S2", 1, "yes", "noise", "no", "",
-     "Steady fan/air-conditioner recording played from a loudspeaker; level 60 dBA measured at the speaker's head position with an SPL meter. Never assume it equals the simulated white/pink conditions."),
-    ("N-STR", "noisy", "real:street-65dBA", "DEV-A", "noisy", "S2", 1, "yes", "noise", "no", "",
-     "Street/traffic recording played from a loudspeaker; 65 dBA at the speaker's head position."),
-    ("N-BAB", "noisy", "real:babble-65dBA", "DEV-A", "noisy", "S2", 1, "yes", "noise", "no", "",
-     "Multi-talker babble recording played from a loudspeaker; 65 dBA at the speaker's head position. Use babble in a language the speaker is not distracted by only if documented."),
-    ("D-100", "noisy", "real:dist-100cm", "DEV-A", "noisy", "S2", 1, "yes", "distance", "no", "",
-     "Quiet room, device 100 cm from the mouth (otherwise as C0). Level and SNR will drop; record the real values from QA."),
-    ("R-HARD", "noisy", "real:room-hard", "DEV-A", "noisy", "S2", 1, "yes", "room", "no", "",
-     "Quiet but hard-surfaced reverberant room (tile/bare walls), device at 20 cm. Measure or at least describe the room; do not assume an RT60."),
+    # id, env, noise_condition, device, qa, session, reps, oov, role, optional, enabled, requires, simultaneous_with, recipe
+    ("C0", "clean", "", "DEV-A", "clean", "S1", 3, "yes", "baseline", "no", "yes", "none", "",
+     "Quiet room (background below ~35 dBA if measurable). The single primary device at about 20 cm, off-axis. Gain fixed; automatic gain control, noise suppression and echo cancellation OFF."),
+    ("C0-DEVB", "clean", "", "DEV-B", "clean", "S1", 3, "yes", "device", "yes", "no", "second_device", "C0",
+     "DEFERRED (gap G2). A second recorder capturing the SAME utterances at the same time needs a shared utterance id and pairing tests first. Disabled for this pilot."),
+    ("C0-R", "clean", "", "DEV-A", "clean", "S2", 1, "yes", "repeat", "no", "yes", "none", "",
+     "Same setup as C0, recorded again in session 2 (ideally at least a day later; if not possible, after a real break with the setup redone). Supports session variability and the personalised queries. First block of session 2."),
+    ("N-FAN", "noisy", "real:fan-60dBA", "DEV-A", "noisy", "S2", 1, "yes", "noise", "yes", "yes", "loudspeaker+spl_meter", "",
+     "OPTIONAL until a loudspeaker and SPL meter are available and the procedure is repeatable. Steady fan/air-conditioner recording played from a loudspeaker, 60 dBA measured at the speaker's head position. Do not specify or claim a level without a measurement."),
+    ("N-STR", "noisy", "real:street-65dBA", "DEV-A", "noisy", "S2", 1, "yes", "noise", "yes", "yes", "loudspeaker+spl_meter", "",
+     "OPTIONAL (as N-FAN). Street/traffic recording played from a loudspeaker; 65 dBA at the speaker's head position."),
+    ("N-BAB", "noisy", "real:babble-65dBA", "DEV-A", "noisy", "S2", 1, "yes", "noise", "yes", "yes", "loudspeaker+spl_meter", "",
+     "OPTIONAL (as N-FAN). Multi-talker babble recording played from a loudspeaker; 65 dBA at the speaker's head position."),
+    ("D-100", "noisy", "real:dist-100cm", "DEV-A", "noisy", "S2", 1, "yes", "distance", "yes", "yes", "tape_measure", "",
+     "OPTIONAL until the procedure is documented. Quiet room, device 100 cm from the mouth (otherwise as C0). Record the real level and SNR from QA."),
+    ("R-HARD", "noisy", "real:room-hard", "DEV-A", "noisy", "S2", 1, "yes", "room", "yes", "yes", "documented_room", "",
+     "OPTIONAL until a suitable room is identified and described. Quiet but hard-surfaced reverberant room, device at 20 cm. Describe the room; do not assume an RT60."),
 ]
 
 NOISY_ENROL = ["N-FAN", "N-STR", "N-BAB"]
@@ -166,12 +175,17 @@ def check(cpath, mpath):
             errs.append("%s: role must be one of %s" % (where, "/".join(sorted(ROLES))))
         if r["optional"] not in ("yes", "no"):
             errs.append("%s: optional must be yes or no" % where)
+        if r["enabled"] not in ("yes", "no"):
+            errs.append("%s: enabled must be yes or no" % where)
+        if r["requires"] not in REQUIRES:
+            errs.append("%s: requires must be one of %s" % (where, "/".join(sorted(REQUIRES))))
+        if r["optional"] == "no" and r["enabled"] == "no":
+            errs.append("%s: a non-optional condition cannot be disabled" % where)
         sw = r["simultaneous_with"]
         if sw and sw not in conds:
             errs.append("%s: simultaneous_with refers to an unknown condition" % where)
-        if sw:
-            warns.append("%s records the same utterances as %s on another device: the dataset key (speaker, session, word, repetition) cannot hold both. "
-                         "Close gap G2 (utterance grouping) before collection, or record it as a separate session." % (where, sw))
+        if sw and r["enabled"] == "yes":
+            errs.append("%s records the same utterances as %s on another device: it cannot be enabled until gap G2 (shared utterance id + pairing tests) is closed" % (where, sw))
     if "C0" not in conds or conds["C0"]["role"] != "baseline" or conds["C0"]["environment"] != "clean":
         errs.append("conditions: C0 (clean baseline) is required")
     if not errs and sum(1 for r in rows if r["role"] == "baseline") != 1:
@@ -219,6 +233,55 @@ def check(cpath, mpath):
         if need not in cats:
             errs.append("matrix: no %s cell: mismatched pairs and clean-query cost must be measured" % need)
     return errs, warns
+
+
+# ---------------------------------------------------------------- activation ---------------------------
+def parse_with(spec, rows):
+    """--with all | id,id : which OPTIONAL enabled conditions are switched on. Mandatory enabled conditions are always active."""
+    if not spec:
+        return set()
+    by = {r["condition_id"]: r for r in rows}
+    if spec == "all":
+        return {r["condition_id"] for r in rows if r["optional"] == "yes" and r["enabled"] == "yes"}
+    ids = set(spec.split(","))
+    for i in ids:
+        if i not in by:
+            sys.exit("error: --with: unknown condition %r" % i)
+        if by[i]["enabled"] != "yes":
+            sys.exit("error: --with: condition %s is disabled in the spec (%s)" % (i, by[i]["requires"]))
+        if by[i]["optional"] != "yes":
+            sys.exit("error: --with: %s is not optional (it is always active)" % i)
+    return ids
+
+
+def active_rows(rows, with_ids):
+    return [r for r in rows if r["enabled"] == "yes" and (r["optional"] == "no" or r["condition_id"] in with_ids)]
+
+
+# ---------------------------------------------------------------- consent ---------------------------
+def require_eligible(a, speakers):
+    """plan/prompts refuse participants who are not consent-eligible, unless the explicitly named synthetic escape hatch is used."""
+    if getattr(a, "synthetic_no_consent_check", False):
+        print("WARNING: consent check skipped (--synthetic-no-consent-check): valid for synthetic software tests ONLY", file=sys.stderr)
+        return
+    if not (a.consent_register and a.participants_register):
+        sys.exit("error: --consent-register and --participants-register are required: no participant may be allocated or prompted without a verified consent record "
+                 "(synthetic software tests may use --synthetic-no-consent-check)")
+    import datetime
+    import consent_gate as cg
+    try:
+        part = cg.read_tagged(a.participants_register, cg.PART_TAG, cg.PART_COLS)
+        cons = cg.read_tagged(a.consent_register, cg.CONSENT_TAG, cg.CONSENT_COLS)
+    except cg.Problems as e:
+        sys.exit("error: %s" % e)
+    today = datetime.date.fromisoformat(a.today) if getattr(a, "today", None) else datetime.date.today()
+    errs, _ = cg.validate(part, cons, today, True)
+    if errs:
+        sys.exit("error: consent registers are invalid: " + "; ".join(errs[:3]))
+    ok = set(cg.eligible_codes(part, cons, today))
+    bad = sorted(set(speakers) - ok)
+    if bad:
+        sys.exit("error: not eligible for recording (consent incomplete, withdrawn, expired or not screened): " + ", ".join(bad))
 
 
 # ---------------------------------------------------------------- allocation -------------------------
@@ -286,13 +349,18 @@ def cmd_plan(a):
         print("note: the pilot target is 10-20 speakers (got %d)" % len(ids), file=sys.stderr)
     if os.path.exists(a.out):
         sys.exit("error: %s exists; refusing to overwrite" % a.out)
-    rows, conds = load_conditions(a.conditions)
+    all_rows, all_conds = load_conditions(a.conditions)
     errs, _ = check(a.conditions, a.matrix) if a.matrix else ([], [])
     if errs:
         sys.exit("error: spec invalid: " + "; ".join(errs[:3]))
+    require_eligible(a, ids)
+    rows = active_rows(all_rows, parse_with(a.with_, all_rows))
+    conds = {r["condition_id"]: r for r in rows}
+    if "C0" not in conds:
+        sys.exit("error: the clean baseline C0 must be active")
     split = assign_splits(speakers, sizes, a.seed)
     stratum_of = dict(speakers)
-    s2 = block_order([r for r in rows], "S2")
+    s2 = block_order(rows, "S2")
     s2_first = [c for c in s2 if conds[c]["role"] in ("baseline", "repeat")]     # clean blocks always open the session
     s2_noisy = [c for c in s2 if conds[c]["role"] not in ("baseline", "repeat")]
     base = list(s2_noisy)
@@ -300,13 +368,14 @@ def cmd_plan(a):
     counters = {"enrol": 0, "calib": 0, "test": 0}
     with open(a.out, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
-        w.writerow(["speaker_id", "split", "stratum", "s1_blocks", "s2_blocks", "prompt_seed_s1", "prompt_seed_s2", "personalised_enrol_session", "personalised_query_session"])
+        w.writerow(["speaker_id", "split", "stratum", "s1_blocks", "s2_blocks", "prompt_seed_s1", "prompt_seed_s2", "personalised_enrol_session", "personalised_query_session", "personalised_group"])
         for sid in sorted(ids):
             k = counters[split[sid]]
             counters[split[sid]] += 1
             rot = base[k % len(base):] + base[:k % len(base)] if base else []
             w.writerow([sid, split[sid], stratum_of[sid], "+".join(block_order(rows, "S1")), "+".join(s2_first + rot),
-                        seed_hex(a.seed, sid, "S1"), seed_hex(a.seed, sid, "S2"), "S1", "S2"])
+                        seed_hex(a.seed, sid, "S1"), seed_hex(a.seed, sid, "S2"), "S1", "S2",
+                        "test_participant" if split[sid] == "test" else "calibration_participant"])
     print("wrote %s (%d speakers: %s)" % (a.out, len(ids), ", ".join("%s=%d" % (n, c) for n, c in counters.items())))
 
 
@@ -332,6 +401,7 @@ def rounds(words, n, rnd):
 
 def cmd_prompts(a):
     rows, conds = load_conditions(a.conditions)
+    require_eligible(a, [a.speaker])
     words = read_wordlist(a.wordlist)
     vocab = [w["word_id"] for w in words if w["role"] == "vocab"]
     oov = [w["word_id"] for w in words if w["role"] == "oov"]
@@ -379,24 +449,63 @@ def wilson_half_width(p, n, z=1.96):
     return z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
 
 
+def word_counts(a):
+    """Counts of APPROVED words: from the actual word list when given (only 'verified' rows count), else the manual numbers."""
+    if a.wordlist:
+        words = read_wordlist(a.wordlist)
+        ver = [w for w in words if w["review_status"] == "verified"]
+        unver = len(words) - len(ver)
+        if unver:
+            print("WARNING: %d word(s) in the word list are not 'verified' and are excluded from this budget" % unver)
+        nv = sum(1 for w in ver if w["role"] == "vocab")
+        no = sum(1 for w in ver if w["role"] == "oov")
+        print("Approved words from %s: %d vocab, %d unknown%s" % (os.path.basename(a.wordlist), nv, no, "" if 30 <= nv <= 50 else "   (pilot guidance is 30-50 vocab words)"))
+        return nv, no
+    if a.vocab_words is None or a.oov_words is None:
+        sys.exit("error: give --wordlist (preferred: the approved list) or both --vocab-words and --oov-words")
+    print("NOTE: word counts were typed in by hand (%d vocab, %d unknown); prefer --wordlist so the budget follows the approved list" % (a.vocab_words, a.oov_words))
+    return a.vocab_words, a.oov_words
+
+
 def cmd_budget(a):
     sizes = [int(x) for x in a.splits.split(",")]
-    rows, conds = load_conditions(a.conditions)
-    nv, no = a.vocab_words, a.oov_words
+    all_rows, _ = load_conditions(a.conditions)
+    errs, _ = check(a.conditions, a.matrix)
+    if errs:
+        sys.exit("error: spec invalid: " + "; ".join(errs[:3]))
+    act = active_rows(all_rows, parse_with(a.with_, all_rows))
+    active = {r["condition_id"] for r in act}
+    mrows = read_csv(a.matrix, MATRIX_TAG)
+    cells = [m for m in mrows if all(c in active for c in m["enrol_conditions"].split("+") + [m["query_condition"]])]
+    used = set()
+    for m in cells:
+        used.update(m["enrol_conditions"].split("+"))
+        used.add(m["query_condition"])
+    nv, no = word_counts(a)
+    unused = sorted(active - used)
+    if unused:
+        print("WARNING: active condition(s) %s appear in no active matrix cell: recording them would not answer any planned comparison" % ", ".join(unused))
     per_speaker = {}
-    for r in rows:
-        if r["optional"] == "yes" and r["simultaneous_with"]:
-            continue                                  # simultaneous second device adds files, not utterances
-        per_speaker[r["condition_id"]] = int(r["repetitions"]) * (nv + (no if r["include_oov"] == "yes" else 0))
+    for r in act:
+        if r["condition_id"] in used:
+            per_speaker[r["condition_id"]] = int(r["repetitions"]) * (nv + (no if r["include_oov"] == "yes" else 0))
+    print("Active conditions: %s (optional ones are on only via --with)" % ", ".join(r["condition_id"] for r in act))
+    skipped = sorted(r["condition_id"] for r in all_rows if r["condition_id"] not in active)
+    if skipped:
+        print("Not active (optional/disabled): %s" % ", ".join("%s[%s]" % (c, next(r["requires"] for r in all_rows if r["condition_id"] == c)) for c in skipped))
+    print("Matrix cells runnable with the active conditions: %d of %d" % (len(cells), len(mrows)))
+    cat = {}
+    for m in cells:
+        cat[m["category"]] = cat.get(m["category"], 0) + 1
+    print("  by category: " + ", ".join("%s %d" % kv for kv in sorted(cat.items())))
     print("Speakers: enrol=%d calib=%d test=%d (total %d)" % (*sizes, sum(sizes)))
     print("Utterances per speaker: %s = %d" % (", ".join("%s %d" % kv for kv in per_speaker.items()), sum(per_speaker.values())))
-    total_utt = sum(per_speaker.values()) * sum(sizes)
-    print("Total utterances: %d (x2 files where a second device records simultaneously)" % total_utt)
+    print("Total utterances: %d" % (sum(per_speaker.values()) * sum(sizes)))
     print("")
     print("Queries per condition for ONE query split (calib or test), known-word / unknown-word, and Wilson 95% half-width at p=0.8 (recordings treated as independent: optimistic because speakers cluster):")
     for sp_name, n_spk in (("calib", sizes[1]), ("test", sizes[2])):
         print("  %s (%d speakers):" % (sp_name, n_spk))
-        for r in rows:
+        for r in act:
             if r["condition_id"] not in per_speaker:
                 continue
             k = n_spk * nv * int(r["repetitions"])
@@ -404,11 +513,95 @@ def cmd_budget(a):
             print("    %-8s known %4d (+-%.1f pts)  unknown %3d" % (r["condition_id"], k, 100 * wilson_half_width(0.8, k), u))
     print("")
     print("Templates per vocab word available from the %d enrolment speakers:" % sizes[0])
-    for r in rows:
+    for r in act:
         if r["condition_id"] in per_speaker:
             print("    %-8s %d" % (r["condition_id"], sizes[0] * int(r["repetitions"])))
     print("")
     print("With only %d test speakers, between-speaker variability, not recording count, limits what the pilot can show: expect to detect large effects only." % sizes[2])
+
+
+# ---------------------------------------------------------------- protocol views ---------------------
+def sess_tail(session):
+    m = re.search(r"-(S[0-9])$", session)
+    return m.group(1) if m else ""
+
+
+def cmd_views(a):
+    """Derive the two protocol datasets from ONE recording pool. The pool's own split column is ignored.
+    Speaker-independent: split = the speaker's allocated split for ALL their recordings; unknown-word recordings of
+      enrolment speakers are dropped (unknown words may never be enrolled).
+    Personalised: S1 vocab recordings are the participant's own templates (enrol); S2 recordings are queries, labelled test for
+      test participants and calib for everyone else; S1 unknown-word recordings are dropped (a session cannot be both split)."""
+    with open(os.path.join(a.pool, "dataset_meta.txt"), encoding="utf-8") as f:
+        meta = f.read()
+    m = re.search(r"^dataset_id=(.*)$", meta, re.M)
+    if not m:
+        sys.exit("error: pool dataset_meta.txt has no dataset_id")
+    base_id = m.group(1)
+    with open(os.path.join(a.pool, "recordings.csv"), encoding="utf-8", newline="") as f:
+        tag = f.readline().rstrip("\r\n")
+        if tag != "#s2w-recordings v1":
+            sys.exit("error: pool recordings.csv has an unexpected first line")
+        rd = csv.DictReader(f)
+        fields, pool = rd.fieldnames, list(rd)
+    words = {w["word_id"]: w for w in read_wordlist(os.path.join(a.pool, "wordlist.csv"))}
+    with open(a.allocation, encoding="utf-8", newline="") as f:
+        alloc = {r["speaker_id"]: r for r in csv.DictReader(f)}
+    missing = sorted({r["speaker_id"] for r in pool} - set(alloc))
+    if missing:
+        sys.exit("error: pool speakers missing from the allocation: " + ", ".join(missing))
+    if os.path.exists(a.out_dir):
+        sys.exit("error: %s exists; refusing to overwrite" % a.out_dir)
+    views = {}
+    dropped = {"speaker_independent": 0, "personalised": 0}
+    si_rows, pe_rows = [], []
+    for r in pool:
+        sp = alloc[r["speaker_id"]]
+        is_oov = words[r["word_id"]]["role"] == "oov"
+        tail = sess_tail(r["session_id"])
+        # speaker-independent
+        if sp["split"] == "enrol" and is_oov:
+            dropped["speaker_independent"] += 1
+        else:
+            x = dict(r)
+            x["split"] = sp["split"]
+            si_rows.append(x)
+        # personalised
+        if tail == "S1" and is_oov:
+            dropped["personalised"] += 1
+        elif tail == "S1":
+            x = dict(r)
+            x["split"] = "enrol"
+            pe_rows.append(x)
+        elif tail == "S2":
+            x = dict(r)
+            x["split"] = "test" if sp["split"] == "test" else "calib"
+            pe_rows.append(x)
+        else:
+            dropped["personalised"] += 1
+    views = {"si": ("speaker_independent", si_rows, ".si"), "pers": ("personalised", pe_rows, ".pers")}
+    for key, (proto, rows_, suffix) in views.items():
+        d = os.path.join(a.out_dir, key)
+        os.makedirs(d)
+        new_id = base_id[:40 - len(suffix)] + suffix
+        with open(os.path.join(d, "dataset_meta.txt"), "w", encoding="utf-8") as f:
+            f.write(re.sub(r"^protocol=.*$", "protocol=%s" % proto, re.sub(r"^dataset_id=.*$", "dataset_id=%s" % new_id, meta, flags=re.M), flags=re.M))
+        for name in ("wordlist.csv", "participants.csv"):
+            src = os.path.join(a.pool, name)
+            if os.path.exists(src):
+                shutil.copy(src, os.path.join(d, name))
+        with open(os.path.join(d, "recordings.csv"), "w", encoding="utf-8", newline="") as f:
+            f.write(tag + "\n")
+            w = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
+            w.writeheader()
+            w.writerows(rows_)
+        for r in rows_:
+            dst = os.path.join(d, r["path"])
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            if not os.path.lexists(dst):
+                os.symlink(os.path.abspath(os.path.join(a.pool, r["path"])), dst)
+        print("%-4s %-19s recordings=%d  (pool recordings not used by this protocol: %d)" % (key, proto, len(rows_), dropped["speaker_independent" if key == "si" else "personalised"]))
+    print("Validate both with build/s2w_dataset_check; evaluate each ONLY with settings whose protocol matches (settings key protocol=personalised for the pers view).")
 
 
 def main(argv=None):
@@ -416,12 +609,20 @@ def main(argv=None):
     sub = p.add_subparsers(dest="cmd", required=True)
     w = sub.add_parser("write-spec"); w.add_argument("outdir")
     c = sub.add_parser("check"); c.add_argument("--conditions", required=True); c.add_argument("--matrix", required=True)
+    def consent_args(sp):
+        sp.add_argument("--consent-register"); sp.add_argument("--participants-register"); sp.add_argument("--today")
+        sp.add_argument("--synthetic-no-consent-check", action="store_true", help="software tests with synthetic ids ONLY")
     pl = sub.add_parser("plan"); pl.add_argument("--speakers", required=True); pl.add_argument("--conditions", required=True); pl.add_argument("--matrix")
     pl.add_argument("--splits", required=True); pl.add_argument("--seed", type=int, required=True); pl.add_argument("--out", required=True)
+    pl.add_argument("--with", dest="with_", default="", help="optional conditions to switch on: 'all' or a comma list")
+    consent_args(pl)
     pr = sub.add_parser("prompts"); pr.add_argument("--wordlist", required=True); pr.add_argument("--conditions", required=True); pr.add_argument("--allocation", required=True)
     pr.add_argument("--speaker", required=True); pr.add_argument("--out", required=True); pr.add_argument("--with-labels", action="store_true")
-    b = sub.add_parser("budget"); b.add_argument("--conditions", required=True); b.add_argument("--splits", required=True)
-    b.add_argument("--vocab-words", type=int, required=True); b.add_argument("--oov-words", type=int, required=True)
+    consent_args(pr)
+    b = sub.add_parser("budget"); b.add_argument("--conditions", required=True); b.add_argument("--matrix", required=True); b.add_argument("--splits", required=True)
+    b.add_argument("--wordlist"); b.add_argument("--vocab-words", type=int); b.add_argument("--oov-words", type=int)
+    b.add_argument("--with", dest="with_", default="")
+    v = sub.add_parser("views"); v.add_argument("--pool", required=True); v.add_argument("--allocation", required=True); v.add_argument("--out-dir", required=True)
     a = p.parse_args(argv)
     if a.cmd == "write-spec":
         write_spec(a.outdir)
@@ -437,6 +638,8 @@ def main(argv=None):
         cmd_plan(a)
     elif a.cmd == "prompts":
         cmd_prompts(a)
+    elif a.cmd == "views":
+        cmd_views(a)
     else:
         cmd_budget(a)
 

@@ -1,0 +1,11 @@
+#s2w-pilot-approvals v1
+item,status,approver_id,date,reference
+vocab_subset_verified,pending,,,
+vocabulary_verified,pending,,,
+consent_materials_approved,pending,,,
+data_protection_review,pending,,,
+storage_arrangement,pending,,,
+retention_defined,pending,,,
+withdrawal_procedure,pending,,,
+split_rules_reviewed,pending,,,
+rehearsal_passed,pending,,,
