@@ -67,8 +67,17 @@ Rules enforced by `s2w_dataset_check` (violations are errors, never auto-repaire
 5. No two recordings share a path, a `recording_id`, a (speaker, session, word, repetition)
    key, or identical audio bytes (SHA-256) - this blocks copy leakage across splits.
 6. `audio_sha256` (when given) must match the file, pinning dataset content.
-Speaker-dependent evaluation (same speaker enrolled and tested) is a different protocol and is not
-supported by schema v1.
+The **personalised** protocol (`protocol=personalised`) is a different protocol with its own rules, implemented and tested:
+a participant's own S1 recordings are the templates for that participant's later-session queries; calibration and test
+participants are disjoint; a query needs the same participant's own template of that word; sessions still belong to one
+speaker and one split. Its settings (`protocol=personalised`), thresholds and results are kept separate from the speaker-independent track
+(`docs/PILOT_SPLIT_DESIGN.md`).
+
+## 4a. Consent status
+`participants.csv` may carry a `consent_status` column (`consented` | `withdrawn`), stamped from the private consent register by
+`consent_gate.py stamp-consent`. **Real datasets (`kind=real`) must carry it for every speaker, and every speaker must be `consented`**; a withdrawn participant
+makes validation and evaluation fail until their recordings are removed (`consent_gate.py build-eligible`). `s2w_ingest` requires `--consent-register` for real datasets.
+See `docs/PILOT_RECRUITMENT_AND_CONSENT.md`.
 
 ## 5. Tuning discipline
 Tuning code may read `enrol` and `calib` only. The `test` split is evaluated only with a frozen

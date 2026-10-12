@@ -11,3 +11,4 @@ Dataset and evaluation: `docs/DATASET.md`, `docs/EVALUATION.md`. Frozen baseline
 Recording, QA and simulated-condition testing: `docs/RECORDING.md`.
 Noise-matched enrolment experiment (synthetic only): `docs/EXPERIMENT_NOISE_ENROLMENT.md`.
 Pilot data-collection plan (protocol, conditions, matrix; no real data yet): `docs/PILOT_DATA_COLLECTION.md`.
+Pilot readiness: `docs/PILOT_DATA_COLLECTION.md`, `docs/PILOT_SPLIT_DESIGN.md`, `docs/PILOT_RECRUITMENT_AND_CONSENT.md`, `docs/RECORDING_SETUP_GUIDE.md`.

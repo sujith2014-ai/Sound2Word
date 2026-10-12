@@ -11,3 +11,12 @@ evaluation/test_ledger.txt
 !data/schema/*
 __pycache__/
 *.pyc
+
+# Private registers and logs (templates in data/schema are tracked)
+consent_register.csv
+participant_register.csv
+pilot_approvals.csv
+session_log_*.csv
+identity_*
+consent_forms/
+signed_*
