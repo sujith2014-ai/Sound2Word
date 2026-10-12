@@ -8,3 +8,4 @@ See the technical program model for the phased implementation plan.
 `make test` builds the C core and runs tests; `build/s2w_inspect file.wav` inspects a WAV. See `docs/ROADMAP.md`.
 
 Dataset and evaluation: `docs/DATASET.md`, `docs/EVALUATION.md`. Frozen baseline: `docs/BASELINE.md`. Fixtures are synthetic; no accuracy claim about Malayalam is made yet.
+Recording, QA and simulated-condition testing: `docs/RECORDING.md`.

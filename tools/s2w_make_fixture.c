@@ -1,5 +1,8 @@
 /* s2w_make_fixture: write a SYNTHETIC dataset (tone "words") for software tests only.
- * usage: s2w_make_fixture OUTDIR
+ * usage: s2w_make_fixture OUTDIR [wide]
+ * "wide" gives calib/test speakers much larger synthetic pitch (0.70-1.45x) and tempo (0.70-1.40x)
+ * offsets than the enrolled speakers, to exercise mismatch handling. Scaling tone frequencies and
+ * durations is NOT a model of real vocal tracts or speaking styles; it says nothing about real speakers.
  * Labels are placeholders (SYNTH_*), not Malayalam; kind=synthetic. Deterministic. */
 #include <math.h>
 #include <stdio.h>
@@ -49,7 +52,8 @@ static const W WORDS[] = {
 #define NW ((int)(sizeof WORDS / sizeof *WORDS))
 
 int main(int argc, char **argv) {
-    if (argc != 2) { fprintf(stderr, "usage: %s OUTDIR\n", argv[0]); return 2; }
+    if (argc != 2 && !(argc == 3 && !strcmp(argv[2], "wide"))) { fprintf(stderr, "usage: %s OUTDIR [wide]\n", argv[0]); return 2; }
+    int wide = argc == 3;
     char p[1024];
     snprintf(p, sizeof p, "%s", argv[1]); mkdir(p, 0755);
     snprintf(p, sizeof p, "%s/audio", argv[1]); mkdir(p, 0755);
@@ -57,7 +61,7 @@ int main(int argc, char **argv) {
     snprintf(p, sizeof p, "%s/dataset_meta.txt", argv[1]);
     FILE *f = fopen(p, "w");
     if (!f) { perror(p); return 2; }
-    fprintf(f, "schema_version=1\nkind=synthetic\ndataset_id=synthetic-fixture\ndataset_version=1\nprotocol=speaker_independent\n");
+    fprintf(f, "schema_version=1\nkind=synthetic\ndataset_id=%s\ndataset_version=1\nprotocol=speaker_independent\n", wide ? "synthetic-fixture-wide" : "synthetic-fixture");
     fclose(f);
 
     snprintf(p, sizeof p, "%s/wordlist.csv", argv[1]);
@@ -75,6 +79,10 @@ int main(int argc, char **argv) {
         {"spkC1", 1, 1.03, 1.05, "dev-a", "f"}, {"spkC2", 1, 0.92, 0.95, "dev-b", "m"}, {"spkC3", 1, 1.08, 1.00, "dev-a", "f"},
         {"spkT1", 2, 0.97, 1.02, "dev-a", "m"}, {"spkT2", 2, 1.06, 0.97, "dev-b", "f"}, {"spkT3", 2, 0.93, 1.08, "dev-a", "m"},
     };
+    if (wide) {   /* calib/test speakers far from the enrolled range */
+        static const double PW[6] = {0.70, 1.45, 0.78, 1.30, 0.85, 1.38}, TW[6] = {0.72, 1.38, 1.25, 0.80, 1.40, 0.70};
+        for (int k = 0; k < 6; k++) { S[4 + k].pitch = PW[k]; S[4 + k].tempo = TW[k]; }
+    }
     snprintf(p, sizeof p, "%s/recordings.csv", argv[1]);
     FILE *rf = fopen(p, "w");
     fprintf(rf, "#s2w-recordings v1\nrecording_id,path,word_id,speaker_id,session_id,repetition,split,device_id,environment,noise_condition,speaking_style,label_verified,audio_sha256\n");

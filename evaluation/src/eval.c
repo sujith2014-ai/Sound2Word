@@ -256,7 +256,14 @@ static void count_unverified(const s2w_dataset *ds, size_t *words, size_t *label
     free(seen);
 }
 
+static size_t count_simulated(const s2w_dataset *ds) {
+    size_t n = 0;
+    for (size_t i = 0; i < ds->nr; i++) n += !strncmp(ds->r[i].noise_condition, "sim:", 4);
+    return n;
+}
+
 static const char *scope_statement(const s2w_dataset *ds, int verified) {
+    if (count_simulated(ds)) return "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.";
     if (ds->synthetic) return "SYNTHETIC FIXTURE: software validation only. These numbers say nothing about Malayalam recognition accuracy.";
     if (!verified) return "PROVISIONAL: word list or recording labels are not fully verified; do not treat as ground-truth accuracy.";
     return "Real dataset with verified word list and labels per its metadata (verification is attested by the dataset, not checked by this tool).";
@@ -277,6 +284,7 @@ static void j_common(s2w_json *j, const s2w_dataset *ds, const s2w_settings *st,
     js_bool(j, "ground_truth_verified", !ds->synthetic && verified);
     js_int(j, "unverified_words_used", (long long)uw);
     js_int(j, "unverified_labels", (long long)ul);
+    js_int(j, "simulated_recordings", (long long)count_simulated(ds));
     js_str(j, "scope_statement", scope_statement(ds, verified));
     js_obj_end(j);
     js_obj(j, "code");
@@ -582,6 +590,7 @@ void s2w_eval_write_summary(FILE *f, const s2w_dataset *ds, const s2w_settings *
     size_t uw, ul;
     count_unverified(ds, &uw, &ul);
     fprintf(f, "Sound2Word evaluation  run_id=%s  split=%s  command=%s\n", c->run_id, c->split_name, c->command);
+    if (count_simulated(ds)) fprintf(f, "*** SIMULATED CONDITIONS (%zu recordings degraded by software): software validation only. NOT evidence about real speakers, rooms or microphones. ***\n", count_simulated(ds));
     if (ds->synthetic) fprintf(f, "*** SYNTHETIC FIXTURE RUN: software validation only. NOT Malayalam recognition accuracy. ***\n");
     else if (uw || ul) fprintf(f, "*** PROVISIONAL: %zu used word(s) not verified, %zu recording label(s) not verified. ***\n", uw, ul);
     fprintf(f, "code: %s%s (%s)\ndataset: %s v%s  manifest_sha256=%.16s...\n", c->git_commit, c->git_dirty ? " (dirty tree)" : "", c->git_describe,

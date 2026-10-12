@@ -19,6 +19,9 @@ Offline-first, Malayalam-first, C core + Kotlin Android.
 ## Phase 3.1 - evaluation foundation (done, synthetic-tested)
 Dataset spec/consent (docs/DATASET.md), schemas (data/schema), validator `s2w_dataset_check`, harness `s2w_eval` (docs/EVALUATION.md). No real Malayalam data or accuracy numbers exist yet.
 
+## Recording pipeline and simulated testing (done, synthetic-tested)
+Ingest/QA/resampler/degradation tools and runner: `docs/RECORDING.md`. Live capture and all real-speech claims remain open.
+
 ## Next
 1. Native-speaker review of the word list (two reviewers) and minimal pairs, using `docs/WORD_REVIEW.md` and `data/schema/wordlist_review_template.xlsx` (tooling done; the review itself is not).
 2. Collect pilot recordings (30-50 words, 10-20 speakers, 3 reps) with consent; validate with `s2w_dataset_check`.
