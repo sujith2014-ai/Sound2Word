@@ -24,7 +24,10 @@ typedef enum {
     S2W_ERR_BAD_PARAMS,
     S2W_ERR_EMPTY,
     S2W_ERR_NOMEM,
-    S2W_ERR_TOO_LARGE
+    S2W_ERR_TOO_LARGE,
+    S2W_ERR_TOO_SHORT,       /* Phase 2: shorter than one analysis frame */
+    S2W_ERR_RATE_MISMATCH,   /* Phase 2: audio rate != configured rate */
+    S2W_ERR_NONFINITE        /* Phase 2: NaN/Inf in samples or features */
 } s2w_status;
 
 const char *s2w_status_str(s2w_status s);

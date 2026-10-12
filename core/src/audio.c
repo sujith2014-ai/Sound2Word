@@ -23,6 +23,9 @@ const char *s2w_status_str(s2w_status s) {
     case S2W_ERR_EMPTY: return "no audio samples";
     case S2W_ERR_NOMEM: return "out of memory";
     case S2W_ERR_TOO_LARGE: return "file too large";
+    case S2W_ERR_TOO_SHORT: return "audio shorter than one analysis frame";
+    case S2W_ERR_RATE_MISMATCH: return "audio sample rate does not match feature config";
+    case S2W_ERR_NONFINITE: return "non-finite value encountered";
     }
     return "unknown error";
 }
