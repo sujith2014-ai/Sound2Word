@@ -1,0 +1,3 @@
+#s2w-wordlist v1
+word_id,label,romanisation,meaning_en,role,pair_id,contrast_type,review_status,reviewer_1,reviewer_2,variants
+EXAMPLE_ID,<malayalam-script-label>,<romanisation>,<meaning>,vocab,,none,draft,,,

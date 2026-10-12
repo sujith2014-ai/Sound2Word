@@ -1,2 +1,11 @@
 build/
 build-asan/
+
+# Private data: never commit audio, participant details, consent or per-query results
+data/private/
+*.wav
+participants.csv
+consent/
+evaluation/runs/
+evaluation/test_ledger.txt
+!data/schema/*

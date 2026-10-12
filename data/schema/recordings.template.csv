@@ -1,0 +1,2 @@
+#s2w-recordings v1
+recording_id,path,word_id,speaker_id,session_id,repetition,split,device_id,environment,noise_condition,speaking_style,label_verified,audio_sha256
