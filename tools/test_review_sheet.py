@@ -303,6 +303,100 @@ class Workbooks(unittest.TestCase):
         self.assertNotEqual(run("status", c1)[0], 0)
 
 
+class AiDraft(unittest.TestCase):
+    """The AI-generated draft is UNVERIFIED by construction. These checks verify only that it is
+    labelled as such, cannot be mistaken for a real word list, and that its pair claims are at least
+    structurally what they say (code points). They say NOTHING about meaning, dialect or phonology."""
+
+    CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "drafts", "ai_draft_candidates.csv")
+    XLSX = CSV.replace(".csv", ".xlsx")
+    LONG_FOR_SHORT = {"\u0d3f": "\u0d40", "\u0d41": "\u0d42", "\u0d4a": "\u0d4b", "\u0d46": "\u0d47"}
+
+    def load(self):
+        with open(self.CSV, encoding="utf-8") as f:
+            first = f.readline().rstrip("\n")
+            return first, list(csv.DictReader(f))
+
+    def test_labelled_unverified_and_not_loadable(self):
+        first, rows = self.load()
+        self.assertTrue(first.startswith("#s2w-ai-draft v1 UNVERIFIED"))
+        self.assertNotEqual(first, "#s2w-wordlist v1")                       # real loader would refuse this file
+        self.assertTrue(rows and all(r["status"] == "UNVERIFIED" for r in rows))
+        ids = [r["draft_id"] for r in rows]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertTrue(all(i.startswith("DRAFT-") and rs.ID_RE.match(i) for i in ids))
+        self.assertFalse(any(i.startswith(("W", "U")) for i in ids))          # cannot be pasted as master IDs by accident
+        if os.path.exists(self.XLSX):
+            self.assertNotEqual(run("status", self.XLSX)[0], 0)               # review_sheet refuses it
+            self.assertNotEqual(run("split", self.XLSX, "--out-dir", tempfile.mkdtemp())[0], 0)
+            wb = load_workbook(self.XLSX)
+            self.assertIn("UNVERIFIED", wb["READ FIRST"]["A1"].value)
+            self.assertIn("NOT ground truth", wb["READ FIRST"]["A2"].value)
+            self.assertNotIn("_meta", wb.sheetnames)
+            ws = wb["AI draft (UNVERIFIED)"]
+            self.assertEqual(ws.max_row, 1 + len(rows))
+            self.assertTrue(all(ws.cell(row=r, column=12).value == "UNVERIFIED" for r in range(2, ws.max_row + 1)))
+
+    def test_counts_and_text_hygiene(self):
+        _, rows = self.load()
+        vocab = [r for r in rows if r["role"] == "vocab"]
+        oov = [r for r in rows if r["role"] == "oov"]
+        self.assertEqual((len(vocab), len(oov)), (36, 10))
+        words = [r["malayalam_ai_draft"] for r in rows]
+        self.assertEqual(len(words), len(set(words)))                         # no word appears twice (so oov never duplicates vocab)
+        import unicodedata
+        for r in rows:
+            w = r["malayalam_ai_draft"]
+            self.assertTrue(rs.is_malayalam_text(w), w)
+            self.assertEqual(unicodedata.normalize("NFC", w), w)
+            self.assertFalse(any("\u0d7a" <= ch <= "\u0d7f" for ch in w), "chillu letters avoided on purpose: " + w)
+            self.assertFalse(any(ch in rs.ZW for ch in w), "no ZWJ/ZWNJ in draft: " + w)
+            self.assertTrue(r["ai_self_rating"] in ("more sure", "less sure") and r["english_meaning_ai"] and r["romanisation_approx"])
+        for r in oov:
+            self.assertEqual((r["proposed_pair_id"], r["proposed_contrast"]), ("", "none"))
+
+    def test_pair_claims_are_structurally_true(self):
+        _, rows = self.load()
+        pairs = {}
+        for r in rows:
+            if r["proposed_pair_id"]:
+                pairs.setdefault(r["proposed_pair_id"], []).append(r)
+            else:
+                self.assertEqual(r["proposed_contrast"], "none")
+        self.assertEqual(sorted(k[:2] for k in pairs), ["DP"] * 6 + ["GP"] * 6)
+        for pid, m in pairs.items():
+            self.assertEqual(len(m), 2, pid)
+            self.assertEqual(m[0]["proposed_contrast"], m[1]["proposed_contrast"])
+            self.assertTrue(all(x["role"] == "vocab" for x in m))
+            a, b = m[0]["malayalam_ai_draft"], m[1]["malayalam_ai_draft"]
+            ct = m[0]["proposed_contrast"]
+            if ct == "gemination":
+                # longer word = shorter word with one consonant letter doubled (C + virama + C)
+                short, long_ = sorted((a, b), key=len)
+                virama = "\u0d4d"
+                ok = any(short[:i + 1] + virama + short[i] + short[i + 1:] == long_ for i in range(len(short)))
+                self.assertTrue(ok, "%s: %s / %s is not a doubled consonant" % (pid, a, b))
+            elif ct == "vowel_length":
+                short, long_ = sorted((a, b), key=len)
+                inserted = any(short[:i] + "\u0d3e" + short[i:] == long_ for i in range(1, len(short) + 1))
+                swapped = len(a) == len(b) and [(x, y) for x, y in zip(a, b) if x != y] and all(
+                    self.LONG_FOR_SHORT.get(x) == y or self.LONG_FOR_SHORT.get(y) == x for x, y in zip(a, b) if x != y)
+                self.assertTrue(inserted or swapped, "%s: %s / %s is not a vowel-length change" % (pid, a, b))
+            else:
+                self.fail("unexpected contrast " + ct)
+
+    def test_generator_output_is_current(self):
+        d = tempfile.mkdtemp()
+        try:
+            import make_ai_draft as mk
+            tmp = os.path.join(d, "x.csv")
+            mk.write_csv(tmp)
+            with open(tmp, encoding="utf-8") as a, open(self.CSV, encoding="utf-8") as b:
+                self.assertEqual(a.read(), b.read(), "run tools/make_ai_draft.py and commit the result")
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
+
 @unittest.skipUnless(os.path.exists(os.path.join(BUILD, "s2w_make_fixture")) and os.path.exists(os.path.join(BUILD, "s2w_dataset_check")),
                      "C tools not built")
 class ValidatorRoundTrip(unittest.TestCase):

@@ -9,6 +9,9 @@ Template: `data/schema/wordlist_review_template.xlsx` (40 vocabulary + 10 unknow
 with `tools/review_sheet.py template OUT.xlsx --vocab-slots N --oov-slots M`). Needs python3 + openpyxl.
 Tests: `make test-review` (runs inside `make test`).
 
+Optional starting point (UNVERIFIED, AI-generated, deliberately not importable): `data/drafts/ai_draft_candidates.xlsx`.
+It is a prompt for the proposer, never a source of ground truth.
+
 ## Roles
 - **Proposer** (native speaker): fills the yellow columns: word, meaning, optional romanisation, IPA only
   if checked by someone competent, contrast pair ID and type. May also be one of the reviewers.

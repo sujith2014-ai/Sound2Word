@@ -1,8 +1,13 @@
 # Brief for the vocabulary proposer (native Malayalam speaker)
 
-You are drafting candidates; two other speakers will review them blind. Please do not ask software or
-anyone else to supply the words for you - the point is native-speaker judgement. Work in the **Master**
-sheet of `wordlist_review_template.xlsx`, yellow columns only.
+You are drafting candidates; two other speakers will review them blind. The point is native-speaker
+judgement. Work in the **Master** sheet of `wordlist_review_template.xlsx`, yellow columns only.
+
+An **AI-generated, UNVERIFIED** starting list exists at `data/drafts/ai_draft_candidates.xlsx` (also `.csv`).
+It was written without a dictionary, native speaker or audio and may be wrong in spelling, meaning, dialect
+or in any claimed contrast. You may use it as a prompt, change it, or ignore it entirely. If you adopt a word,
+type it into the Master yourself after checking it; do not copy rows across wholesale, and do not treat the
+AI's self-rating as evidence.
 
 ## What to propose
 - **30-50 enrolled words (`vocab`, rows W001...)**, familiar everyday words people say naturally in

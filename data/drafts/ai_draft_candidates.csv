@@ -1,0 +1,48 @@
+#s2w-ai-draft v1 UNVERIFIED - NOT A WORD LIST - DO NOT IMPORT AS VERIFIED
+draft_id,role,malayalam_ai_draft,romanisation_approx,english_meaning_ai,proposed_pair_id,proposed_contrast,proposed_contrast_detail,ai_self_rating,ai_concerns,oov_closeness_guess,status
+DRAFT-V01,vocab,കലം,kalaṁ,pot / cooking vessel,DP01,vowel_length,a vs aa (short vs long a),more sure,Both very common. Check the long vowel is clearly longer in isolated speech.,,UNVERIFIED
+DRAFT-V02,vocab,കാലം,kālaṁ,"time, era, season",DP01,vowel_length,a vs aa (short vs long a),more sure,Both very common. Check the long vowel is clearly longer in isolated speech.,,UNVERIFIED
+DRAFT-V03,vocab,തരം,taraṁ,"kind, type, grade",DP02,vowel_length,aa vs a (long vs short a),more sure,"'താരം' may be heard as 'star (celebrity)'; 'തരം' as 'kind, type, grade'. Confirm both are natural.",,UNVERIFIED
+DRAFT-V04,vocab,താരം,tāraṁ,star; celebrity,DP02,vowel_length,aa vs a (long vs short a),more sure,"'താരം' may be heard as 'star (celebrity)'; 'തരം' as 'kind, type, grade'. Confirm both are natural.",,UNVERIFIED
+DRAFT-V05,vocab,പടം,paṭaṁ,"picture, film",DP03,vowel_length,a vs aa,more sure,Regional pronunciation of 'പടം' (picture/film) may vary.,,UNVERIFIED
+DRAFT-V06,vocab,പാടം,pāṭaṁ,paddy field,DP03,vowel_length,a vs aa,more sure,Regional pronunciation of 'പടം' (picture/film) may vary.,,UNVERIFIED
+DRAFT-V07,vocab,മല,mala,"hill, mountain",DP04,vowel_length,a vs aa,more sure,Short words; confirm vowel length is the only audible difference.,,UNVERIFIED
+DRAFT-V08,vocab,മാല,māla,"garland, necklace",DP04,vowel_length,a vs aa,more sure,Short words; confirm vowel length is the only audible difference.,,UNVERIFIED
+DRAFT-V09,vocab,നില,nila,"floor, level, state",DP05,vowel_length,i vs ii (short vs long i),more sure,"'നില' has several senses (floor, level, state); pick one context if needed.",,UNVERIFIED
+DRAFT-V10,vocab,നീല,nīla,blue,DP05,vowel_length,i vs ii (short vs long i),more sure,"'നില' has several senses (floor, level, state); pick one context if needed.",,UNVERIFIED
+DRAFT-V11,vocab,കൊടി,koṭi,flag,DP06,vowel_length,o vs oo (short vs long o),more sure,"Short ൊ vs long ോ: confirm the contrast is length, not quality.",,UNVERIFIED
+DRAFT-V12,vocab,കോടി,kōṭi,"ten million, crore",DP06,vowel_length,o vs oo (short vs long o),more sure,"Short ൊ vs long ോ: confirm the contrast is length, not quality.",,UNVERIFIED
+DRAFT-V13,vocab,അട,aṭa,rice dumpling (snack),GP01,gemination,single ṭ vs geminate ṭṭ,more sure,Different parts of speech/semantic fields; confirm both familiar.,,UNVERIFIED
+DRAFT-V14,vocab,അട്ട,aṭṭa,leech,GP01,gemination,single ṭ vs geminate ṭṭ,more sure,Different parts of speech/semantic fields; confirm both familiar.,,UNVERIFIED
+DRAFT-V15,vocab,കളം,kaḷaṁ,"court, square, drawn pattern",GP02,gemination,single ḷ vs geminate ḷḷ,more sure,"Close in sound to GP03 (കളം/വളം, കള്ളം/വള്ളം): useful hard negatives but may confuse a learner.",,UNVERIFIED
+DRAFT-V16,vocab,കള്ളം,kaḷḷaṁ,"lie, falsehood",GP02,gemination,single ḷ vs geminate ḷḷ,more sure,"Close in sound to GP03 (കളം/വളം, കള്ളം/വള്ളം): useful hard negatives but may confuse a learner.",,UNVERIFIED
+DRAFT-V17,vocab,വളം,vaḷaṁ,"fertiliser, manure",GP03,gemination,single ḷ vs geminate ḷḷ,more sure,Close in sound to GP02. 'വളം' = fertiliser (also other senses).,,UNVERIFIED
+DRAFT-V18,vocab,വള്ളം,vaḷḷaṁ,"boat, canoe",GP03,gemination,single ḷ vs geminate ḷḷ,more sure,Close in sound to GP02. 'വളം' = fertiliser (also other senses).,,UNVERIFIED
+DRAFT-V19,vocab,പടി,paṭi,"step, stair",GP04,gemination,single ṭ vs geminate ṭṭ,more sure,Both extremely common.,,UNVERIFIED
+DRAFT-V20,vocab,പട്ടി,paṭṭi,dog,GP04,gemination,single ṭ vs geminate ṭṭ,more sure,Both extremely common.,,UNVERIFIED
+DRAFT-V21,vocab,കടി,kaṭi,bite,GP05,gemination,single ṭ vs geminate ṭṭ,less sure,"'കട്ടി' has several senses (thickness, solid, lump); meaning may need fixing to one sense.",,UNVERIFIED
+DRAFT-V22,vocab,കട്ടി,kaṭṭi,"thick(ness), solid",GP05,gemination,single ṭ vs geminate ṭṭ,less sure,"'കട്ടി' has several senses (thickness, solid, lump); meaning may need fixing to one sense.",,UNVERIFIED
+DRAFT-V23,vocab,കുറി,kuṟi,"mark, chit",GP06,gemination,റ vs റ്റ,less sure,"Is റ vs റ്റ a pure single/geminate contrast, or does quality also differ? Needs a phonetically aware reviewer.",,UNVERIFIED
+DRAFT-V24,vocab,കുറ്റി,kuṟṟi,"peg, stump, post",GP06,gemination,റ vs റ്റ,less sure,"Is റ vs റ്റ a pure single/geminate contrast, or does quality also differ? Needs a phonetically aware reviewer.",,UNVERIFIED
+DRAFT-V25,vocab,ആന,āna,elephant,,none,,more sure,,,UNVERIFIED
+DRAFT-V26,vocab,പൂച്ച,pūcca,cat,,none,,more sure,,,UNVERIFIED
+DRAFT-V27,vocab,ചെവി,cevi,ear,,none,,more sure,,,UNVERIFIED
+DRAFT-V28,vocab,മഴ,maḻa,rain,,none,,more sure,"Contains ഴ; shares it with പുഴ, പഴം (intentional spread, but similar endings).",,UNVERIFIED
+DRAFT-V29,vocab,പുഴ,puḻa,river,,none,,more sure,"Shares ഴ with മഴ, പഴം.",,UNVERIFIED
+DRAFT-V30,vocab,പഴം,paḻaṁ,"banana, fruit",,none,,more sure,'banana' vs general 'fruit': pick the sense speakers use.,,UNVERIFIED
+DRAFT-V31,vocab,അമ്മ,amma,mother,,none,,more sure,Geminate mm in a single word (no pair).,,UNVERIFIED
+DRAFT-V32,vocab,ചക്ക,cakka,jackfruit,,none,,more sure,,,UNVERIFIED
+DRAFT-V33,vocab,തേങ്ങ,tēṅṅa,coconut,,none,,more sure,Conjunct ങ്ങ: check spelling.,,UNVERIFIED
+DRAFT-V34,vocab,പുസ്തകം,pustakaṁ,book,,none,,more sure,Conjunct സ്ത: check spelling.,,UNVERIFIED
+DRAFT-V35,vocab,ആകാശം,ākāśaṁ,sky,,none,,more sure,Longer word (3 syllables) for length variety.,,UNVERIFIED
+DRAFT-V36,vocab,വിദ്യാലയം,vidyālayaṁ,school,,none,,more sure,Long word (5 syllables); formal register.,,UNVERIFIED
+DRAFT-U01,oov,ചിരി,ciri,"laugh, smile",,none,,more sure,Must NOT be enrolled; unknown-word test only.,far,UNVERIFIED
+DRAFT-U02,oov,പക്ഷി,pakṣi,bird,,none,,more sure,Must NOT be enrolled; unknown-word test only.,far,UNVERIFIED
+DRAFT-U03,oov,തീ,tī,fire,,none,,more sure,Must NOT be enrolled; unknown-word test only.,far (one syllable),UNVERIFIED
+DRAFT-U04,oov,കുട്ടി,kuṭṭi,child,,none,,more sure,Must NOT be enrolled; unknown-word test only.,"near (കട്ടി, കടി, പടി, പട്ടി)",UNVERIFIED
+DRAFT-U05,oov,വഴി,vaḻi,"way, road",,none,,more sure,Must NOT be enrolled; unknown-word test only.,"near (പഴം, മഴ, പുഴ share ഴ)",UNVERIFIED
+DRAFT-U06,oov,ഓണം,ōṇaṁ,Onam (festival),,none,,more sure,Must NOT be enrolled; unknown-word test only.,far,UNVERIFIED
+DRAFT-U07,oov,മുറി,muṟi,room,,none,,more sure,Must NOT be enrolled; unknown-word test only.,near (കുറി),UNVERIFIED
+DRAFT-U08,oov,ചന്ദനം,candanaṁ,sandalwood,,none,,more sure,Must NOT be enrolled; unknown-word test only.,far,UNVERIFIED
+DRAFT-U09,oov,നക്ഷത്രം,nakṣatraṁ,star (formal),,none,,more sure,Must NOT be enrolled; unknown-word test only.,"far (same meaning as താരം, unrelated sound)",UNVERIFIED
+DRAFT-U10,oov,ഗ്രാമം,grāmaṁ,village,,none,,more sure,Must NOT be enrolled; unknown-word test only.,far,UNVERIFIED
