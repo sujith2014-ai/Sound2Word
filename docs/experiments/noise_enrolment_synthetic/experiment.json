@@ -1,0 +1,5307 @@
+{
+  "auc": {
+    "clean | clean": {
+      "auc": 1.0
+    },
+    "clean | far_mic": {
+      "auc": 0.7996080736821477
+    },
+    "clean | hum_snr10": {
+      "auc": 1.0
+    },
+    "clean | snr0_white": {
+      "auc": 0.9519890260631002
+    },
+    "clean | snr10_pink": {
+      "auc": 0.9033631332481907
+    },
+    "clean | snr10_white": {
+      "auc": 0.8426807760141094
+    },
+    "clean | snr20_white": {
+      "auc": 1.0
+    },
+    "clean | telephone": {
+      "auc": 1.0
+    },
+    "far_mic | clean": {
+      "auc": 0.9163249759136026
+    },
+    "far_mic | far_mic": {
+      "auc": 1.0
+    },
+    "far_mic | hum_snr10": {
+      "auc": 0.3368249273673754
+    },
+    "far_mic | snr0_white": {
+      "auc": 0.9289236554562225
+    },
+    "far_mic | snr10_pink": {
+      "auc": 1.0
+    },
+    "far_mic | snr10_white": {
+      "auc": 1.0
+    },
+    "far_mic | snr20_white": {
+      "auc": 1.0
+    },
+    "far_mic | telephone": {
+      "auc": 0.7483199537797239
+    },
+    "mix:snr10_white | clean": {
+      "auc": 1.0
+    },
+    "mix:snr10_white | far_mic": {
+      "auc": 1.0
+    },
+    "mix:snr10_white | hum_snr10": {
+      "auc": 0.9941700960219478
+    },
+    "mix:snr10_white | snr0_white": {
+      "auc": 1.0
+    },
+    "mix:snr10_white | snr10_pink": {
+      "auc": 1.0
+    },
+    "mix:snr10_white | snr10_white": {
+      "auc": 1.0
+    },
+    "mix:snr10_white | snr20_white": {
+      "auc": 1.0
+    },
+    "mix:snr10_white | telephone": {
+      "auc": 1.0
+    },
+    "snr10_pink | clean": {
+      "auc": 0.7956567501616565
+    },
+    "snr10_pink | far_mic": {
+      "auc": 1.0
+    },
+    "snr10_pink | hum_snr10": {
+      "auc": 0.22797552241996688
+    },
+    "snr10_pink | snr0_white": {
+      "auc": 0.963902744883573
+    },
+    "snr10_pink | snr10_pink": {
+      "auc": 1.0
+    },
+    "snr10_pink | snr10_white": {
+      "auc": 1.0
+    },
+    "snr10_pink | snr20_white": {
+      "auc": 1.0
+    },
+    "snr10_pink | telephone": {
+      "auc": 0.6092080650560182
+    },
+    "snr10_white | clean": {
+      "auc": 0.8113397347965249
+    },
+    "snr10_white | far_mic": {
+      "auc": 1.0
+    },
+    "snr10_white | hum_snr10": {
+      "auc": 0.1763145861911294
+    },
+    "snr10_white | snr0_white": {
+      "auc": 1.0
+    },
+    "snr10_white | snr10_pink": {
+      "auc": 1.0
+    },
+    "snr10_white | snr10_white": {
+      "auc": 1.0
+    },
+    "snr10_white | snr20_white": {
+      "auc": 1.0
+    },
+    "snr10_white | telephone": {
+      "auc": 0.6031425364758698
+    }
+  },
+  "cells": {
+    "1": {
+      "clean | clean": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.939357,
+        "median_impostor_distance": 3.200482,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SYNTHETIC FIXTURE: software validation only. These numbers say nothing about Malayalam recognition accuracy.",
+        "simulated_recordings": 0,
+        "templates": 96,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | far_mic": {
+        "auc": 0.828042328042328,
+        "frr_at_far5_insample": 0.35714285714285715,
+        "median_genuine_distance": 2.70055,
+        "median_impostor_distance": 2.953673,
+        "n_genuine_dist": 42,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          42,
+          72
+        ],
+        "top3": [
+          71,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | hum_snr10": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.107565,
+        "median_impostor_distance": 3.016623,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | snr0_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 2.805365,
+        "median_impostor_distance": 2.932654,
+        "n_genuine_dist": 15,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          15,
+          72
+        ],
+        "top3": [
+          36,
+          72
+        ],
+        "top5": [
+          61,
+          72
+        ]
+      },
+      "clean | snr10_pink": {
+        "auc": 0.9054916985951469,
+        "frr_at_far5_insample": 0.3448275862068966,
+        "median_genuine_distance": 2.537268,
+        "median_impostor_distance": 2.900902,
+        "n_genuine_dist": 29,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          29,
+          72
+        ],
+        "top3": [
+          67,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | snr10_white": {
+        "auc": 0.8624338624338624,
+        "frr_at_far5_insample": 0.22857142857142856,
+        "median_genuine_distance": 2.735573,
+        "median_impostor_distance": 2.993641,
+        "n_genuine_dist": 35,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          35,
+          72
+        ],
+        "top3": [
+          69,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 2.486806,
+        "median_impostor_distance": 3.092118,
+        "n_genuine_dist": 57,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          57,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | telephone": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.966352,
+        "median_impostor_distance": 3.253022,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | clean": {
+        "auc": 0.9252761533463287,
+        "frr_at_far5_insample": 0.3157894736842105,
+        "median_genuine_distance": 2.994768,
+        "median_impostor_distance": 3.447677,
+        "n_genuine_dist": 57,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 96,
+        "top1": [
+          57,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.95413,
+        "median_impostor_distance": 1.498241,
+        "n_genuine_dist": 71,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          71,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | hum_snr10": {
+        "auc": 0.3391812865497076,
+        "frr_at_far5_insample": 0.9649122807017544,
+        "median_genuine_distance": 2.692461,
+        "median_impostor_distance": 2.449365,
+        "n_genuine_dist": 57,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          57,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr0_white": {
+        "auc": 0.9583333333333334,
+        "frr_at_far5_insample": 0.25,
+        "median_genuine_distance": 1.185249,
+        "median_impostor_distance": 1.354968,
+        "n_genuine_dist": 56,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          56,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.01225,
+        "median_impostor_distance": 1.394113,
+        "n_genuine_dist": 64,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          64,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.01857,
+        "median_impostor_distance": 1.375706,
+        "n_genuine_dist": 64,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          64,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.055817,
+        "median_impostor_distance": 1.625971,
+        "n_genuine_dist": 63,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          63,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | telephone": {
+        "auc": 0.751984126984127,
+        "frr_at_far5_insample": 0.6607142857142857,
+        "median_genuine_distance": 3.069064,
+        "median_impostor_distance": 3.252389,
+        "n_genuine_dist": 56,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          56,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | clean": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.939357,
+        "median_impostor_distance": 3.110146,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 192,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.037442,
+        "median_impostor_distance": 1.412919,
+        "n_genuine_dist": 66,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          66,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | hum_snr10": {
+        "auc": 0.9938271604938271,
+        "frr_at_far5_insample": 0.041666666666666664,
+        "median_genuine_distance": 1.107565,
+        "median_impostor_distance": 2.422993,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr0_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.02965,
+        "median_impostor_distance": 1.244355,
+        "n_genuine_dist": 65,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          65,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.916138,
+        "median_impostor_distance": 1.306123,
+        "n_genuine_dist": 70,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          70,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.906677,
+        "median_impostor_distance": 1.325277,
+        "n_genuine_dist": 68,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          68,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.083044,
+        "median_impostor_distance": 1.564391,
+        "n_genuine_dist": 70,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          70,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | telephone": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.966352,
+        "median_impostor_distance": 3.026185,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | clean": {
+        "auc": 0.7936507936507936,
+        "frr_at_far5_insample": 0.5892857142857143,
+        "median_genuine_distance": 3.138741,
+        "median_impostor_distance": 3.43242,
+        "n_genuine_dist": 56,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 96,
+        "top1": [
+          56,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.028356,
+        "median_impostor_distance": 1.436727,
+        "n_genuine_dist": 66,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          66,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | hum_snr10": {
+        "auc": 0.22828282828282828,
+        "frr_at_far5_insample": 1.0,
+        "median_genuine_distance": 2.851833,
+        "median_impostor_distance": 2.48495,
+        "n_genuine_dist": 55,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          55,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr0_white": {
+        "auc": 0.9611414693381907,
+        "frr_at_far5_insample": 0.16393442622950818,
+        "median_genuine_distance": 1.021099,
+        "median_impostor_distance": 1.230092,
+        "n_genuine_dist": 61,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          61,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.903521,
+        "median_impostor_distance": 1.343127,
+        "n_genuine_dist": 69,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          69,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.909823,
+        "median_impostor_distance": 1.345067,
+        "n_genuine_dist": 69,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          69,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.069482,
+        "median_impostor_distance": 1.666287,
+        "n_genuine_dist": 70,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          70,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | telephone": {
+        "auc": 0.5993265993265994,
+        "frr_at_far5_insample": 0.7818181818181819,
+        "median_genuine_distance": 3.177346,
+        "median_impostor_distance": 3.228432,
+        "n_genuine_dist": 55,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          55,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | clean": {
+        "auc": 0.813443072702332,
+        "frr_at_far5_insample": 0.5,
+        "median_genuine_distance": 3.121778,
+        "median_impostor_distance": 3.379249,
+        "n_genuine_dist": 54,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 96,
+        "top1": [
+          54,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.037442,
+        "median_impostor_distance": 1.412919,
+        "n_genuine_dist": 66,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          66,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | hum_snr10": {
+        "auc": 0.16598079561042525,
+        "frr_at_far5_insample": 1.0,
+        "median_genuine_distance": 2.840235,
+        "median_impostor_distance": 2.422993,
+        "n_genuine_dist": 54,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          54,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr0_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.02965,
+        "median_impostor_distance": 1.244355,
+        "n_genuine_dist": 65,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          65,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.916138,
+        "median_impostor_distance": 1.306123,
+        "n_genuine_dist": 70,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          70,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.906677,
+        "median_impostor_distance": 1.325277,
+        "n_genuine_dist": 68,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          68,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.083044,
+        "median_impostor_distance": 1.564391,
+        "n_genuine_dist": 70,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          70,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | telephone": {
+        "auc": 0.6121212121212121,
+        "frr_at_far5_insample": 0.7818181818181819,
+        "median_genuine_distance": 3.155663,
+        "median_impostor_distance": 3.194352,
+        "n_genuine_dist": 55,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          55,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      }
+    },
+    "2": {
+      "clean | clean": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.939357,
+        "median_impostor_distance": 3.200482,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SYNTHETIC FIXTURE: software validation only. These numbers say nothing about Malayalam recognition accuracy.",
+        "simulated_recordings": 0,
+        "templates": 96,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | far_mic": {
+        "auc": 0.7991769547325103,
+        "frr_at_far5_insample": 0.35555555555555557,
+        "median_genuine_distance": 2.670643,
+        "median_impostor_distance": 2.940675,
+        "n_genuine_dist": 45,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          45,
+          72
+        ],
+        "top3": [
+          71,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | hum_snr10": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.108848,
+        "median_impostor_distance": 3.019706,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | snr0_white": {
+        "auc": 0.9197530864197531,
+        "frr_at_far5_insample": 0.1111111111111111,
+        "median_genuine_distance": 2.818975,
+        "median_impostor_distance": 2.92948,
+        "n_genuine_dist": 18,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          18,
+          72
+        ],
+        "top3": [
+          38,
+          72
+        ],
+        "top5": [
+          60,
+          72
+        ]
+      },
+      "clean | snr10_pink": {
+        "auc": 0.8978288633461047,
+        "frr_at_far5_insample": 0.27586206896551724,
+        "median_genuine_distance": 2.558437,
+        "median_impostor_distance": 2.900958,
+        "n_genuine_dist": 29,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          29,
+          72
+        ],
+        "top3": [
+          64,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | snr10_white": {
+        "auc": 0.8433862433862434,
+        "frr_at_far5_insample": 0.2571428571428571,
+        "median_genuine_distance": 2.6746,
+        "median_impostor_distance": 3.000121,
+        "n_genuine_dist": 35,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          35,
+          72
+        ],
+        "top3": [
+          67,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 2.528106,
+        "median_impostor_distance": 3.094756,
+        "n_genuine_dist": 55,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          55,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | telephone": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.966352,
+        "median_impostor_distance": 3.253022,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | clean": {
+        "auc": 0.9226770630279402,
+        "frr_at_far5_insample": 0.2982456140350877,
+        "median_genuine_distance": 2.957693,
+        "median_impostor_distance": 3.44016,
+        "n_genuine_dist": 57,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 96,
+        "top1": [
+          57,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.94151,
+        "median_impostor_distance": 1.531379,
+        "n_genuine_dist": 66,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          66,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | hum_snr10": {
+        "auc": 0.3424301494476933,
+        "frr_at_far5_insample": 0.9122807017543859,
+        "median_genuine_distance": 2.767469,
+        "median_impostor_distance": 2.477632,
+        "n_genuine_dist": 57,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          57,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr0_white": {
+        "auc": 0.9382716049382716,
+        "frr_at_far5_insample": 0.21052631578947367,
+        "median_genuine_distance": 1.163787,
+        "median_impostor_distance": 1.38835,
+        "n_genuine_dist": 57,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          57,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.018274,
+        "median_impostor_distance": 1.46522,
+        "n_genuine_dist": 63,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          63,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.022422,
+        "median_impostor_distance": 1.473625,
+        "n_genuine_dist": 61,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          61,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.071116,
+        "median_impostor_distance": 1.734945,
+        "n_genuine_dist": 64,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          64,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | telephone": {
+        "auc": 0.7579821200510856,
+        "frr_at_far5_insample": 0.6206896551724138,
+        "median_genuine_distance": 3.042869,
+        "median_impostor_distance": 3.273711,
+        "n_genuine_dist": 58,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          58,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | clean": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.939357,
+        "median_impostor_distance": 3.108453,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 192,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.022307,
+        "median_impostor_distance": 1.426777,
+        "n_genuine_dist": 67,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          67,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | hum_snr10": {
+        "auc": 0.9958847736625515,
+        "frr_at_far5_insample": 0.041666666666666664,
+        "median_genuine_distance": 1.108848,
+        "median_impostor_distance": 2.474826,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr0_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.024321,
+        "median_impostor_distance": 1.240174,
+        "n_genuine_dist": 62,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          62,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.916143,
+        "median_impostor_distance": 1.335079,
+        "n_genuine_dist": 69,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          69,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.905149,
+        "median_impostor_distance": 1.310898,
+        "n_genuine_dist": 69,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          69,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.088284,
+        "median_impostor_distance": 1.586795,
+        "n_genuine_dist": 65,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          65,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | telephone": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.966352,
+        "median_impostor_distance": 3.043098,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | clean": {
+        "auc": 0.7940991839296924,
+        "frr_at_far5_insample": 0.576271186440678,
+        "median_genuine_distance": 3.152787,
+        "median_impostor_distance": 3.438233,
+        "n_genuine_dist": 59,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 96,
+        "top1": [
+          59,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.015153,
+        "median_impostor_distance": 1.438482,
+        "n_genuine_dist": 67,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          67,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | hum_snr10": {
+        "auc": 0.2228395061728395,
+        "frr_at_far5_insample": 1.0,
+        "median_genuine_distance": 2.849607,
+        "median_impostor_distance": 2.483721,
+        "n_genuine_dist": 60,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          60,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr0_white": {
+        "auc": 0.9504080351537979,
+        "frr_at_far5_insample": 0.1694915254237288,
+        "median_genuine_distance": 1.029506,
+        "median_impostor_distance": 1.207931,
+        "n_genuine_dist": 59,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          59,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.903707,
+        "median_impostor_distance": 1.320385,
+        "n_genuine_dist": 69,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          69,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.913348,
+        "median_impostor_distance": 1.337758,
+        "n_genuine_dist": 69,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          69,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.06668,
+        "median_impostor_distance": 1.653405,
+        "n_genuine_dist": 65,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          65,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | telephone": {
+        "auc": 0.6129629629629629,
+        "frr_at_far5_insample": 0.7833333333333333,
+        "median_genuine_distance": 3.173978,
+        "median_impostor_distance": 3.255295,
+        "n_genuine_dist": 60,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          60,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | clean": {
+        "auc": 0.7983539094650206,
+        "frr_at_far5_insample": 0.6111111111111112,
+        "median_genuine_distance": 3.138278,
+        "median_impostor_distance": 3.373418,
+        "n_genuine_dist": 54,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 96,
+        "top1": [
+          54,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.022307,
+        "median_impostor_distance": 1.426777,
+        "n_genuine_dist": 67,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          67,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | hum_snr10": {
+        "auc": 0.18249158249158248,
+        "frr_at_far5_insample": 1.0,
+        "median_genuine_distance": 2.858937,
+        "median_impostor_distance": 2.474826,
+        "n_genuine_dist": 55,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          55,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr0_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.024321,
+        "median_impostor_distance": 1.240174,
+        "n_genuine_dist": 62,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          62,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.916143,
+        "median_impostor_distance": 1.335079,
+        "n_genuine_dist": 69,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          69,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.905149,
+        "median_impostor_distance": 1.310898,
+        "n_genuine_dist": 69,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          69,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.088284,
+        "median_impostor_distance": 1.586795,
+        "n_genuine_dist": 65,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          65,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | telephone": {
+        "auc": 0.5872053872053872,
+        "frr_at_far5_insample": 0.7818181818181819,
+        "median_genuine_distance": 3.1822,
+        "median_impostor_distance": 3.205055,
+        "n_genuine_dist": 55,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          55,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      }
+    },
+    "3": {
+      "clean | clean": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.939357,
+        "median_impostor_distance": 3.200482,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SYNTHETIC FIXTURE: software validation only. These numbers say nothing about Malayalam recognition accuracy.",
+        "simulated_recordings": 0,
+        "templates": 96,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | far_mic": {
+        "auc": 0.7716049382716049,
+        "frr_at_far5_insample": 0.40476190476190477,
+        "median_genuine_distance": 2.689532,
+        "median_impostor_distance": 2.907695,
+        "n_genuine_dist": 42,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          42,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | hum_snr10": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.117351,
+        "median_impostor_distance": 3.031118,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | snr0_white": {
+        "auc": 0.9362139917695473,
+        "frr_at_far5_insample": 0.2222222222222222,
+        "median_genuine_distance": 2.83073,
+        "median_impostor_distance": 2.933754,
+        "n_genuine_dist": 18,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          18,
+          72
+        ],
+        "top3": [
+          36,
+          72
+        ],
+        "top5": [
+          62,
+          72
+        ]
+      },
+      "clean | snr10_pink": {
+        "auc": 0.9067688378033205,
+        "frr_at_far5_insample": 0.2413793103448276,
+        "median_genuine_distance": 2.52364,
+        "median_impostor_distance": 2.903164,
+        "n_genuine_dist": 29,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          29,
+          72
+        ],
+        "top3": [
+          63,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | snr10_white": {
+        "auc": 0.8222222222222222,
+        "frr_at_far5_insample": 0.2571428571428571,
+        "median_genuine_distance": 2.702834,
+        "median_impostor_distance": 3.006001,
+        "n_genuine_dist": 35,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          35,
+          72
+        ],
+        "top3": [
+          68,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 2.546434,
+        "median_impostor_distance": 3.120031,
+        "n_genuine_dist": 55,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          55,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "clean | telephone": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.966352,
+        "median_impostor_distance": 3.253022,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 99,
+        "templates": 96,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | clean": {
+        "auc": 0.901021711366539,
+        "frr_at_far5_insample": 0.3793103448275862,
+        "median_genuine_distance": 3.009864,
+        "median_impostor_distance": 3.421468,
+        "n_genuine_dist": 58,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 96,
+        "top1": [
+          58,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.969515,
+        "median_impostor_distance": 1.499391,
+        "n_genuine_dist": 68,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          68,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | hum_snr10": {
+        "auc": 0.3288633461047254,
+        "frr_at_far5_insample": 0.9310344827586207,
+        "median_genuine_distance": 2.69476,
+        "median_impostor_distance": 2.461092,
+        "n_genuine_dist": 58,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          58,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr0_white": {
+        "auc": 0.8901660280970626,
+        "frr_at_far5_insample": 0.3793103448275862,
+        "median_genuine_distance": 1.202847,
+        "median_impostor_distance": 1.331925,
+        "n_genuine_dist": 58,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          58,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.008699,
+        "median_impostor_distance": 1.416466,
+        "n_genuine_dist": 65,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          65,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.003964,
+        "median_impostor_distance": 1.416167,
+        "n_genuine_dist": 61,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          61,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.057875,
+        "median_impostor_distance": 1.663942,
+        "n_genuine_dist": 65,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          65,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "far_mic | telephone": {
+        "auc": 0.7349936143039592,
+        "frr_at_far5_insample": 0.6551724137931034,
+        "median_genuine_distance": 3.048073,
+        "median_impostor_distance": 3.241041,
+        "n_genuine_dist": 58,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          58,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | clean": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.939357,
+        "median_impostor_distance": 3.108453,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 192,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.045332,
+        "median_impostor_distance": 1.425472,
+        "n_genuine_dist": 67,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          67,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | hum_snr10": {
+        "auc": 0.992798353909465,
+        "frr_at_far5_insample": 0.041666666666666664,
+        "median_genuine_distance": 1.117351,
+        "median_impostor_distance": 2.434761,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr0_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.030332,
+        "median_impostor_distance": 1.234089,
+        "n_genuine_dist": 59,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          59,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.918935,
+        "median_impostor_distance": 1.317776,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.90685,
+        "median_impostor_distance": 1.312275,
+        "n_genuine_dist": 71,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          71,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.084706,
+        "median_impostor_distance": 1.563424,
+        "n_genuine_dist": 68,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          68,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "mix:snr10_white | telephone": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.966352,
+        "median_impostor_distance": 3.037388,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 192,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | clean": {
+        "auc": 0.7992202729044834,
+        "frr_at_far5_insample": 0.6140350877192983,
+        "median_genuine_distance": 3.127413,
+        "median_impostor_distance": 3.436391,
+        "n_genuine_dist": 57,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 96,
+        "top1": [
+          57,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.038984,
+        "median_impostor_distance": 1.439318,
+        "n_genuine_dist": 69,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          69,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | hum_snr10": {
+        "auc": 0.2328042328042328,
+        "frr_at_far5_insample": 1.0,
+        "median_genuine_distance": 2.843371,
+        "median_impostor_distance": 2.458938,
+        "n_genuine_dist": 56,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          56,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr0_white": {
+        "auc": 0.9801587301587301,
+        "frr_at_far5_insample": 0.125,
+        "median_genuine_distance": 1.026505,
+        "median_impostor_distance": 1.229892,
+        "n_genuine_dist": 56,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          56,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.90485,
+        "median_impostor_distance": 1.317667,
+        "n_genuine_dist": 71,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          71,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.912139,
+        "median_impostor_distance": 1.314451,
+        "n_genuine_dist": 71,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          71,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.076592,
+        "median_impostor_distance": 1.615511,
+        "n_genuine_dist": 69,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          69,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_pink | telephone": {
+        "auc": 0.6153346328784925,
+        "frr_at_far5_insample": 0.7543859649122807,
+        "median_genuine_distance": 3.164449,
+        "median_impostor_distance": 3.254839,
+        "n_genuine_dist": 57,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          57,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | clean": {
+        "auc": 0.8222222222222222,
+        "frr_at_far5_insample": 0.6363636363636364,
+        "median_genuine_distance": 3.111384,
+        "median_impostor_distance": 3.398247,
+        "n_genuine_dist": 55,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 96,
+        "templates": 96,
+        "top1": [
+          55,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | far_mic": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.045332,
+        "median_impostor_distance": 1.425472,
+        "n_genuine_dist": 67,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          67,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | hum_snr10": {
+        "auc": 0.18047138047138048,
+        "frr_at_far5_insample": 1.0,
+        "median_genuine_distance": 2.839791,
+        "median_impostor_distance": 2.434761,
+        "n_genuine_dist": 55,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          55,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr0_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.030332,
+        "median_impostor_distance": 1.234089,
+        "n_genuine_dist": 59,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          59,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr10_pink": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.918935,
+        "median_impostor_distance": 1.317776,
+        "n_genuine_dist": 72,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          72,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr10_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 0.90685,
+        "median_impostor_distance": 1.312275,
+        "n_genuine_dist": 71,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          71,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | snr20_white": {
+        "auc": 1.0,
+        "frr_at_far5_insample": 0.0,
+        "median_genuine_distance": 1.084706,
+        "median_impostor_distance": 1.563424,
+        "n_genuine_dist": 68,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          68,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      },
+      "snr10_white | telephone": {
+        "auc": 0.6101010101010101,
+        "frr_at_far5_insample": 0.7636363636363637,
+        "median_genuine_distance": 3.14535,
+        "median_impostor_distance": 3.194497,
+        "n_genuine_dist": 55,
+        "n_impostor_dist": 27,
+        "n_known": 72,
+        "n_unknown": 27,
+        "n_unusable": 0,
+        "scope": "SIMULATED CONDITIONS: some recordings were artificially degraded by software. Software validation only; not evidence about real speakers, rooms or microphones.",
+        "simulated_recordings": 195,
+        "templates": 96,
+        "top1": [
+          55,
+          72
+        ],
+        "top3": [
+          72,
+          72
+        ],
+        "top5": [
+          72,
+          72
+        ]
+      }
+    }
+  },
+  "clean_query_top1_by_enrolment": {
+    "clean": 1.0,
+    "far_mic": 0.7962962962962963,
+    "mix:snr10_white": 1.0,
+    "snr10_pink": 0.7962962962962963,
+    "snr10_white": 0.7546296296296297
+  },
+  "comparisons": [
+    {
+      "clean_enrol": 0.7731481481481481,
+      "matched": null,
+      "matched_minus_clean": null,
+      "matched_minus_mismatched": null,
+      "mismatched_noisy_mean": 0.9243827160493826,
+      "mix": null,
+      "n_mismatched": 3,
+      "query": "snr20_white",
+      "recovery_matched": null,
+      "recovery_mix": null
+    },
+    {
+      "clean_enrol": 0.4861111111111111,
+      "matched": 0.9629629629629629,
+      "matched_minus_clean": 0.4768518518518518,
+      "matched_minus_mismatched": 0.04861111111111105,
+      "mismatched_noisy_mean": 0.9143518518518519,
+      "mix": 0.9629629629629629,
+      "n_mismatched": 2,
+      "query": "snr10_white",
+      "recovery_matched": 0.9279279279279279,
+      "recovery_mix": 0.9279279279279279
+    },
+    {
+      "clean_enrol": 0.2361111111111111,
+      "matched": null,
+      "matched_minus_clean": null,
+      "matched_minus_mismatched": null,
+      "mismatched_noisy_mean": 0.8225308641975309,
+      "mix": null,
+      "n_mismatched": 3,
+      "query": "snr0_white",
+      "recovery_matched": null,
+      "recovery_mix": null
+    },
+    {
+      "clean_enrol": 0.4027777777777778,
+      "matched": 0.9675925925925926,
+      "matched_minus_clean": 0.5648148148148148,
+      "matched_minus_mismatched": 0.03472222222222221,
+      "mismatched_noisy_mean": 0.9328703703703703,
+      "mix": null,
+      "n_mismatched": 2,
+      "query": "snr10_pink",
+      "recovery_matched": 0.945736434108527,
+      "recovery_mix": null
+    },
+    {
+      "clean_enrol": 0.5972222222222222,
+      "matched": 0.9490740740740741,
+      "matched_minus_clean": 0.35185185185185186,
+      "matched_minus_mismatched": 0.01851851851851849,
+      "mismatched_noisy_mean": 0.9305555555555556,
+      "mix": null,
+      "n_mismatched": 2,
+      "query": "far_mic",
+      "recovery_matched": 0.8735632183908046,
+      "recovery_mix": null
+    },
+    {
+      "clean_enrol": 1.0,
+      "matched": null,
+      "matched_minus_clean": null,
+      "matched_minus_mismatched": null,
+      "mismatched_noisy_mean": 0.7854938271604938,
+      "mix": null,
+      "n_mismatched": 3,
+      "query": "telephone",
+      "recovery_matched": null,
+      "recovery_mix": null
+    },
+    {
+      "clean_enrol": 1.0,
+      "matched": null,
+      "matched_minus_clean": null,
+      "matched_minus_mismatched": null,
+      "mismatched_noisy_mean": 0.7824074074074074,
+      "mix": null,
+      "n_mismatched": 3,
+      "query": "hum_snr10",
+      "recovery_matched": null,
+      "recovery_mix": null
+    }
+  ],
+  "meta": {
+    "banner": "*** SIMULATED CONDITIONS, SYNTHETIC DATA: software validation only. NOT evidence about real speakers, rooms, microphones or Malayalam recognition. ***",
+    "cell_errors": 0,
+    "dataset_kind": "synthetic",
+    "enrol": [
+      "clean",
+      "snr10_white",
+      "snr10_pink",
+      "far_mic",
+      "mix:snr10_white"
+    ],
+    "git_commit": "08fb0582da79d239216ea15f70fe855d9552ef10",
+    "git_describe": "baseline-v0.3.0-10-g08fb058",
+    "matcher": "unchanged (baseline matcher, no tuning)",
+    "n_known_per_cell_per_seed": 72,
+    "queries": [
+      "identity",
+      "snr20_white",
+      "snr10_white",
+      "snr0_white",
+      "snr10_pink",
+      "far_mic",
+      "telephone",
+      "hum_snr10"
+    ],
+    "schema": "s2w-enrolment-experiment-v1",
+    "seeds": [
+      1,
+      2,
+      3
+    ],
+    "settings_file": "base.cfg",
+    "settings_file_sha256": "b9443e060598aca228c943c69ee30c9c7a28332acbafb96c9d9db63fdc9aa3d7",
+    "source_manifest_sha256": "ba36d38e3874fcac9af8c69c02ce501b4f8bdda40f9f008a167ae760924da0b5",
+    "split": "calib only; test split never read"
+  },
+  "top1": {
+    "clean | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "clean | far_mic": {
+      "ci95": [
+        0.530667209446227,
+        0.660379435046899
+      ],
+      "den": 216,
+      "max": 0.625,
+      "min": 0.5833333333333334,
+      "num": 129,
+      "per_seed": [
+        0.5833333333333334,
+        0.625,
+        0.5833333333333334
+      ],
+      "rate": 0.5972222222222222
+    },
+    "clean | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "clean | snr0_white": {
+      "ci95": [
+        0.1843930829060412,
+        0.29705173918404554
+      ],
+      "den": 216,
+      "max": 0.25,
+      "min": 0.20833333333333334,
+      "num": 51,
+      "per_seed": [
+        0.20833333333333334,
+        0.25,
+        0.25
+      ],
+      "rate": 0.2361111111111111
+    },
+    "clean | snr10_pink": {
+      "ci95": [
+        0.3396205649531011,
+        0.4693327905537731
+      ],
+      "den": 216,
+      "max": 0.4027777777777778,
+      "min": 0.4027777777777778,
+      "num": 87,
+      "per_seed": [
+        0.4027777777777778,
+        0.4027777777777778,
+        0.4027777777777778
+      ],
+      "rate": 0.4027777777777778
+    },
+    "clean | snr10_white": {
+      "ci95": [
+        0.4202834848831271,
+        0.5524241373321408
+      ],
+      "den": 216,
+      "max": 0.4861111111111111,
+      "min": 0.4861111111111111,
+      "num": 105,
+      "per_seed": [
+        0.4861111111111111,
+        0.4861111111111111,
+        0.4861111111111111
+      ],
+      "rate": 0.4861111111111111
+    },
+    "clean | snr20_white": {
+      "ci95": [
+        0.7128087003689365,
+        0.8239413960641317
+      ],
+      "den": 216,
+      "max": 0.7916666666666666,
+      "min": 0.7638888888888888,
+      "num": 167,
+      "per_seed": [
+        0.7916666666666666,
+        0.7638888888888888,
+        0.7638888888888888
+      ],
+      "rate": 0.7731481481481481
+    },
+    "clean | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | clean": {
+      "ci95": [
+        0.7376275401231382,
+        0.844609852617817
+      ],
+      "den": 216,
+      "max": 0.8055555555555556,
+      "min": 0.7916666666666666,
+      "num": 172,
+      "per_seed": [
+        0.7916666666666666,
+        0.7916666666666666,
+        0.8055555555555556
+      ],
+      "rate": 0.7962962962962963
+    },
+    "far_mic | far_mic": {
+      "ci95": [
+        0.9111242639598923,
+        0.9713292844131182
+      ],
+      "den": 216,
+      "max": 0.9861111111111112,
+      "min": 0.9166666666666666,
+      "num": 205,
+      "per_seed": [
+        0.9861111111111112,
+        0.9166666666666666,
+        0.9444444444444444
+      ],
+      "rate": 0.9490740740740741
+    },
+    "far_mic | hum_snr10": {
+      "ci95": [
+        0.7376275401231382,
+        0.844609852617817
+      ],
+      "den": 216,
+      "max": 0.8055555555555556,
+      "min": 0.7916666666666666,
+      "num": 172,
+      "per_seed": [
+        0.7916666666666666,
+        0.7916666666666666,
+        0.8055555555555556
+      ],
+      "rate": 0.7962962962962963
+    },
+    "far_mic | snr0_white": {
+      "ci95": [
+        0.7326437318548641,
+        0.8404962016245138
+      ],
+      "den": 216,
+      "max": 0.8055555555555556,
+      "min": 0.7777777777777778,
+      "num": 171,
+      "per_seed": [
+        0.7777777777777778,
+        0.7916666666666666,
+        0.8055555555555556
+      ],
+      "rate": 0.7916666666666666
+    },
+    "far_mic | snr10_pink": {
+      "ci95": [
+        0.8399976025091761,
+        0.9241889754633278
+      ],
+      "den": 216,
+      "max": 0.9027777777777778,
+      "min": 0.875,
+      "num": 192,
+      "per_seed": [
+        0.8888888888888888,
+        0.875,
+        0.9027777777777778
+      ],
+      "rate": 0.8888888888888888
+    },
+    "far_mic | snr10_white": {
+      "ci95": [
+        0.8086518563940518,
+        0.9009499660089876
+      ],
+      "den": 216,
+      "max": 0.8888888888888888,
+      "min": 0.8472222222222222,
+      "num": 186,
+      "per_seed": [
+        0.8888888888888888,
+        0.8472222222222222,
+        0.8472222222222222
+      ],
+      "rate": 0.8611111111111112
+    },
+    "far_mic | snr20_white": {
+      "ci95": [
+        0.8399976025091761,
+        0.9241889754633278
+      ],
+      "den": 216,
+      "max": 0.9027777777777778,
+      "min": 0.875,
+      "num": 192,
+      "per_seed": [
+        0.875,
+        0.8888888888888888,
+        0.9027777777777778
+      ],
+      "rate": 0.8888888888888888
+    },
+    "far_mic | telephone": {
+      "ci95": [
+        0.7376275401231382,
+        0.844609852617817
+      ],
+      "den": 216,
+      "max": 0.8055555555555556,
+      "min": 0.7777777777777778,
+      "num": 172,
+      "per_seed": [
+        0.7777777777777778,
+        0.8055555555555556,
+        0.8055555555555556
+      ],
+      "rate": 0.7962962962962963
+    },
+    "mix:snr10_white | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | far_mic": {
+      "ci95": [
+        0.8830724811415184,
+        0.9538937709236049
+      ],
+      "den": 216,
+      "max": 0.9305555555555556,
+      "min": 0.9166666666666666,
+      "num": 200,
+      "per_seed": [
+        0.9166666666666666,
+        0.9305555555555556,
+        0.9305555555555556
+      ],
+      "rate": 0.9259259259259259
+    },
+    "mix:snr10_white | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | snr0_white": {
+      "ci95": [
+        0.8086518563940518,
+        0.9009499660089876
+      ],
+      "den": 216,
+      "max": 0.9027777777777778,
+      "min": 0.8194444444444444,
+      "num": 186,
+      "per_seed": [
+        0.9027777777777778,
+        0.8611111111111112,
+        0.8194444444444444
+      ],
+      "rate": 0.8611111111111112
+    },
+    "mix:snr10_white | snr10_pink": {
+      "ci95": [
+        0.9469652554392134,
+        0.9900730485032616
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 0.9583333333333334,
+      "num": 211,
+      "per_seed": [
+        0.9722222222222222,
+        0.9583333333333334,
+        1.0
+      ],
+      "rate": 0.9768518518518519
+    },
+    "mix:snr10_white | snr10_white": {
+      "ci95": [
+        0.9286302932675697,
+        0.9811156328901728
+      ],
+      "den": 216,
+      "max": 0.9861111111111112,
+      "min": 0.9444444444444444,
+      "num": 208,
+      "per_seed": [
+        0.9444444444444444,
+        0.9583333333333334,
+        0.9861111111111112
+      ],
+      "rate": 0.9629629629629629
+    },
+    "mix:snr10_white | snr20_white": {
+      "ci95": [
+        0.8997646716372754,
+        0.9644939582125802
+      ],
+      "den": 216,
+      "max": 0.9722222222222222,
+      "min": 0.9027777777777778,
+      "num": 203,
+      "per_seed": [
+        0.9722222222222222,
+        0.9027777777777778,
+        0.9444444444444444
+      ],
+      "rate": 0.9398148148148148
+    },
+    "mix:snr10_white | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | clean": {
+      "ci95": [
+        0.7376275401231382,
+        0.844609852617817
+      ],
+      "den": 216,
+      "max": 0.8194444444444444,
+      "min": 0.7777777777777778,
+      "num": 172,
+      "per_seed": [
+        0.7777777777777778,
+        0.8194444444444444,
+        0.7916666666666666
+      ],
+      "rate": 0.7962962962962963
+    },
+    "snr10_pink | far_mic": {
+      "ci95": [
+        0.8941587262035944,
+        0.9610024443846839
+      ],
+      "den": 216,
+      "max": 0.9583333333333334,
+      "min": 0.9166666666666666,
+      "num": 202,
+      "per_seed": [
+        0.9166666666666666,
+        0.9305555555555556,
+        0.9583333333333334
+      ],
+      "rate": 0.9351851851851852
+    },
+    "snr10_pink | hum_snr10": {
+      "ci95": [
+        0.7326437318548641,
+        0.8404962016245138
+      ],
+      "den": 216,
+      "max": 0.8333333333333334,
+      "min": 0.7638888888888888,
+      "num": 171,
+      "per_seed": [
+        0.7638888888888888,
+        0.8333333333333334,
+        0.7777777777777778
+      ],
+      "rate": 0.7916666666666666
+    },
+    "snr10_pink | snr0_white": {
+      "ci95": [
+        0.757670571765482,
+        0.860956658021783
+      ],
+      "den": 216,
+      "max": 0.8472222222222222,
+      "min": 0.7777777777777778,
+      "num": 176,
+      "per_seed": [
+        0.8472222222222222,
+        0.8194444444444444,
+        0.7777777777777778
+      ],
+      "rate": 0.8148148148148148
+    },
+    "snr10_pink | snr10_pink": {
+      "ci95": [
+        0.9346283209697888,
+        0.9842150644495313
+      ],
+      "den": 216,
+      "max": 0.9861111111111112,
+      "min": 0.9583333333333334,
+      "num": 209,
+      "per_seed": [
+        0.9583333333333334,
+        0.9583333333333334,
+        0.9861111111111112
+      ],
+      "rate": 0.9675925925925926
+    },
+    "snr10_pink | snr10_white": {
+      "ci95": [
+        0.9346283209697888,
+        0.9842150644495313
+      ],
+      "den": 216,
+      "max": 0.9861111111111112,
+      "min": 0.9583333333333334,
+      "num": 209,
+      "per_seed": [
+        0.9583333333333334,
+        0.9583333333333334,
+        0.9861111111111112
+      ],
+      "rate": 0.9675925925925926
+    },
+    "snr10_pink | snr20_white": {
+      "ci95": [
+        0.9054181082032218,
+        0.9679379809082111
+      ],
+      "den": 216,
+      "max": 0.9722222222222222,
+      "min": 0.9027777777777778,
+      "num": 204,
+      "per_seed": [
+        0.9722222222222222,
+        0.9027777777777778,
+        0.9583333333333334
+      ],
+      "rate": 0.9444444444444444
+    },
+    "snr10_pink | telephone": {
+      "ci95": [
+        0.7376275401231382,
+        0.844609852617817
+      ],
+      "den": 216,
+      "max": 0.8333333333333334,
+      "min": 0.7638888888888888,
+      "num": 172,
+      "per_seed": [
+        0.7638888888888888,
+        0.8333333333333334,
+        0.7916666666666666
+      ],
+      "rate": 0.7962962962962963
+    },
+    "snr10_white | clean": {
+      "ci95": [
+        0.693123811320322,
+        0.8072364480664365
+      ],
+      "den": 216,
+      "max": 0.7638888888888888,
+      "min": 0.75,
+      "num": 163,
+      "per_seed": [
+        0.75,
+        0.75,
+        0.7638888888888888
+      ],
+      "rate": 0.7546296296296297
+    },
+    "snr10_white | far_mic": {
+      "ci95": [
+        0.8830724811415184,
+        0.9538937709236049
+      ],
+      "den": 216,
+      "max": 0.9305555555555556,
+      "min": 0.9166666666666666,
+      "num": 200,
+      "per_seed": [
+        0.9166666666666666,
+        0.9305555555555556,
+        0.9305555555555556
+      ],
+      "rate": 0.9259259259259259
+    },
+    "snr10_white | hum_snr10": {
+      "ci95": [
+        0.6980316254440095,
+        0.8114260932043265
+      ],
+      "den": 216,
+      "max": 0.7638888888888888,
+      "min": 0.75,
+      "num": 164,
+      "per_seed": [
+        0.75,
+        0.7638888888888888,
+        0.7638888888888888
+      ],
+      "rate": 0.7592592592592593
+    },
+    "snr10_white | snr0_white": {
+      "ci95": [
+        0.8086518563940518,
+        0.9009499660089876
+      ],
+      "den": 216,
+      "max": 0.9027777777777778,
+      "min": 0.8194444444444444,
+      "num": 186,
+      "per_seed": [
+        0.9027777777777778,
+        0.8611111111111112,
+        0.8194444444444444
+      ],
+      "rate": 0.8611111111111112
+    },
+    "snr10_white | snr10_pink": {
+      "ci95": [
+        0.9469652554392134,
+        0.9900730485032616
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 0.9583333333333334,
+      "num": 211,
+      "per_seed": [
+        0.9722222222222222,
+        0.9583333333333334,
+        1.0
+      ],
+      "rate": 0.9768518518518519
+    },
+    "snr10_white | snr10_white": {
+      "ci95": [
+        0.9286302932675697,
+        0.9811156328901728
+      ],
+      "den": 216,
+      "max": 0.9861111111111112,
+      "min": 0.9444444444444444,
+      "num": 208,
+      "per_seed": [
+        0.9444444444444444,
+        0.9583333333333334,
+        0.9861111111111112
+      ],
+      "rate": 0.9629629629629629
+    },
+    "snr10_white | snr20_white": {
+      "ci95": [
+        0.8997646716372754,
+        0.9644939582125802
+      ],
+      "den": 216,
+      "max": 0.9722222222222222,
+      "min": 0.9027777777777778,
+      "num": 203,
+      "per_seed": [
+        0.9722222222222222,
+        0.9027777777777778,
+        0.9444444444444444
+      ],
+      "rate": 0.9398148148148148
+    },
+    "snr10_white | telephone": {
+      "ci95": [
+        0.7029482608159545,
+        0.8156069170939588
+      ],
+      "den": 216,
+      "max": 0.7638888888888888,
+      "min": 0.7638888888888888,
+      "num": 165,
+      "per_seed": [
+        0.7638888888888888,
+        0.7638888888888888,
+        0.7638888888888888
+      ],
+      "rate": 0.7638888888888888
+    }
+  },
+  "top3": {
+    "clean | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "clean | far_mic": {
+      "ci95": [
+        0.9668735348025802,
+        0.9974571469246271
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 0.9861111111111112,
+      "num": 214,
+      "per_seed": [
+        0.9861111111111112,
+        0.9861111111111112,
+        1.0
+      ],
+      "rate": 0.9907407407407407
+    },
+    "clean | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "clean | snr0_white": {
+      "ci95": [
+        0.4430132102416934,
+        0.5751817082814615
+      ],
+      "den": 216,
+      "max": 0.5277777777777778,
+      "min": 0.5,
+      "num": 110,
+      "per_seed": [
+        0.5,
+        0.5277777777777778,
+        0.5
+      ],
+      "rate": 0.5092592592592593
+    },
+    "clean | snr10_pink": {
+      "ci95": [
+        0.8506083695035469,
+        0.9317731269921119
+      ],
+      "den": 216,
+      "max": 0.9305555555555556,
+      "min": 0.875,
+      "num": 194,
+      "per_seed": [
+        0.9305555555555556,
+        0.8888888888888888,
+        0.875
+      ],
+      "rate": 0.8981481481481481
+    },
+    "clean | snr10_white": {
+      "ci95": [
+        0.9054181082032218,
+        0.9679379809082111
+      ],
+      "den": 216,
+      "max": 0.9583333333333334,
+      "min": 0.9305555555555556,
+      "num": 204,
+      "per_seed": [
+        0.9583333333333334,
+        0.9305555555555556,
+        0.9444444444444444
+      ],
+      "rate": 0.9444444444444444
+    },
+    "clean | snr20_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "clean | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | far_mic": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | snr0_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | snr10_pink": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | snr10_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | snr20_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | far_mic": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | snr0_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | snr10_pink": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | snr10_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | snr20_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | far_mic": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | snr0_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | snr10_pink": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | snr10_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | snr20_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | far_mic": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | snr0_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | snr10_pink": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | snr10_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | snr20_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    }
+  },
+  "top5": {
+    "clean | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "clean | far_mic": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "clean | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "clean | snr0_white": {
+      "ci95": [
+        0.7932105496762286,
+        0.8890988949420785
+      ],
+      "den": 216,
+      "max": 0.8611111111111112,
+      "min": 0.8333333333333334,
+      "num": 183,
+      "per_seed": [
+        0.8472222222222222,
+        0.8333333333333334,
+        0.8611111111111112
+      ],
+      "rate": 0.8472222222222222
+    },
+    "clean | snr10_pink": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "clean | snr10_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "clean | snr20_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "clean | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | far_mic": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | snr0_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | snr10_pink": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | snr10_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | snr20_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "far_mic | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | far_mic": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | snr0_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | snr10_pink": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | snr10_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | snr20_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "mix:snr10_white | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | far_mic": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | snr0_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | snr10_pink": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | snr10_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | snr20_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_pink | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | clean": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | far_mic": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | hum_snr10": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | snr0_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | snr10_pink": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | snr10_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | snr20_white": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    },
+    "snr10_white | telephone": {
+      "ci95": [
+        0.9825256002503623,
+        1.0
+      ],
+      "den": 216,
+      "max": 1.0,
+      "min": 1.0,
+      "num": 216,
+      "per_seed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rate": 1.0
+    }
+  }
+}
