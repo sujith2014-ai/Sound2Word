@@ -46,6 +46,11 @@ $(BUILD):
 
 test: $(TESTS)
 	@for t in $(TESTS); do $$t $(BUILD) || exit 1; done
+	@$(MAKE) --no-print-directory test-review BUILD=$(BUILD)
+
+# Word-list review tooling (skipped automatically without python3 + openpyxl)
+test-review: $(BUILD)/s2w_make_fixture $(BUILD)/s2w_dataset_check
+	@S2W_BUILD=$(BUILD) python3 -I tools/test_review_sheet.py
 
 # Same suite under AddressSanitizer + UndefinedBehaviorSanitizer (leaks fail the run).
 test-asan:
@@ -63,4 +68,4 @@ test-real: all
 clean:
 	rm -rf build build-asan
 
-.PHONY: all test test-asan test-real clean
+.PHONY: all test test-review test-asan test-real clean
