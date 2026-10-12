@@ -25,6 +25,9 @@ Ingest/QA/resampler/degradation tools and runner: `docs/RECORDING.md`. Live capt
 ## Noise-matched enrolment experiment (done, synthetic only)
 `docs/EXPERIMENT_NOISE_ENROLMENT.md`: clean vs matched vs mismatched vs mixed enrolment on simulated noise. Hypothesis for real data: multi-condition enrolment; not evidence about Malayalam.
 
+## Pilot data-collection plan (drafted)
+`docs/PILOT_DATA_COLLECTION.md`, `docs/RECORDING_SESSION_CHECKLIST.md`, condition matrix `data/schema/pilot_*.csv`, `tools/pilot_plan.py`. Official recordings wait for the approved vocabulary (Gate 0).
+
 ## Next
 1. Native-speaker review of the word list (two reviewers) and minimal pairs, using `docs/WORD_REVIEW.md` and `data/schema/wordlist_review_template.xlsx` (tooling done; the review itself is not).
 2. Collect pilot recordings (30-50 words, 10-20 speakers, 3 reps) with consent; validate with `s2w_dataset_check`.

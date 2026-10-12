@@ -1,0 +1,2 @@
+#s2w-session-log v1
+speaker_id,session_id,date,operator_id,room_id,room_description,device_id,device_model_class,app_and_audio_source,gain_setting,processing_off_confirmed,condition_id,noise_file_id,playback_dbA_at_head,mic_distance_cm,background_dbA,notes

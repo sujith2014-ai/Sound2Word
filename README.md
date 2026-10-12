@@ -10,3 +10,4 @@ See the technical program model for the phased implementation plan.
 Dataset and evaluation: `docs/DATASET.md`, `docs/EVALUATION.md`. Frozen baseline: `docs/BASELINE.md`. Fixtures are synthetic; no accuracy claim about Malayalam is made yet.
 Recording, QA and simulated-condition testing: `docs/RECORDING.md`.
 Noise-matched enrolment experiment (synthetic only): `docs/EXPERIMENT_NOISE_ENROLMENT.md`.
+Pilot data-collection plan (protocol, conditions, matrix; no real data yet): `docs/PILOT_DATA_COLLECTION.md`.
