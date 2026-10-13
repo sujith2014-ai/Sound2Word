@@ -69,6 +69,7 @@ test-review: $(BUILD)/s2w_make_fixture $(BUILD)/s2w_dataset_check $(BUILD)/s2w_i
 	@S2W_BUILD=$(BUILD) python3 -I tools/test_pilot_plan.py
 	@S2W_BUILD=$(BUILD) python3 -I tools/test_consent_gate.py
 	@S2W_BUILD=$(BUILD) python3 -I tools/test_viewer.py
+	@S2W_BUILD=$(BUILD) python3 -I tools/test_recorder.py
 
 # Same suite under AddressSanitizer + UndefinedBehaviorSanitizer (leaks fail the run).
 test-asan:
