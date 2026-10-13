@@ -121,6 +121,8 @@ class PureLexicon(unittest.TestCase):
         self.assertEqual(dic.search("kaal")[0]["ml"], "കാലം")                        # prefix
         self.assertEqual(dic.search("കല")[0]["ml"], "കലം")                            # Malayalam prefix
         self.assertEqual(dic.search("patti")[0]["meaning"], "dog")
+        res = [x["ml"] for x in dic.search("a")]
+        self.assertEqual(res, sorted(res))                                           # results are listed alphabetically
         self.assertEqual(dic.search(""), [])
         self.assertLessEqual(len(dic.search("a", limit=3)), 3)
         phrase = next(x for x in dic.search("hello") if " " in x["ml"])

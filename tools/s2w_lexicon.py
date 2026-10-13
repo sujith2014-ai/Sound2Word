@@ -4,8 +4,9 @@
   python3 tools/s2w_lexicon.py --out data/private/dictionary/lexicon.csv \\
       --source datuk.csv=Datuk:ODbL --source kurup.csv=Kurup:ODbL --source olam-enml.csv=Olam-ENML:ODbL
 
-Each --source is FILE[=NAME[:LICENCE]]. Layouts are detected as in the recorder's dictionary sidebar (a mostly-Malayalam column
-holds the words, an optional mostly-English column the meaning); override with --ml-col/--en-col for ALL sources, or give
+Each --source is FILE[=NAME[:LICENCE]]. Known Olam layouts are read directly: Datuk and enml (from_content/types/to_content TSV)
+and E.K. Kurup (.yml synsets). Other CSV/TSV files use the recorder's detection (a mostly-Malayalam column holds the words, an
+optional mostly-English column the meaning); override with --ml-col/--en-col for ALL sources, or give
 each source its own layout by running the tool with one source and merging the outputs.
 
 What it combines, per Malayalam word (the pieces each source is missing):
@@ -22,13 +23,139 @@ Load the result in the recorder with:  python3 tools/s2w_recorder.py --dictionar
 import argparse
 import csv
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import s2w_recorder as r  # noqa: E402
 import s2w_viewer as v  # noqa: E402
 
-COLUMNS = ["word_ml", "manglish", "sound_units", "ipa", "meaning_en", "meaning_ml", "sources", "licences", "g2p"]
+COLUMNS = ["word_ml", "manglish", "sound_units", "ipa", "meaning_en", "meaning_ml", "synonyms_ml", "pos", "sources", "licences", "g2p"]
+
+
+_WORD = re.compile("[\u0d05-\u0d39][\u0d00-\u0d65\u0d70-\u0d7f\u200c\u200d]*")        # starts with a full letter; no digits, brackets or symbols
+
+
+def clean_word(w):
+    """True for a plain Malayalam word: not a fragment starting with a vowel sign/chillu/virama, and with no digits or stray symbols."""
+    return bool(_WORD.fullmatch(w))
+
+
+def _tokens(cell):
+    """Single Malayalam words from a cell (several per cell are split at , ; / |; parenthesised notes and phrases are dropped)."""
+    out = []
+    for tok in re.split(r"[;,/|\n]+", re.sub(r"\([^)]*\)", " ", cell)):
+        t = tok.strip(" .:-\u2013\u2014\"'")
+        if t and r.MAL.search(t) and len(t) <= 60 and not re.search(r"\s", t):
+            out.append(t)
+    return out
+
+
+def _flow_lists(text):
+    """Parse a YAML flow sequence of sequences ([[a, b], ['c d']]) into a list of lists of strings (quotes honoured)."""
+    groups, cur, buf, q, depth = [], None, [], None, 0
+    for ch in text:
+        if q:
+            if ch == q:
+                q = None
+            else:
+                buf.append(ch)
+        elif ch in "'\"":
+            q = ch
+        elif ch == "[":
+            depth += 1
+            if depth == 2:
+                cur = []
+        elif ch == "]":
+            if buf and cur is not None:
+                cur.append("".join(buf).strip())
+            buf = []
+            if depth == 2 and cur is not None:
+                groups.append([x for x in cur if x])
+                cur = None
+            depth -= 1
+        elif ch == "," and depth == 2:
+            cur.append("".join(buf).strip())
+            buf = []
+        else:
+            buf.append(ch)
+    return groups
+
+
+def _kurup_rows(text, head, pos):
+    for g in _flow_lists(text):
+        for w in g:
+            for t in _tokens(w):
+                yield t, head, pos, [x for x in g if x != w]
+
+
+def read_kurup(path):
+    """E.K. Kurup YAML corpus -> (ml_word, english_head, pos, malayalam_synonyms). The English head word is each Malayalam word's
+    English meaning; the other Malayalam words in the same synset are its synonyms."""
+    head, pos, collecting = None, "", None
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.rstrip("\n")
+            if collecting is not None:
+                collecting += " " + line.strip()
+                if collecting.count("[") <= collecting.count("]"):
+                    yield from _kurup_rows(collecting, head, pos)
+                    collecting = None
+                continue
+            m = re.match(r"^- head:\s*(.*)$", line)
+            if m:
+                head = m.group(1).strip().strip("'\"")
+                continue
+            m = re.match(r"^\s+- pos:\s*(.*)$", line)
+            if m:
+                pos = m.group(1).strip()
+                continue
+            m = re.match(r"^\s+ml:\s*(\[.*)$", line)
+            if m:
+                collecting = m.group(1)
+                if collecting.count("[") <= collecting.count("]"):
+                    yield from _kurup_rows(collecting, head, pos)
+                    collecting = None
+
+
+def read_olam_tsv(path):
+    """Olam Datuk (Malayalam, POS, Malayalam definition) and enml (English, POS, Malayalam meaning) dumps, tab separated with a
+    `from_content  types  to_content` header. -> (ml_word, meaning, pos, synonyms); the meaning is Malayalam (Datuk) or English (enml)."""
+    csv.field_size_limit(10 ** 7)
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        rdr = csv.reader(f, delimiter="\t")
+        first = next(rdr, None)
+        if first is None or [c.strip().lower() for c in first[:3]] != ["from_content", "types", "to_content"]:
+            raise v.ViewerError(2, "%s is not an Olam from_content/types/to_content dump" % os.path.basename(path))
+        for row in rdr:
+            if len(row) < 3:
+                continue
+            frm, pos, to = row[0].strip(), row[1].strip().strip("{}"), row[2].strip()
+            if r.MAL.search(frm):                           # Datuk: Malayalam word -> Malayalam definition
+                if to:
+                    for t in _tokens(frm):
+                        yield t, to, pos, []
+            else:                                           # enml: English word -> Malayalam word(s)
+                for t in _tokens(to):
+                    yield t, frm, pos, []
+
+
+def read_source(path, ml_col=None, en_col=None):
+    """Yield (ml_word, meaning, pos, synonyms) from a known Olam layout, or from any CSV/TSV via the recorder's detection."""
+    if os.path.splitext(path)[1].lower() in (".yml", ".yaml"):
+        yield from read_kurup(path)
+        return
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            is_olam = f.readline().rstrip("\r\n").lower().replace(" ", "") == "from_content\ttypes\tto_content"
+    except OSError as e:
+        raise v.ViewerError(2, "cannot read %s: %s" % (path, e))
+    if is_olam and ml_col is None and en_col is None:
+        yield from read_olam_tsv(path)
+        return
+    for ml, meaning, tr, _lc, _pu in r.Dictionary(path, ml_col, en_col).entries:
+        if tr:
+            yield ml, meaning, "", []
 
 
 def parse_source(spec):
@@ -41,22 +168,25 @@ def build(sources, out_path, ml_col=None, en_col=None, use_g2p=True, max_words=N
     """sources: [(path, name, licence)] -> writes the merged CSV, returns a stats dict."""
     merged, per_source = {}, {}
     for path, name, lic in sources:
-        dic = r.Dictionary(path, ml_col, en_col)
         n_words = 0
-        for ml, meaning, tr, _lc, _pu in dic.entries:
-            if not tr:                                              # phrases are not single words
-                continue
-            m = merged.setdefault(ml, {"en": [], "ml": [], "src": [], "lic": []})
+        for ml, meaning, pos, syn in read_source(path, ml_col, en_col):
+            m = merged.setdefault(ml, {"en": [], "ml": [], "syn": [], "pos": [], "src": [], "lic": []})
             if meaning:
                 bucket = m["ml"] if r.MAL.search(meaning) else m["en"]
-                if meaning not in bucket:
+                if meaning not in bucket and len(bucket) < 30:
                     bucket.append(meaning)
+            for x in syn:
+                if x != ml and x not in m["syn"] and len(m["syn"]) < 12:
+                    m["syn"].append(x)
+            if pos and pos != "-" and pos not in m["pos"]:
+                m["pos"].append(pos)
             if name not in m["src"]:
                 m["src"].append(name)
             if lic and lic not in m["lic"]:
                 m["lic"].append(lic)
             n_words += 1
         per_source[name] = n_words
+    merged = {w: m for w, m in merged.items() if clean_word(w)}
     if not merged:
         raise v.ViewerError(2, "no single-word Malayalam entries found in the given sources")
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
@@ -78,6 +208,7 @@ def build(sources, out_path, ml_col=None, en_col=None, use_g2p=True, max_words=N
             if not manglish or not units:
                 continue
             w.writerow([r._sanitise_cell(ml), manglish, " ".join(units), ipa, r._sanitise_cell(" ; ".join(m["en"])[:300]), r._sanitise_cell(" ; ".join(m["ml"])[:300]),
+                        r._sanitise_cell(" ; ".join(m["syn"])[:300]), r._sanitise_cell(" ".join(m["pos"])[:60]),
                         " + ".join(m["src"]), " + ".join(m["lic"]), "yes" if g else "no"])
             stats["words"] += 1
             stats["g2p"] += 1 if g else 0
@@ -104,7 +235,7 @@ def main():
     print("wrote %s: %d words (%d with pronunciation from mlphon, %d from more than one source, %d with both English and Malayalam meanings)"
           % (a.out, st["words"], st["g2p"], st["multi_source"], st["with_en_and_ml"]))
     for n, c in st["per_source"].items():
-        print("  %-20s %d single-word entries" % (n, c))
+        print("  %-20s %d word-meaning rows" % (n, c))
     if r.g2p("കലം") is None and not a.no_g2p:
         print("note: `mlphon` is not installed, so pronunciation came from the spelling rule (no vowel length). pip install mlphon for better units.")
     print("reminder: derived data - check each source's licence, keep it out of git, and treat every entry as an unverified suggestion.")

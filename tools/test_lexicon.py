@@ -1,5 +1,6 @@
 """Tests for tools/s2w_lexicon.py and the recorder's dictionary loading of its output. MADE-UP sample dictionaries only:
-the real Olam/Datuk/Kurup files are not available here, so their exact layouts are NOT verified by these tests."""
+the real files are not committed; RealLayouts mirrors the layouts of the Olam datuk / enml TSV dumps and the E.K. Kurup YAML as
+published on olam.in/p/open (checked against the downloaded files), using made-up rows."""
 import csv
 import os
 import subprocess
@@ -134,6 +135,51 @@ class Lexicon(unittest.TestCase):
         self.assertLess(load, 15, "load took %.1fs" % load)
         self.assertLess(q, 1.5, "search took %.2fs" % q)
         self.assertTrue(hits)
+
+
+class CleanWords(unittest.TestCase):
+    def test_clean_word(self):
+        for ok in ("കലം", "കാലം", "പട്ടി", "അ", "ക്രിക്കറ്റ്"):
+            self.assertTrue(lx.clean_word(ok), ok)
+        for bad in ("(ഉദാ", "100ഗ്രാം", "ദരം2", "ൽ", "ർത്ത്", "◦വിവേകരഹിതം", "ാ", "", "kalam", "ക ലം"):
+            self.assertFalse(lx.clean_word(bad), bad)
+
+
+class RealLayouts(unittest.TestCase):
+    """Layouts as published by Olam: `from_content<TAB>types<TAB>to_content` TSV (datuk, enml) and the Kurup YAML synsets."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.d = tempfile.mkdtemp()
+        cls.datuk = write(os.path.join(cls.d, "datuk"), "from_content\ttypes\tto_content\nകലം\t{നാ.}\tപാചകത്തിനുള്ള പാത്രം\nകലം\t{നാ.}\tകുടം\nഅ1\t{}\t\n")
+        cls.enml = write(os.path.join(cls.d, "enml"), "from_content\ttypes\tto_content\nPot\t{n}\tകലം, കുടം\n10 Crores\t{n}\tപത്തുകോടി\nSay hi\t{v}\tഹായ് പറയുക\n")
+        cls.kurup = write(os.path.join(cls.d, "ekkurup.yml"),
+                          "- head: pot\n  senses:\n    - pos: noun\n      en: [[pot, vessel]]\n      ml: [[കലം, 'കുടം', \"ഭാജനം\"]]\n"
+                          "- head: take someone aback\n  senses:\n    - pos: idiom\n      en: [[astonish]]\n      ml: [[അമ്പരപ്പിക്കുക,\n        ഞെട്ടിക്കുക]]\n")
+        cls.out = os.path.join(cls.d, "lexicon.csv")
+        cls.stats = lx.build([(cls.datuk, "Datuk", "ODbL"), (cls.enml, "Olam-ENML", "ODbL"), (cls.kurup, "EK-Kurup", "CC-BY-SA-4.0")], cls.out, use_g2p=False)
+        cls.rows = {x["word_ml"]: x for x in rows(cls.out)}
+
+    def test_olam_tsv_and_kurup_yaml_are_combined(self):
+        kalam = self.rows["കലം"]
+        self.assertEqual(kalam["sources"], "Datuk + Olam-ENML + EK-Kurup")
+        self.assertEqual(kalam["meaning_en"], "Pot ; pot")
+        self.assertEqual(kalam["meaning_ml"], "പാചകത്തിനുള്ള പാത്രം ; കുടം")
+        self.assertEqual(kalam["synonyms_ml"], "കുടം ; ഭാജനം")
+        self.assertEqual(kalam["pos"], "നാ. n noun")
+        self.assertEqual(kalam["licences"], "ODbL + CC-BY-SA-4.0")
+
+    def test_quoted_and_wrapped_yaml_lists_and_phrases(self):
+        self.assertIn("ഭാജനം", self.rows)
+        self.assertIn("ഞെട്ടിക്കുക", self.rows)                      # list wrapped over two lines
+        self.assertEqual(self.rows["ഞെട്ടിക്കുക"]["meaning_en"], "take someone aback")
+        self.assertFalse(any(" " in w for w in self.rows))           # "ഹായ് പറയുക" is a phrase
+        self.assertNotIn("അ1", self.rows)                            # headword with a digit and no definition
+
+    def test_non_olam_tsv_is_rejected_by_the_strict_reader(self):
+        bad = write(os.path.join(self.d, "bad.tsv"), "a\tb\tc\nകലം\tx\ty\n")
+        with self.assertRaises(v.ViewerError):
+            list(lx.read_olam_tsv(bad))
 
 
 if __name__ == "__main__":

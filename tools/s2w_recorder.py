@@ -385,8 +385,9 @@ class Dictionary:
                     continue
                 scored.append((rank, len(ml), i))
         scored.sort()
+        top = sorted(scored[:limit], key=lambda t: (self.entries[t[2]][0], t[0], t[2]))      # best `limit` matches, listed alphabetically
         out = []
-        for _, _, i in scored[:limit]:
+        for _, _, i in top:
             ml, mean, tr, _lc, pu = self.entries[i]
             g = g2p(ml) if tr and not pu else None
             if pu:
