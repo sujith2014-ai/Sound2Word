@@ -76,7 +76,7 @@ function tone(file, rate) { const parts = [[0, .1], [300, .3], [600, .3], [900, 
   await page.click(`#dres .dr`); await sleep(400);
   rec('phrases are shown but cannot be added', /only single words/.test(await page.textContent('#dmsg')) && (await page.locator('.chip').count()) === 2, await page.textContent('#dmsg'));
 
-  await page.fill('#addml', 'മഴ'); await page.fill('#addrom', 'mazha'); await page.click('#addgo'); await page.waitForFunction(() => document.querySelectorAll('.chip').length === 3, null, { timeout: 5000 });
+  await page.fill('#addml', 'മഴ'); await page.fill('#addrom', 'mazha'); await page.click('#addgo'); await page.waitForFunction(() => document.querySelectorAll('.chip').length === 3 && document.getElementById('ml').textContent === 'മഴ', null, { timeout: 5000 });
   rec('a word typed by hand is added too', (await page.textContent('#ml')) === 'മഴ' && (await page.textContent('#units')) === 'M · A · ZH · A');
   await page.fill('#addml', 'പടി'); await page.fill('#addrom', 'paḍi'); await page.click('#addgo'); await sleep(500);
   rec('invalid Manglish is refused with a message', /ASCII letters|bad --word|Manglish/i.test(await page.textContent('#addmsg')) && (await page.locator('.chip').count()) === 3, await page.textContent('#addmsg'));

@@ -6,7 +6,7 @@ It keeps the ML packages out of this repository and out of the Docker container:
 has faster-whisper installed (Rootit Voice's backend venv), then start the recorder with --aligner-url.
 
   "D:\\Apps\\Rootit Voice\\backend\\.venv-py310\\Scripts\\python.exe" tools\\s2w_aligner_service.py --model vegam-ml --device cpu
-  (recorder in Docker)   ... python3 tools/s2w_recorder.py ... --aligner-url http://host.docker.internal:8780
+  (recorder in Docker)   ... python3 tools/s2w_recorder.py ... --aligner-url http://host.docker.internal:8790
 
 API:  POST /align?lang=ml   body = 16-bit mono WAV   ->  {"ok":true,"model":..,"text":..,"start":s,"end":e,"words":[{"t","s","e"}]}
       GET  /health
@@ -152,7 +152,7 @@ def main():
     ap.add_argument("--models-dir", help="folder holding model sub-folders (default %%APPDATA%%\\rootit-voice\\models)")
     ap.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
     ap.add_argument("--compute-type", help="CTranslate2 compute type (default int8 on cpu, float16 on cuda)")
-    ap.add_argument("--port", type=int, default=8780)
+    ap.add_argument("--port", type=int, default=8790)
     a = ap.parse_args()
     al = Aligner(a.model, a.device, a.compute_type, a.models_dir)
     threading.Thread(target=al.load, daemon=True).start()

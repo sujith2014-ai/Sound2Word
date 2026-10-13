@@ -102,15 +102,19 @@ function stepsWav(file, rate) {   // 0.1 s silence, five 0.3 s tones (300..1500 
   await page.click('#vz'); const vw1 = await page.evaluate(() => ({ v: view.slice(), d: dur() }));
   rec('Show whole recording switches the view to the full recording and back', vw1.v[0] === 0 && Math.abs(vw1.v[1] - vw1.d) < 1e-9 && /whole recording/.test(await page.textContent('#vinfo')));
   await page.click('#vz'); rec('and back to the zoomed word', await page.evaluate(() => zoomed === true && /zoomed to the word/.test(document.getElementById('vinfo').textContent)));
+  await page.evaluate(() => { edges[1] += 0.02; method = 'edited'; renderCards(); drawReview(); });
+  await page.click('#revertbd');
+  const rv = await page.evaluate(() => ({ e: edges.slice(), m: method }));
+  rec('Revert to default restores the automatic first guess', JSON.stringify(rv.e) === JSON.stringify(st0.edges) && rv.m === 'suggested', JSON.stringify(rv.e.map(x => +x.toFixed(3))) + ' ' + rv.m);
   // put boundary 2 back where the test below expects it
   await page.evaluate(w => { edges[2] = w; method = 'edited'; renderCards(); drawReview(); }, st0.edges[2]);
 
   // play one sound on its own
-  const p3 = await page.evaluate(() => new Promise(res => { document.querySelector('[data-u="3"]').click(); setTimeout(() => res({ t: rev.currentTime, paused: rev.paused, a: edges[3], b: edges[4] }), 40); }));
-  rec('play sound 4 starts at that sound', !p3.paused && p3.t >= p3.a - 0.01 && p3.t <= p3.b, JSON.stringify(p3));
-  await sleep((p3.b - p3.a) * 1000 + 500);
-  const p3b = await page.evaluate(() => ({ t: rev.currentTime, paused: rev.paused, b: edges[4] }));
-  rec('play sound 4 stops at the end of that sound', p3b.paused && p3b.t >= p3b.b - 0.02 && p3b.t < p3b.b + 0.2, JSON.stringify(p3b));
+  const p3 = await page.evaluate(() => new Promise(res => { document.querySelector('[data-u="3"]').click(); setTimeout(() => res({ playing: !!regionPlay, a: regionPlay && regionPlay.a, d: regionPlay && regionPlay.d, e3: edges[3], e4: edges[4], wholePaused: rev.paused }), 40); }));
+  rec('play sound 4 is scheduled sample-accurately for exactly that sound', p3.playing && Math.abs(p3.a - p3.e3) < 1e-9 && Math.abs(p3.d - (p3.e4 - p3.e3)) < 1e-9 && p3.wholePaused, JSON.stringify(p3));
+  await sleep((p3.e4 - p3.e3) * 1000 + 500);
+  const p3b = await page.evaluate(() => ({ playing: !!regionPlay }));
+  rec('play sound 4 ends by itself at the end of that sound', !p3b.playing, JSON.stringify(p3b));
   const w1 = await page.evaluate(() => new Promise(res => { document.getElementById('play').click(); setTimeout(() => res({ t: rev.currentTime, paused: rev.paused, btn: document.getElementById('play').textContent }), 60); }));
   rec('Play whole word restarts from the beginning after a single-sound play', !w1.paused && w1.t < 0.4, JSON.stringify(w1));
   await sleep(150);

@@ -412,6 +412,99 @@ class Sidebar(Base):
         self.assertEqual(json.loads(self.req("GET", "/api/dict?browse=1&offset=999999&limit=5")[1])["results"], [])
         self.assertEqual(len(json.loads(self.req("GET", "/api/dict?browse=1&offset=junk&limit=junk")[1])["results"]), len(every[:40]))
 
+    def test_reference_clips_are_listed_and_served(self):
+        root = os.path.join(self.tmp, "refs")
+        run = os.path.join(root, "set_a")
+        os.makedirs(run)
+        with open(os.path.join(run, "w01.wav"), "wb") as f:
+            f.write(b"RIFFxxxxWAVE")
+        outside = os.path.join(self.tmp, "outside.wav")
+        with open(outside, "wb") as f:
+            f.write(b"RIFFxxxxWAVE")
+        with open(os.path.join(run, "meta.json"), "w", encoding="utf-8") as f:
+            json.dump({"items": [{"word_ml": "കലം", "file": "w01.wav", "model": "org/Some-TTS", "voice": "Anjali", "audio_s": 0.5, "heard": "കലം", "exact": True},
+                                 {"word_ml": "കലം", "file": "../../outside.wav", "model": "evil", "voice": "x"},
+                                 {"word_ml": "കലം", "file": "missing.wav", "model": "m", "voice": "x"}]}, f, ensure_ascii=False)
+        rec = r.Recorder(os.path.join(self.tmp, "refrec"), WORDS, BUILD, None, None, root)
+        wid = next(w["id"] for w in WORDS if w["label"] == "കലം")
+        d = rec.reference_list(wid)
+        self.assertTrue(d["available"])
+        self.assertEqual([(c["model"], c["voice"], c["exact"]) for c in d["items"]], [("Some-TTS", "Anjali", True)])    # escaping/missing files are dropped
+        self.assertEqual(rec.reference_audio(wid, 0), b"RIFFxxxxWAVE")
+        with self.assertRaises(v.ViewerError):
+            rec.reference_audio(wid, 1)
+        other = next(w["id"] for w in WORDS if w["id"] != wid)
+        self.assertEqual(rec.reference_list(other)["items"], [])
+        self.assertFalse(r.Recorder(os.path.join(self.tmp, "norefrec"), WORDS, BUILD).reference_list(wid)["available"])
+
+    def test_hand_corrected_boundaries_are_saved(self):
+        root = os.path.join(self.tmp, "refs2", "set_b")
+        os.makedirs(root)
+        with open(os.path.join(root, "w01.wav"), "wb") as f:
+            f.write(make_wav(0.6))
+        with open(os.path.join(root, "meta.json"), "w", encoding="utf-8") as f:
+            json.dump({"items": [{"word_ml": "കലം", "file": "w01.wav", "model": "org/Some-TTS", "voice": "Anjali"}]}, f, ensure_ascii=False)
+        rec = r.Recorder(os.path.join(self.tmp, "bdrec"), WORDS, BUILD, None, None, os.path.join(self.tmp, "refs2"))
+        wid = "kalam"
+        units = rec.words[wid]["units"]
+        edges = [0.0, 0.1, 0.2, 0.3, 0.45, 0.58]
+        self.assertIsNone(rec.ref_boundaries(wid, 0))
+        out = rec.save_boundaries({"kind": "ref", "word": wid, "i": 0, "units": units, "edges": edges, "method": "edited"})
+        self.assertTrue(out["saved"].startswith("reference_boundaries/kalam/"))
+        got = rec.ref_boundaries(wid, 0)
+        self.assertEqual((got["edges"], got["units"], got["synthetic"]), (edges, units, True))
+        self.assertEqual(got["clip"]["voice"], "Anjali")
+        rec.save_boundaries({"kind": "ref", "word": wid, "i": 0, "units": units, "edges": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]})      # updating overwrites
+        self.assertEqual(rec.ref_boundaries(wid, 0)["edges"][-1], 0.5)
+        bad = [dict(edges=[0.0, 0.3, 0.2, 0.3, 0.4, 0.5]), dict(edges=[0.0, 0.1, 0.2]), dict(edges=[0.0, 0.1, 0.2, 0.3, 0.4, 9.0]),
+               dict(units=["x"] * 5), dict(i=7), dict(word="nope"), dict(kind="other"), dict(edges="no")]
+        for b in bad:
+            base = {"kind": "ref", "word": wid, "i": 0, "units": units, "edges": edges}
+            base.update(b)
+            with self.assertRaises(v.ViewerError, msg=str(b)):
+                rec.save_boundaries(base)
+        self.assertEqual(rec.ref_boundaries(wid, 0)["edges"][-1], 0.5)                       # failed saves changed nothing
+        # an accepted take: its boundaries can be corrected; the previous version is kept
+        seg = {"units": units, "edges": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0], "method": "suggested"}
+        name = rec.accept(wid, make_wav(1.0), seg)["saved"].split("/")[-1]
+        out = rec.save_boundaries({"kind": "take", "word": wid, "take": name, "units": units, "edges": [0.0, 0.1, 0.2, 0.3, 0.4, 0.95]})
+        self.assertEqual(rec.segments(wid, name)["edges"][-1], 0.95)
+        self.assertTrue(os.path.isfile(os.path.join(rec.dir, wid, name[:-4] + ".segments.prev.json")))
+        with self.assertRaises(v.ViewerError):
+            rec.save_boundaries({"kind": "take", "word": wid, "take": "take_999.wav", "units": units, "edges": edges})
+
+    def test_sound_units_of_a_word(self):
+        import s2w_units as su
+        self.assertEqual(su.decompose("അംഗകം"), ["അം", "ഗ", "കം"])
+        self.assertEqual(su.decompose("ക്കു"), ["ക്", "കു"])                       # a doubled cluster = hold + syllable
+        self.assertEqual(su.decompose("ആൾ"), ["ആ", "ൾ"])
+        self.assertIsNone(su.decompose("abc"))
+        d = os.path.join(self.tmp, "units")
+        os.makedirs(d)
+        items = []
+        for k, text in enumerate(["ക", "ല"]):
+            fn = "u%d.wav" % k
+            with open(os.path.join(d, fn), "wb") as f:
+                f.write(make_wav(0.2, rate=16000))
+            items.append({"word_ml": text, "file": fn, "kind": "syllable", "heard": text if k == 0 else "x", "exact": k == 0, "voice": "T"})
+        with open(os.path.join(d, "meta.json"), "w", encoding="utf-8") as f:
+            json.dump({"items": items}, f, ensure_ascii=False)
+        words = [r.parse_word("കല|kala"), r.parse_word("കലം|kalam")]
+        rec = r.Recorder(os.path.join(self.tmp, "unitrec"), words, BUILD, None, None, None, d)
+        u = rec.unit_list("kala")
+        self.assertEqual([(x["text"], x["have"], x["exact"]) for x in u["units"]], [("ക", True, True), ("ല", True, False)])
+        wav, texts, edges = rec.unit_join("kala")
+        self.assertEqual(texts, ["ക", "ല"])
+        self.assertEqual(len(edges), 3)
+        self.assertAlmostEqual(edges[-1], 0.4, places=3)
+        self.assertEqual(r.validate_wav(wav)[0], 16000)
+        self.assertGreater(len(rec.unit_audio("kala", 1)), 100)
+        with self.assertRaises(v.ViewerError):
+            rec.unit_audio("kala", 5)
+        with self.assertRaises(v.ViewerError):
+            rec.unit_join("kalam")                                           # the unit "ം" is attached to ല → "ലം" has no clip
+        self.assertFalse(r.Recorder(os.path.join(self.tmp, "nounit"), words, BUILD).unit_list("kala")["available"])
+
     def test_no_dictionary_is_reported(self):
         plain = r.Recorder(os.path.join(self.tmp, "plain"), WORDS, BUILD)
         self.assertFalse(plain.dict_search("pot")["available"])

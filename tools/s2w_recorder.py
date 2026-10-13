@@ -32,8 +32,10 @@ import os
 import re
 import secrets
 import signal
+import struct
 import sys
 import tempfile
+import unicodedata
 import wave
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -41,6 +43,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import s2w_viewer as v  # noqa: E402
+import s2w_units as su  # noqa: E402
 
 MAX_BYTES = 12 * 1024 * 1024
 MIN_S, MAX_S = 0.3, 20.0
@@ -121,10 +124,59 @@ def align_units(ua, ub):
     return rows[::-1]
 
 
-def suggest_edges(mat, n, hop=0.010, frame=0.025, min_frames=4):
+# Sounds whose closure + burst is short (a stop or affricate): they need only ~20 ms, while a vowel / nasal / liquid needs ~40 ms.
+# Without this the 50 ms minimum spacing pushed the consonant|vowel cut past the vowel ("G" swallowed the following "A").
+SHORT_UNITS = {"k", "kh", "g", "gh", "ch", "chh", "j", "jh", "t", "th", "d", "dh", "tt", "p", "ph", "b", "bh", "c"}
+
+
+def _best_cuts(cands, sm, first, last, need, soft_max=None, lam=0.0):
+    """Choose len(need)-1 cut frames from `cands` maximising the summed spectral-flux strength, so that sound i lasts at least
+    need[i] frames (the first sound starts at `first`, the last ends at `last`+1). `soft_max[i]` (frames) is a preferred maximum
+    length: each extra frame costs `lam`. None when impossible."""
+    soft_max = soft_max or [10 ** 6] * len(need)
+    pen = lambda i, d: lam * max(0, d - soft_max[i])
+    k = len(need) - 1
+    if k == 0:
+        return []
+    cs = sorted(c for c in cands if first + need[0] <= c <= last + 1 - need[-1])
+    if len(cs) < k:
+        return None
+    NEG = -1e18
+    best = [[NEG] * len(cs) for _ in range(k)]
+    back = [[-1] * len(cs) for _ in range(k)]
+    for j, c in enumerate(cs):
+        if c - first >= need[0]:
+            best[0][j] = sm[c] - pen(0, c - first)
+    for m in range(1, k):
+        for j, c in enumerate(cs):
+            for q in range(j):
+                v = best[m - 1][q] + sm[c] - pen(m, c - cs[q]) if best[m - 1][q] > NEG else NEG
+                if v > NEG and c - cs[q] >= need[m] and v > best[m][j]:
+                    best[m][j], back[m][j] = v, q
+    end = None
+    for j, c in enumerate(cs):
+        if best[k - 1][j] > NEG and last + 1 - c >= need[-1]:
+            tot = best[k - 1][j] - pen(k, last + 1 - c)
+            if end is None or tot > end[0]:
+                end = (tot, j)
+    if end is None:
+        return None
+    out, j = [], end[1]
+    for m in range(k - 1, -1, -1):
+        out.append(cs[j])
+        j = back[m][j]
+    return out[::-1]
+
+
+def suggest_edges(mat, n, hop=0.010, frame=0.025, min_frames=4, units=None):
     """First-guess unit edges [start, b1..b(n-1), end] (seconds) from spectral change: the speech region is where the mean
-    log-mel energy is high; boundaries go at the n-1 strongest spectral-flux peaks at least 50 ms apart (widest gaps are
-    split if too few peaks). An ESTIMATE of unknown accuracy on real speech; meant to be corrected by hand."""
+    log-mel energy is high; boundaries go at the n-1 strongest spectral-flux peaks, each sound lasting at least ~40 ms
+    (~20 ms for stops/affricates when `units` are given); widest gaps are split if there are too few peaks. An ESTIMATE of
+    unknown accuracy on real speech; meant to be corrected by hand.
+
+    `units` (EXPERIMENTAL, off by default: the recorder does not pass it): lifted the cross-word consistency score on synthetic
+    clips from 24% to 34% (tools/model_eval/unit_consistency.py) but mis-split some words (e.g. a nasal before a stop) and broke
+    the tone-change test, so it is not used until it is validated on hand-corrected real takes."""
     if not mat or n < 1:
         return None
     nf = len(mat)
@@ -135,6 +187,14 @@ def suggest_edges(mat, n, hop=0.010, frame=0.025, min_frames=4):
     flux = [0.0] + [math.sqrt(sum((a - b) ** 2 for a, b in zip(mat[i], mat[i - 1])) / len(mat[i])) for i in range(1, nf)]
     sm = [sum(flux[max(0, i - 1):i + 2]) / len(flux[max(0, i - 1):i + 2]) for i in range(nf)]
     cands = [i for i in range(max(first + min_frames, 1), min(last - min_frames, nf - 2) + 1) if sm[i] >= sm[i - 1] and sm[i] >= sm[i + 1]]
+    t = lambda i: round((i - 0.5) * hop + frame / 2, 4)        # boundary between frame i-1 and frame i
+    if units and len(units) == n and n > 1:
+        need = [2 if u in SHORT_UNITS else 4 for u in units]
+        wide = [i for i in range(max(first + 2, 1), min(last, nf - 2) + 1) if sm[i] >= sm[i - 1] and sm[i] >= sm[i + 1]]
+        soft = [8 if u in SHORT_UNITS else 10 ** 6 for u in units]        # a stop (closure + burst) is normally under ~80 ms
+        dp = _best_cuts(wide, sm, first, last, need, soft, 0.15 * max(sm))
+        if dp is not None:
+            return [round(first * hop + (frame - hop) / 2, 4)] + [t(c) for c in dp] + [round(last * hop + (frame + hop) / 2, 4)]
     chosen = []
     for i in sorted(cands, key=lambda k: -sm[k]):
         if len(chosen) < n - 1 and all(abs(i - c) >= 5 for c in chosen):
@@ -144,8 +204,98 @@ def suggest_edges(mat, n, hop=0.010, frame=0.025, min_frames=4):
         pts = [first] + cuts + [last + 1]
         k = max(range(len(pts) - 1), key=lambda t: pts[t + 1] - pts[t])
         cuts = sorted(cuts + [(pts[k] + pts[k + 1]) // 2])
-    t = lambda i: round((i - 0.5) * hop + frame / 2, 4)        # boundary between frame i-1 and frame i
     return [round(first * hop + (frame - hop) / 2, 4)] + [t(c) for c in cuts] + [round(last * hop + (frame + hop) / 2, 4)]
+
+
+def load_units(root):
+    """{NFC unit text: clip} from the meta_scored.json / meta.json written by tools/model_eval/gen_units.py (+ trim + roundtrip).
+    Prefers a clip the recogniser heard exactly; only files inside `root` are indexed."""
+    out = {}
+    if not root or not os.path.isdir(root):
+        return out
+    real = os.path.realpath(root)
+    for dp, _dn, fn in os.walk(root):
+        name = "meta_scored.json" if "meta_scored.json" in fn else "meta.json" if "meta.json" in fn else None
+        if not name:
+            continue
+        try:
+            with open(os.path.join(dp, name), encoding="utf-8") as f:
+                meta = json.load(f)
+        except (OSError, ValueError):
+            continue
+        for it in (meta.get("items") if isinstance(meta, dict) else None) or []:
+            try:
+                path = os.path.realpath(os.path.join(dp, str(it["file"])))
+                if not it["file"] or not path.startswith(real + os.sep) or not path.lower().endswith(".wav") or not os.path.isfile(path):
+                    continue
+                key = unicodedata.normalize("NFC", str(it["word_ml"]))
+                cand = {"path": path, "heard": str(it["heard"])[:60] if it.get("heard") is not None else None, "exact": bool(it.get("exact")),
+                        "voice": str(it.get("voice", ""))[:30], "kind": str(it.get("kind", ""))[:20]}
+                old = out.get(key)
+                if old is None or (cand["exact"] and not old["exact"]):
+                    out[key] = cand
+            except (KeyError, TypeError):
+                continue
+    return out
+
+
+def _read_pcm16(path):
+    with wave.open(path, "rb") as w:
+        if w.getnchannels() != 1 or w.getsampwidth() != 2:
+            raise v.ViewerError(409, "unit clip %s is not 16-bit mono" % os.path.basename(path))
+        return w.getframerate(), w.readframes(w.getnframes())
+
+
+def _dtw(a, b):
+    """Length-normalised DTW distance between two sequences of vectors (lists of floats)."""
+    n, m = len(a), len(b)
+    if not n or not m:
+        return float("inf")
+    INF = float("inf")
+    prev = [INF] * (m + 1)
+    prev[0] = 0.0
+    for i in range(1, n + 1):
+        cur = [INF] * (m + 1)
+        ai = a[i - 1]
+        for j in range(1, m + 1):
+            bj = b[j - 1]
+            d = math.sqrt(sum((x - y) * (x - y) for x, y in zip(ai, bj)))
+            cur[j] = d + min(prev[j], cur[j - 1], prev[j - 1])
+        prev = cur
+    return prev[m] / (n + m)
+
+
+def load_references(root):
+    """{NFC Malayalam label: [clip, ...]} from the meta_scored.json / meta.json files that tools such as the TTS test write
+    (items: word_ml, file, model, voice, audio_s, heard, exact). Only files that really sit inside `root` are indexed."""
+    out = {}
+    if not root or not os.path.isdir(root):
+        return out
+    real = os.path.realpath(root)
+    for dp, _dn, fn in os.walk(root):
+        name = "meta_scored.json" if "meta_scored.json" in fn else "meta.json" if "meta.json" in fn else None
+        if not name:
+            continue
+        try:
+            with open(os.path.join(dp, name), encoding="utf-8") as f:
+                meta = json.load(f)
+        except (OSError, ValueError):
+            continue
+        for it in (meta.get("items") if isinstance(meta, dict) else None) or []:
+            try:
+                path = os.path.realpath(os.path.join(dp, str(it["file"])))
+                if not it["file"] or not path.startswith(real + os.sep) or not path.lower().endswith(".wav") or not os.path.isfile(path):
+                    continue
+                label = unicodedata.normalize("NFC", str(it["word_ml"]))
+                out.setdefault(label, []).append({
+                    "path": path, "model": str(it.get("model", "?")).split("/")[-1][:48], "voice": str(it.get("voice", ""))[:40],
+                    "run": os.path.relpath(dp, root).replace(os.sep, "/")[-60:], "audio_s": it.get("audio_s") if isinstance(it.get("audio_s"), (int, float)) else None,
+                    "heard": str(it["heard"])[:80] if it.get("heard") is not None else None, "exact": bool(it.get("exact"))})
+            except (KeyError, TypeError):
+                continue
+    for lst in out.values():
+        lst.sort(key=lambda c: (c["model"], c["voice"], c["run"]))
+    return out
 
 
 def call_aligner(url, data, duration, timeout=120):
@@ -170,7 +320,7 @@ def call_aligner(url, data, duration, timeout=120):
     return {"ok": True, "start": float(st), "end": min(float(en), duration), "text": str(d.get("text", ""))[:80], "model": str(d.get("model", ""))[:40]}
 
 
-def aligned_edges(mat, n_units, a0, a1, hop=0.010):
+def aligned_edges(mat, n_units, a0, a1, hop=0.010, units=None):
     """Unit edges inside the model's word span [a0, a1]: outer edges are the span, inner ones come from spectral change computed
     only within the span (even split when that fails). -> (edges, "spectral" | "even")."""
     inner = None
@@ -466,8 +616,11 @@ def validate_wav(data):
 class Recorder:
     MAX_WORDS = 200
 
-    def __init__(self, record_dir, words, build="build", dictionary=None, aligner_url=None):
+    def __init__(self, record_dir, words, build="build", dictionary=None, aligner_url=None, reference_dir=None, unit_audio_dir=None):
         self.dir, self.build, self.dictionary, self.aligner_url = record_dir, build, dictionary, aligner_url
+        self.refs = load_references(reference_dir)
+        self.unit_clips = load_units(unit_audio_dir)
+        self._seq_cache = {}
         self.words = {w["id"]: w for w in words}
         os.makedirs(self.dir, exist_ok=True)
         self.token = secrets.token_urlsafe(16)
@@ -552,6 +705,179 @@ class Recorder:
 
     def listing(self):
         return [dict(w, takes=self.takes(w["id"])) for w in self.words.values()]
+
+    def reference_list(self, wid):
+        w = self.words.get(wid)
+        if w is None:
+            raise v.ViewerError(404, "unknown word")
+        clips = self.refs.get(unicodedata.normalize("NFC", w["label"]), [])
+        keep = ("model", "voice", "run", "audio_s", "heard", "exact")
+        return {"available": bool(self.refs), "items": [dict({k: c[k] for k in keep}, i=i) for i, c in enumerate(clips)]}
+
+    def reference_audio(self, wid, i):
+        w = self.words.get(wid)
+        clips = self.refs.get(unicodedata.normalize("NFC", w["label"]), []) if w else []
+        if not (0 <= i < len(clips)):
+            raise v.ViewerError(404, "no such reference clip")
+        with open(clips[i]["path"], "rb") as f:
+            return f.read(20 * 1024 * 1024)
+
+    # ---- the generated sound units that build a word -------------------------------------------------------------------------
+    def unit_list(self, wid):
+        w = self.words.get(wid)
+        if w is None:
+            raise v.ViewerError(404, "unknown word")
+        parts = su.decompose(w["label"])
+        if not self.unit_clips:
+            return {"available": False, "units": []}
+        if parts is None:
+            return {"available": True, "units": [], "note": "this spelling cannot be split into units"}
+        out = []
+        for k, u in enumerate(parts):
+            c = self.unit_clips.get(unicodedata.normalize("NFC", u))
+            out.append({"k": k, "text": u, "kind": su.kind(u), "have": c is not None, "heard": c["heard"] if c else None,
+                        "exact": bool(c and c["exact"]), "voice": c["voice"] if c else ""})
+        return {"available": True, "units": out, "have_all": all(x["have"] for x in out)}
+
+    def unit_audio(self, wid, k):
+        lst = self.unit_list(wid)["units"]
+        if not (0 <= k < len(lst)) or not lst[k]["have"]:
+            raise v.ViewerError(404, "no clip for this unit")
+        with open(self.unit_clips[unicodedata.normalize("NFC", lst[k]["text"])]["path"], "rb") as f:
+            return f.read(5 * 1024 * 1024)
+
+    def unit_join(self, wid, fade_ms=2.0):
+        """The unit clips of a word glued end to end (tiny fades at the joins) -> (wav bytes, units, edges in seconds)."""
+        lst = self.unit_list(wid)["units"]
+        if not lst or not all(x["have"] for x in lst):
+            raise v.ViewerError(404, "not every unit of this word has a generated clip")
+        rate, frames, edges, pos = None, [], [0.0], 0
+        for x in lst:
+            r, data = _read_pcm16(self.unit_clips[unicodedata.normalize("NFC", x["text"])]["path"])
+            if rate is None:
+                rate = r
+            elif r != rate:
+                raise v.ViewerError(409, "unit clips have different sample rates")
+            n = len(data) // 2
+            samples = list(struct.unpack("<%dh" % n, data))
+            f = min(n // 2, int(rate * fade_ms / 1000.0))
+            for i in range(f):
+                g = i / float(f)
+                samples[i] = int(samples[i] * g)
+                samples[n - 1 - i] = int(samples[n - 1 - i] * g)
+            frames.extend(samples)
+            pos += n
+            edges.append(round(pos / float(rate), 4))
+        buf = io.BytesIO()
+        with wave.open(buf, "wb") as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(rate)
+            w.writeframes(struct.pack("<%dh" % len(frames), *frames))
+        return buf.getvalue(), [x["text"] for x in lst], edges
+
+    def _mfcc_seq(self, path):
+        """12-dim MFCC-like vectors (c1..c12, mean-removed, every 20 ms) of a WAV file, cached."""
+        hit = self._seq_cache.get(path)
+        if hit is not None:
+            return hit
+        res = v.run_tool(self.tool("s2w_features"), [path, "--out", "logmel"])
+        if res.returncode != 0:
+            raise v.ViewerError(503, "feature tool failed")
+        mat = v.parse_matrix(res.stdout, "logmel_raw")
+        nb = len(mat[0])
+        mean = [sum(r[b] for r in mat) / len(mat) for b in range(nb)]
+        dct = [[math.cos(math.pi / nb * (b + 0.5) * k) for b in range(nb)] for k in range(1, 13)]
+        seq = [[sum(c * (row[b] - mean[b]) for b, c in enumerate(cs)) for cs in dct] for row in mat[::2]]
+        self._seq_cache[path] = seq
+        return seq
+
+    def unit_score(self, wid):
+        """How close is the composed word to this word's real/AI whole-word clips, compared with other words' clips?"""
+        w = self.words.get(wid)
+        if w is None:
+            raise v.ViewerError(404, "unknown word")
+        data, units, _edges = self.unit_join(wid)
+        label = unicodedata.normalize("NFC", w["label"])
+        own = self.refs.get(label, [])
+        if not own:
+            raise v.ViewerError(404, "no whole-word reference clip for this word to compare with")
+        with tempfile.TemporaryDirectory() as td:
+            p = os.path.join(td, "composed.wav")
+            with open(p, "wb") as f:
+                f.write(data)
+            comp = self._mfcc_seq(p)
+        d_own = min(_dtw(comp, self._mfcc_seq(c["path"])) for c in own)
+        others = {}
+        for lab, clips in self.refs.items():
+            if lab != label:
+                others[lab] = min(_dtw(comp, self._mfcc_seq(c["path"])) for c in clips[:2])
+        worse = sum(1 for d in others.values() if d > d_own)
+        return {"distance_to_this_word": round(d_own, 2), "other_words": len(others), "closer_than_others": worse,
+                "rank": len(others) - worse + 1, "median_other": round(sorted(others.values())[len(others) // 2], 2) if others else None,
+                "note": "DTW distance on mean-removed MFCC; lower is closer. Rank 1 = the composed word is closest to the right word."}
+
+    def _ref_clip(self, wid, i):
+        w = self.words.get(wid)
+        clips = self.refs.get(unicodedata.normalize("NFC", w["label"]), []) if w else []
+        if not isinstance(i, int) or isinstance(i, bool) or not (0 <= i < len(clips)):
+            raise v.ViewerError(404, "no such reference clip")
+        return clips[i]
+
+    def _ref_seg_path(self, wid, clip):
+        stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", "%s__%s__%s__%s" % (clip["run"], clip["model"], clip["voice"], os.path.basename(clip["path"])[:-4]))
+        return os.path.join(self.dir, "reference_boundaries", wid, stem[:150] + ".json")
+
+    def ref_boundaries(self, wid, i):
+        sp = self._ref_seg_path(wid, self._ref_clip(wid, i))
+        if not os.path.isfile(sp):
+            return None
+        with open(sp, encoding="utf-8") as f:
+            return json.load(f)
+
+    def save_boundaries(self, d):
+        """Store boundaries the person corrected by hand. kind 'ref': an AI reference clip (written under
+        <record-dir>/reference_boundaries/); kind 'take': an accepted take (its .segments.json is replaced, the old one kept as .prev)."""
+        if not isinstance(d, dict):
+            raise v.ViewerError(422, "request must be a JSON object")
+        wid = d.get("word")
+        if wid not in self.words:
+            raise v.ViewerError(404, "unknown word")
+        units = self.words[wid]["units"]
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        seg_in = {"units": d.get("units"), "edges": d.get("edges"), "method": "edited"}
+        if d.get("kind") == "take":
+            name = d.get("take")
+            path = self.take_path(wid, name) if isinstance(name, str) else None
+            if path is None:
+                raise v.ViewerError(404, "unknown take")
+            with wave.open(path, "rb") as w:
+                dur = w.getnframes() / w.getframerate()
+            seg = validate_segments(seg_in, units, dur)
+            sp = path[:-4] + ".segments.json"
+            if os.path.isfile(sp):
+                os.replace(sp, path[:-4] + ".segments.prev.json")
+            with open(sp, "w", encoding="utf-8") as f:
+                json.dump(dict(seg, saved_utc=now, note="sound boundaries corrected by hand after recording"), f, ensure_ascii=False, indent=1)
+            return {"saved": os.path.relpath(sp, self.dir).replace(os.sep, "/"), "edges": seg["edges"]}
+        if d.get("kind") == "ref":
+            clip = self._ref_clip(wid, d.get("i"))
+            with open(clip["path"], "rb") as f:
+                data = f.read(20 * 1024 * 1024)
+            rate, n = validate_wav(data)
+            seg = validate_segments(seg_in, units, n / rate)
+            sp = self._ref_seg_path(wid, clip)
+            os.makedirs(os.path.dirname(sp), exist_ok=True)
+            tmp = sp + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(dict(seg, synthetic=True, saved_utc=now, word_ml=self.words[wid]["label"],
+                               clip={"run": clip["run"], "model": clip["model"], "voice": clip["voice"], "file": os.path.basename(clip["path"]),
+                                     "sha256": hashlib.sha256(data).hexdigest(), "audio_s": round(n / rate, 4)},
+                               note="boundaries corrected by hand on a SYNTHETIC clip; ground truth for comparing boundary methods only"),
+                          f, ensure_ascii=False, indent=1)
+            os.replace(tmp, sp)
+            return {"saved": os.path.relpath(sp, self.dir).replace(os.sep, "/"), "edges": seg["edges"]}
+        raise v.ViewerError(422, "kind must be 'ref' or 'take'")
 
     def dict_search(self, q, limit=40, offset=None):
         """offset=None: search; an integer offset: a page of the whole dictionary (the sidebar's default alphabetical list)."""
@@ -730,6 +1056,31 @@ def make_handler(rec):
                     return self.send(200, COMPARE.replace("__STYLE__", STYLE).replace("__TOKEN__", rec.token).encode(), "text/html; charset=utf-8")
                 if p == "/api/words":
                     return self.js(rec.listing())
+                if p == "/api/units":
+                    return self.js(rec.unit_list((parse_qs(urlparse(self.path).query).get("word") or [""])[0]))
+                if p == "/api/unitaudio":
+                    qs = parse_qs(urlparse(self.path).query)
+                    k = (qs.get("k") or ["x"])[0]
+                    return self.send(200, rec.unit_audio((qs.get("word") or [""])[0], int(k) if k.isdigit() else -1), "audio/wav")
+                if p == "/api/unitjoin":
+                    qs = parse_qs(urlparse(self.path).query)
+                    data, units, edges = rec.unit_join((qs.get("word") or [""])[0])
+                    if "meta" in qs:
+                        return self.js({"composed": True, "units": units, "edges": edges, "method": "composed"})
+                    return self.send(200, data, "audio/wav")
+                if p == "/api/unitscore":
+                    return self.js(rec.unit_score((parse_qs(urlparse(self.path).query).get("word") or [""])[0]))
+                if p == "/api/reference":
+                    return self.js(rec.reference_list((parse_qs(urlparse(self.path).query).get("word") or [""])[0]))
+                if p == "/api/refsegments":
+                    qs = parse_qs(urlparse(self.path).query)
+                    k = (qs.get("i") or ["x"])[0]
+                    seg = rec.ref_boundaries((qs.get("word") or [""])[0], int(k) if k.isdigit() else -1)
+                    return self.js(seg) if seg is not None else self.js({"error": "no saved boundaries"}, 404)
+                if p == "/api/refaudio":
+                    qs = parse_qs(urlparse(self.path).query)
+                    k = (qs.get("i") or ["x"])[0]
+                    return self.send(200, rec.reference_audio((qs.get("word") or [""])[0], int(k) if k.isdigit() else -1), "audio/wav")
                 if p == "/api/dict":
                     qs = parse_qs(urlparse(self.path).query)
                     num = lambda k, d: int((qs.get(k) or [d])[0]) if re.fullmatch(r"\d{1,7}", (qs.get(k) or [str(d)])[0]) else d
@@ -791,6 +1142,20 @@ def make_handler(rec):
                         raise v.ViewerError(422, "units must be a list of strings")
                     w = rec.add_word(d.get("label"), d.get("manglish"), units, d.get("meaning", ""), d.get("source", ""), d.get("g2p") is True)
                     return self.js({"added": w["id"], "words": len(rec.words)})
+                if u.path == "/api/boundaries":
+                    if ctype != "application/json":
+                        return self.js({"error": "Content-Type must be application/json"}, 415)
+                    try:
+                        n = int(self.headers.get("Content-Length", ""))
+                    except ValueError:
+                        raise v.ViewerError(411, "Content-Length required")
+                    if n > 8192:
+                        raise v.ViewerError(413, "request too large")
+                    try:
+                        d = json.loads(self.rfile.read(n).decode("utf-8"))
+                    except (ValueError, UnicodeDecodeError):
+                        raise v.ViewerError(422, "request is not valid JSON")
+                    return self.js(rec.save_boundaries(d))
                 if ctype != "audio/wav":
                     return self.js({"error": "Content-Type must be audio/wav"}, 415)
                 data = self.body()
@@ -871,22 +1236,24 @@ PAGE = r"""<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name
 <main>
 <div class="card"><div class="chips" id="chips"></div>
  <div class="word"><div class="ml" id="ml"></div><div class="rom" id="rom"></div><div class="units" id="units"></div><div class="mut" id="meaning"></div></div>
+ <div id="refs" style="margin:4px 0 10px"></div>
+ <div id="unitrow" style="margin:4px 0 10px"></div>
  <div class="row" style="justify-content:center"><button id="rec" class="rec">&#9679; Record</button><button id="stop" disabled>&#9632; Stop</button><span id="timer" class="mut">0.0 s</span></div>
  <canvas id="live" height="130"></canvas><div id="status" role="status"></div></div>
-<div class="card" id="review" hidden><h2 style="margin:0 0 4px;font-size:16px">Your recording</h2>
+<div class="card" id="review" hidden><h2 style="margin:0 0 4px;font-size:16px" id="revtitle">Your recording</h2>
  <div class="mut" style="margin-bottom:8px">Drag the dark handles on the graph to where you hear each sound begin and end. The first positions are only a guess from spectral changes. Sounds overlap in real speech, so boundaries are approximate.</div>
  <div class="row" style="margin:0 0 6px"><button id="vz" type="button">Show whole recording</button><span class="mut" id="vinfo"></span></div>
  <canvas id="wave" height="150"></canvas><canvas id="segbar" height="36" style="margin-top:6px"></canvas><div class="mut" style="margin-top:4px">Combined word: <b id="comb"></b> &middot; you can also drag on the coloured bar, or use the &#9664; &#9654; buttons on each sound (Shift = 50 ms).</div>
  <h3 style="margin:14px 0 2px;font-size:15px">Each sound on its own</h3><div id="cards"></div>
  <canvas id="spec" height="120" style="margin-top:10px"></canvas>
  <div id="qa" class="mut" style="margin-top:8px"></div>
- <div class="row"><button id="play">&#9654; Play whole word</button><button id="accept" class="ok">&#10003; Accept</button><button id="discard">&#10007; Discard</button><span class="mut">Discard throws this recording away (nothing is saved) and you can record again.</span></div></div>
+ <div class="row"><button id="play">&#9654; Play whole word</button><button id="accept" class="ok">&#10003; Accept</button><button id="savebd" class="ok" hidden>&#128190; Save boundaries</button><button id="revertbd" type="button" title="go back to the automatic first guess">&#8634; Revert to default</button><button id="discard">&#10007; Discard</button><span class="mut">Discard throws this recording away (nothing is saved) and you can record again.</span></div></div>
 <div class="card"><h2 style="margin:0 0 6px;font-size:16px">Accepted takes for this word</h2><div id="takes" class="mut">None yet.</div></div>
 </main></div>
 <script>
 const TOKEN='__TOKEN__',$=id=>document.getElementById(id),COL=['#4285d8','#e8a43c','#2d9d78','#9b59b6','#d35400','#16a085','#c0392b','#7f8c8d'];
 const QS=new URLSearchParams(location.search);let urlWord=QS.get('word');
-let words=[],cur=0,state='idle',ctx,stream,node,chunks=[],rate=0,start=0,live=[],raf=0,pcm=null,wav=null,rev=null,analysis=null,units=[],edges=[],method='suggested',stopAt=null,drag=-1,pausedMid=false,view=[0,1],zoomed=true;
+let words=[],cur=0,state='idle',ctx,stream,node,chunks=[],rate=0,start=0,live=[],raf=0,pcm=null,wav=null,rev=null,analysis=null,units=[],edges=[],method='suggested',stopAt=null,drag=-1,pausedMid=false,view=[0,1],zoomed=true,refView=null,clipTarget=null,autoEdges=null,autoMethod='default-split',unitsOverride=null;
 const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 function say(t,cls){const s=$('status');s.textContent=t;s.className=cls||''}
 async function api(u,opt){const r=await fetch(u,opt);const d=await r.json().catch(()=>({error:'bad response'}));if(!r.ok||d.error)throw new Error(d.error||('HTTP '+r.status));return d}
@@ -897,10 +1264,56 @@ async function loadWords(){words=await api('/api/words');if(urlWord!==null){cons
  if(!words.length){$('ml').textContent='';$('rom').textContent='';$('units').textContent='';$('meaning').textContent='No words yet: search the dictionary on the left and press ＋ Add, or add a word by hand.';$('takes').textContent='None yet.';if(state==='idle')$('rec').disabled=true;return}
  if(state==='idle'&&$('rec').disabled&&!pcm)$('rec').disabled=false;
  if(window.afterWords)afterWords();
- const w=words[cur];$('ml').textContent=w.label;$('rom').textContent=w.manglish;$('units').textContent=w.units.map(u=>u.toUpperCase()).join(' · ');$('meaning').textContent=w.meaning?w.meaning+(w.source?' ('+w.source+', unverified)':''):'';
- $('takes').innerHTML=w.takes.length?w.takes.map(t=>`<div class="take"><button data-t="${t.name}">&#9654;</button><span>${t.name}</span><span class="mut">${t.duration==null?'':t.duration.toFixed(2)+' s'} · ${t.segments?'sounds marked':'no sound boundaries'}</span></div>`).join(''):'None yet.';
- document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>new Audio('/audio/'+w.id+'/'+b.dataset.t).play())}
+ const w=words[cur];loadRefs(w.id);loadUnits(w.id);$('ml').textContent=w.label;$('rom').textContent=w.manglish;$('units').textContent=w.units.map(u=>u.toUpperCase()).join(' · ');$('meaning').textContent=w.meaning?w.meaning+(w.source?' ('+w.source+', unverified)':''):'';
+ $('takes').innerHTML=w.takes.length?w.takes.map(t=>`<div class="take"><button data-t="${t.name}">&#9654;</button><button type="button" data-g="${t.name}" title="graph of each sound and the whole word">&#9636; Graph</button><span>${t.name}</span><span class="mut">${t.duration==null?'':t.duration.toFixed(2)+' s'} · ${t.segments?'sounds marked':'no sound boundaries'}</span></div>`).join(''):'None yet.';
+ document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>new Audio('/audio/'+w.id+'/'+b.dataset.t).play());
+ document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>openClip('/audio/'+w.id+'/'+b.dataset.g,'/api/segments/'+w.id+'/'+b.dataset.g,'Saved take '+b.dataset.g,
+  'Saved take: these are the boundaries stored with the take. Drag to correct them and press Save boundaries (the previous version is kept).',{kind:'take',take:b.dataset.g}))}
 function sized(c){const r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=(+c.getAttribute('height'))*d;const g=c.getContext('2d');g.scale(d,d);return[g,r.width,+c.getAttribute('height')]}
+async function openClip(audioUrl,segUrl,title,note,target){
+ if(state!=='idle'){say('Finish or discard the current recording first.','bad');return}
+ clearReview();state='analysing';say('Loading the clip…');
+ try{const r=await fetch(audioUrl);if(!r.ok)throw new Error('HTTP '+r.status);const buf=await r.arrayBuffer();
+  const ac=new AudioContext();const ab=await ac.decodeAudioData(buf.slice(0));await ac.close();
+  pcm=ab.getChannelData(0).slice();rate=ab.sampleRate;wav=new Blob([buf],{type:'audio/wav'});
+  try{analysis=await api('/api/analyse?word='+encodeURIComponent(words[cur].id),{method:'POST',headers:{'X-S2W-Token':TOKEN,'Content-Type':'audio/wav'},body:wav})}catch(e){analysis=null}
+  let saved=null,ovr=null;if(segUrl){try{const sg=await api(segUrl);
+   if(sg&&sg.composed&&sg.edges&&sg.units&&sg.units.length+1===sg.edges.length){saved=sg.edges;ovr=sg.units}
+   else if(sg&&sg.edges&&sg.edges.length===words[cur].units.length+1)saved=sg.edges}catch(e){}}
+  unitsOverride=ovr;
+  if(saved){if(!analysis)analysis={spec:{}};if(!analysis.spec)analysis.spec={};analysis.spec.auto=analysis.spec.suggest||[];analysis.spec.suggest=saved}
+  refView=title;state='review';showReview();if(saved)method='saved';
+  clipTarget=target||null;$('savebd').hidden=!clipTarget;$('accept').hidden=true;$('discard').innerHTML='&#10005; Close';$('revtitle').textContent=title;renderCards();drawReview();
+  say(note,'');$('review').scrollIntoView({block:'nearest'})}
+ catch(e){clearReview();state='idle';say('Cannot show this clip: '+e.message,'bad')}}
+async function loadUnits(id){const el=$('unitrow');
+ try{const d=await api('/api/units?word='+encodeURIComponent(id));
+  if(!d.available){el.innerHTML='';return}
+  if(!d.units.length){el.innerHTML='<div class="mut">'+esc(d.note||'No units for this word.')+'</div>';return}
+  const missing=d.units.filter(u=>!u.have).length;
+  el.innerHTML='<div class="mut"><span class="tag">SYNTHETIC</span>Sounds that build this word, '+d.units.length+' unit'+(d.units.length===1?'':'s')+' (each generated alone; &#10003; = the recogniser heard exactly that unit)</div>'
+   +'<div class="chips" style="margin:6px 0">'+d.units.map(u=>`<span class="chip" style="cursor:default;display:inline-flex;gap:6px;align-items:center${u.have?'':';opacity:.5'}">`
+     +(u.have?`<button type="button" data-uk="${u.k}" title="play this unit">&#9654;</button>`:'')
+     +`<b style="font-size:20px">${esc(u.text)}</b><span class="mut">${esc(u.kind)}</span>`
+     +(u.have?(u.exact?'<span class="good">&#10003;</span>':`<span class="bad" title="heard: ${esc(u.heard||'')}">&#10007; ${esc((u.heard||'').slice(0,8))}</span>`):'<span class="bad">no clip</span>')+'</span>').join('')+'</div>'
+   +(missing?`<div class="mut">${missing} unit(s) have no generated clip yet.</div>`:
+     '<div class="row" style="margin:4px 0"><button type="button" id="uplay">&#9654; Play composed word</button><button type="button" id="ugraph">&#9636; Graph (units glued together)</button><button type="button" id="utest">Test: how close to the real word?</button><span class="mut" id="uscore"></span></div>');
+  el.querySelectorAll('[data-uk]').forEach(b=>b.onclick=()=>new Audio('/api/unitaudio?word='+encodeURIComponent(id)+'&k='+b.dataset.uk).play());
+  if($('uplay')){$('uplay').onclick=()=>new Audio('/api/unitjoin?word='+encodeURIComponent(id)).play();
+   $('ugraph').onclick=()=>openClip('/api/unitjoin?word='+encodeURIComponent(id),'/api/unitjoin?word='+encodeURIComponent(id)+'&meta=1','Composed from sound units (SYNTHETIC)',
+     'The generated unit clips glued together with no smoothing. Boundaries are exact (where each unit clip starts and ends). Compare with the whole-word clips above.');
+   $('utest').onclick=async()=>{$('uscore').textContent='measuring…';try{const r=await api('/api/unitscore?word='+encodeURIComponent(id));
+     $('uscore').innerHTML=`distance to this word <b>${r.distance_to_this_word}</b> (typical other word ${r.median_other}); closer than <b>${r.closer_than_others} of ${r.other_words}</b> other words &mdash; rank <b>${r.rank}</b>`}
+    catch(e){$('uscore').textContent=e.message}}}}
+ catch(e){el.textContent=''}}
+async function loadRefs(id){const el=$('refs');
+ try{const d=await api('/api/reference?word='+encodeURIComponent(id));
+  if(!d.available){el.innerHTML='';return}
+  el.innerHTML='<div class="mut"><span class="tag">SYNTHETIC</span>AI reference voices for this word &mdash; for checking only, not real speakers</div>'+(d.items.length?d.items.map(r=>`<div class="take"><button type="button" data-ri="${r.i}" title="play">&#9654;</button><button type="button" data-rg="${r.i}" data-rt="${esc(r.model+' · '+r.voice)}" title="graph of each sound and the whole word">&#9636; Graph</button><span><b>${esc(r.model)}</b> &middot; ${esc(r.voice)} <span class="mut">(${esc(r.run)})</span></span><span class="mut">${r.audio_s==null?'':r.audio_s.toFixed(2)+' s'}${r.heard!=null?` &middot; recogniser heard &ldquo;${esc(r.heard)}&rdquo; `+(r.exact?'<span class="good">&#10003; matches</span>':'<span class="bad">&#10007; differs</span>'):''}</span></div>`).join(''):'<div class="mut">No AI reference clip has been generated for this word yet.</div>');
+  el.querySelectorAll('[data-ri]').forEach(b=>b.onclick=()=>new Audio('/api/refaudio?word='+encodeURIComponent(id)+'&i='+b.dataset.ri).play());
+  el.querySelectorAll('[data-rg]').forEach(b=>b.onclick=()=>openClip('/api/refaudio?word='+encodeURIComponent(id)+'&i='+b.dataset.rg,'/api/refsegments?word='+encodeURIComponent(id)+'&i='+b.dataset.rg,'AI reference clip (SYNTHETIC) — '+b.dataset.rt,
+   'SYNTHETIC AI clip, for checking only. The sound boundaries are spectral estimates: drag them to where you hear each sound change, then press Save boundaries (kept next to your recordings; the clip itself is not changed).',{kind:'ref',i:+b.dataset.rg}))}
+ catch(e){el.textContent=''}}
 function drawLive(){const[g,W,H]=sized($('live'));g.clearRect(0,0,W,H);g.strokeStyle='#4285d8';const N=Math.floor(W/2),sl=live.slice(-N);
  sl.forEach(([lo,hi],i)=>{g.beginPath();g.moveTo(i*2,H/2-hi*H/2);g.lineTo(i*2,H/2-lo*H/2);g.stroke()});
  const peak=sl.length?Math.max(...sl.slice(-10).map(([a,b])=>Math.max(-a,b))):0;g.fillStyle=peak>.98?'#d93025':'#1e8e3e';g.fillRect(0,H-5,peak*W,5);
@@ -929,17 +1342,25 @@ async function stopRec(){if(state!=='recording')return;state='analysing';cancelA
  try{analysis=await api('/api/analyse?word='+encodeURIComponent(words[cur].id),{method:'POST',headers:{'X-S2W-Token':TOKEN,'Content-Type':'audio/wav'},body:wav})}catch(e){analysis=null;say('Could not analyse this recording: '+e.message+' (you can still mark the sounds by hand, play, accept or discard it)','bad')}
  state='review';showReview();if(analysis)say('Listen to it, check the sound boundaries, then Accept or Discard.')}
 const dur=()=>pcm.length/rate;
-function fixEdges(){const d=dur(),N=units.length;let ok=edges.length===N+1;for(let k=1;ok&&k<=N;k++){if(!(edges[k]-edges[k-1]>=0.012))edges[k]=edges[k-1]+0.012}
+function fixEdges(){const d=dur(),N=units.length;let ok=edges.length===N+1;if(ok&&edges[N]>d&&edges[N]<d+0.02)edges[N]=d;       // decoding rounds the length by a few ms
+ for(let k=1;ok&&k<=N;k++){if(!(edges[k]-edges[k-1]>=0.012))edges[k]=edges[k-1]+0.012}
  if(!ok||edges[N]>d||edges[0]<0){edges=units.map((_,k)=>k*d/N).concat([d]);method='default-split'}}
-function initSegments(){units=words[cur].units;const sug=analysis&&analysis.spec&&analysis.spec.suggest;
- if(sug&&sug.length===units.length+1){edges=sug.slice();method=analysis.aligner&&analysis.aligner.ok?'model-aligned':'suggested'}else{edges=[];method='default-split'}fixEdges();zoomed=true;setView()}
+function initSegments(){units=unitsOverride||words[cur].units;const sug=analysis&&analysis.spec&&analysis.spec.suggest;
+ if(sug&&sug.length===units.length+1){edges=sug.slice();method=analysis.aligner&&analysis.aligner.ok?'model-aligned':'suggested'}else{edges=[];method='default-split'}fixEdges();
+ const au=analysis&&analysis.spec&&analysis.spec.auto;            // the automatic guess, kept apart from any boundaries loaded from a saved version
+ if(au&&au.length===units.length+1){autoEdges=au.slice();autoMethod=analysis.aligner&&analysis.aligner.ok?'model-aligned':'suggested'}
+ else if(au&&au.length===0){const d=dur(),N=units.length;autoEdges=units.map((_,k)=>k*d/N).concat([d]);autoMethod='default-split'}
+ else{autoEdges=edges.slice();autoMethod=method}
+ zoomed=true;setView()}
+function revertEdges(){if(!pcm||!autoEdges)return;edges=autoEdges.slice();method=autoMethod;fixEdges();ensureVisible();renderCards();drawReview();
+ say('Back to the automatic first guess. '+(clipTarget?'Press Save boundaries to keep it.':'Nothing changes on disk until you Accept.'),'')}
 function setView(){const d=dur(),N=units.length;view=zoomed?[Math.max(0,edges[0]-0.15),Math.min(d,edges[N]+0.15)]:[0,d];if(view[1]-view[0]<0.2)view=[0,d];$('vz').textContent=zoomed?'Show whole recording':'Zoom to the word';$('vinfo').textContent=zoomed?'zoomed to the word':'whole recording';$('comb').textContent=units.join('').toUpperCase()}
 function ensureVisible(){if(zoomed){const N=units.length;view=[Math.min(view[0],Math.max(0,edges[0]-0.05)),Math.max(view[1],Math.min(dur(),edges[N]+0.05))]}}
 function peaksOf(a,b,W){const out=[],n=pcm.length,s0=Math.floor(a*rate),s1=Math.floor(b*rate);for(let x=0;x<W;x++){let lo=1,hi=-1;const i0=s0+Math.floor(x*(s1-s0)/W),i1=Math.max(i0+1,s0+Math.floor((x+1)*(s1-s0)/W));for(let i=Math.max(0,i0);i<i1&&i<n;i++){const y=pcm[i];if(y<lo)lo=y;if(y>hi)hi=y}out.push([lo,hi])}return out}
 function showReview(){$('review').hidden=false;rev=new Audio(URL.createObjectURL(wav));rev.onended=()=>{$('play').textContent='▶ Play whole word';stopAt=null;pausedMid=false;drawReview()};initSegments();
  if(analysis){const q=analysis.qa;$('qa').innerHTML=`<span class="tag">measured</span>duration ${analysis.duration.toFixed(2)} s · ${analysis.rate} Hz · SNR ${q.snr_db_estimate} dB · level ${q.speech_level_dbfs} dBFS · clipping ${q.clipped_run_samples} · QA verdict <b>${esc(q.verdict)}</b> (${esc(q.flags)})`;const al=analysis.aligner;if(al)$('qa').innerHTML+='<br>'+(al.ok?`<span class="tag">speech model</span>${esc(al.model)} places the word at ${al.start.toFixed(2)}–${al.end.toFixed(2)} s and heard “${esc(al.text)}”; the split inside the word is spectral ('${esc(al.split)}')`:`<span class="tag">speech model unavailable</span>${esc(al.error)} (using the spectral first guess)`)}else $('qa').textContent='';
  renderCards();drawReview();$('play').disabled=false;$('accept').disabled=false;$('discard').disabled=false}
-function tagText(){return method==='edited'?'placed by you':method==='model-aligned'?'word span from the speech model':method==='suggested'?'first guess':'even split (no guess available)'}
+function tagText(){return method==='saved'?(unitsOverride?'exact: where each unit clip starts and ends':'your saved boundaries'):method==='edited'?'placed by you':method==='model-aligned'?'word span from the speech model':method==='suggested'?'first guess':'even split (no guess available)'}
 function renderCards(){$('cards').innerHTML=units.map((u,k)=>`<div class="seg"><div class="badge" style="background:${COL[k%8]}">${esc(u.toUpperCase())}</div><div><b>Sound ${k+1}: ${esc(u.toUpperCase())}</b> <span class="tag">${tagText()}</span><br><span class="mut">${edges[k].toFixed(3)} – ${edges[k+1].toFixed(3)} s · ${Math.round((edges[k+1]-edges[k])*1000)} ms</span>
  <span class="nudge mut"> start <button type="button" data-n="${k}:-1">&#9664;</button><button type="button" data-n="${k}:1">&#9654;</button> end <button type="button" data-n="${k+1}:-1">&#9664;</button><button type="button" data-n="${k+1}:1">&#9654;</button></span><canvas class="mini" data-k="${k}" height="40"></canvas></div><button data-u="${k}" title="play this sound">&#9654;</button></div>`).join('');
  document.querySelectorAll('[data-n]').forEach(b=>b.onclick=e=>{const[i,dir]=b.dataset.n.split(':').map(Number),N=units.length,step=(e.shiftKey?0.05:0.01)*dir,lo=i>0?edges[i-1]+0.012:0,hi=i<N?edges[i+1]-0.012:dur();edges[i]=Math.max(lo,Math.min(hi,edges[i]+step));method='edited';ensureVisible();renderCards();drawReview()});
@@ -949,7 +1370,8 @@ function drawReview(){if(!pcm)return;const[v0,v1]=view;let[g,W,H]=sized($('wave'
  units.forEach((u,k)=>{g.fillStyle=COL[k%8]+'33';g.fillRect(X(edges[k]),0,X(edges[k+1])-X(edges[k]),H)});
  g.strokeStyle='#4285d8';peaksOf(v0,v1,Math.floor(W)).forEach(([lo,hi],x)=>{g.beginPath();g.moveTo(x,H/2-hi*H/2);g.lineTo(x,H/2-lo*H/2);g.stroke()});
  edges.forEach((t,k)=>{const outer=k===0||k===units.length;g.fillStyle=outer?'#8f98aa':'#1c2230';g.fillRect(X(t)-1,0,2,H);g.fillRect(X(t)-8,0,16,20);g.fillStyle='#fff';g.font='bold 11px sans-serif';g.fillText('◂▸',X(t)-7,14)});
- if(rev&&rev.duration&&(!rev.paused||pausedMid)){g.strokeStyle='#d93025';g.lineWidth=2;const x=X(rev.currentTime);g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}
+ const ph=regionPlay?regionPlay.a+Math.min(regionPlay.d,Math.max(0,aCtx.currentTime-regionPlay.t0)):(rev&&rev.duration&&(!rev.paused||pausedMid)?rev.currentTime:null);
+ if(ph!==null){g.strokeStyle='#d93025';g.lineWidth=2;const x=X(ph);g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}
  [g,W,H]=sized($('segbar'));units.forEach((u,k)=>{const x0=X(edges[k]),x1=X(edges[k+1]);g.fillStyle=COL[k%8];g.fillRect(x0,0,Math.max(1,x1-x0-1),H);if(x1-x0>16){g.fillStyle='#fff';g.font='bold 13px sans-serif';g.fillText(u.toUpperCase(),x0+5,22)}});
  edges.forEach(t=>{g.fillStyle='#1c2230';g.fillRect(X(t)-1,0,2,H)});
  [g,W,H]=sized($('spec'));const sp=analysis&&analysis.spec;if(!sp){g.fillStyle='#8f98aa';g.fillText('spectrogram unavailable',8,16);return}
@@ -965,21 +1387,35 @@ function bindDrag(c){
  c.addEventListener('pointerup',()=>{drag=-1});c.addEventListener('pointercancel',()=>{drag=-1})}
 bindDrag($('wave'));bindDrag($('segbar'));
 $('vz').onclick=()=>{zoomed=!zoomed;setView();drawReview()};
-function playRegion(a,b){if(!rev)return;pausedMid=false;rev.currentTime=a;stopAt=b;rev.play();$('play').textContent='❚❚ Pause';rafPlay()}
-function rafPlay(){drawReview();if(rev&&!rev.paused){if(stopAt!=null&&rev.currentTime>=stopAt){rev.pause();stopAt=null;pausedMid=false;$('play').textContent='▶ Play whole word';drawReview();return}requestAnimationFrame(rafPlay)}}
-function clearReview(){if(rev){rev.pause();rev=null}$('review').hidden=true;pcm=null;wav=null;analysis=null;stopAt=null;pausedMid=false;$('play').textContent='▶ Play whole word'}
+let aCtx=null,regionPlay=null,regionSrc=null;
+function stopRegion(){if(regionSrc){try{regionSrc.stop()}catch(e){}regionSrc=null}regionPlay=null}
+function playRegion(a,b){if(!pcm)return;stopRegion();if(rev)rev.pause();pausedMid=false;stopAt=null;$('play').textContent='▶ Play whole word';
+ aCtx=aCtx||new AudioContext();aCtx.resume();
+ const buf=aCtx.createBuffer(1,pcm.length,rate);buf.copyToChannel(pcm,0);const src=aCtx.createBufferSource();src.buffer=buf;const g=aCtx.createGain();src.connect(g).connect(aCtx.destination);
+ const d=Math.max(0.01,b-a),t0=aCtx.currentTime+0.02;g.gain.setValueAtTime(1,t0);g.gain.setValueAtTime(1,t0+Math.max(0,d-0.004));g.gain.linearRampToValueAtTime(0,t0+d);
+ src.start(t0,a,d);regionSrc=src;regionPlay={t0,a,d};rafPlay();
+ setTimeout(()=>{if(regionPlay&&regionPlay.t0===t0){regionPlay=null;regionSrc=null;drawReview()}},(d+0.1)*1000)}
+function rafPlay(){drawReview();if(regionPlay){if(aCtx.currentTime<regionPlay.t0+regionPlay.d+0.03)requestAnimationFrame(rafPlay);else{regionPlay=null;regionSrc=null;drawReview()}return}
+ if(rev&&!rev.paused)requestAnimationFrame(rafPlay)}
+function clearReview(){unitsOverride=null;stopRegion();if(rev){rev.pause();rev=null}refView=null;clipTarget=null;$('savebd').hidden=true;$('accept').hidden=false;$('discard').innerHTML='&#10007; Discard';$('revtitle').textContent='Your recording';$('review').hidden=true;pcm=null;wav=null;analysis=null;stopAt=null;pausedMid=false;$('play').textContent='▶ Play whole word'}
 function discard(){clearReview();state='idle';$('rec').disabled=false;$('stop').disabled=true;$('timer').textContent='0.0 s';say('Discarded — nothing was saved. Ready for a new recording.')}
-async function accept(){if(state!=='review')return;$('accept').disabled=true;
+async function accept(){if(state!=='review'||refView)return;$('accept').disabled=true;
  try{const seg=JSON.stringify({units,edges:edges.map(x=>+x.toFixed(4)),method});
   const r=await api('/api/accept?word='+encodeURIComponent(words[cur].id),{method:'POST',headers:{'X-S2W-Token':TOKEN,'X-S2W-Segments':seg,'Content-Type':'audio/wav'},body:wav});
   clearReview();state='idle';$('rec').disabled=false;$('stop').disabled=true;await loadWords();say('Saved '+r.saved+' with its sound boundaries. Record another, pick the next word, or open Compare.','good')}
  catch(e){$('accept').disabled=false;say('Could not save: '+e.message,'bad')}}
+$('savebd').onclick=async()=>{if(!clipTarget)return;$('savebd').disabled=true;
+ try{const r=await api('/api/boundaries',{method:'POST',headers:{'X-S2W-Token':TOKEN,'Content-Type':'application/json'},body:JSON.stringify(Object.assign({word:words[cur].id,units,edges:edges.map(x=>+x.toFixed(4)),method:'edited'},clipTarget))});
+  method='saved';renderCards();say('Saved your boundaries ('+r.saved+'). You can keep adjusting and save again.','good')}
+ catch(e){say('Could not save: '+e.message,'bad')}
+ $('savebd').disabled=false};
+$('revertbd').onclick=revertEdges;
 $('rec').onclick=startRec;$('stop').onclick=stopRec;$('discard').onclick=discard;$('accept').onclick=accept;
-$('play').onclick=()=>{if(!rev)return;if(rev.paused){if(!pausedMid)rev.currentTime=0;pausedMid=false;stopAt=null;rev.play();$('play').textContent='❚❚ Pause';rafPlay()}else{rev.pause();pausedMid=stopAt==null;stopAt=null;$('play').textContent=pausedMid?'▶ Resume':'▶ Play whole word'}};
+$('play').onclick=()=>{stopRegion();if(!rev)return;if(rev.paused){if(!pausedMid)rev.currentTime=0;pausedMid=false;stopAt=null;rev.play();$('play').textContent='❚❚ Pause';rafPlay()}else{rev.pause();pausedMid=stopAt==null;stopAt=null;$('play').textContent=pausedMid?'▶ Resume':'▶ Play whole word'}};
 addEventListener('resize',()=>{if(state==='review'){renderCards();drawReview()}});
 async function addWord(body,msgEl){if(state!=='idle'){msgEl.textContent='Finish or discard the current recording first.';msgEl.className='bad';return false}
  try{const r=await api('/api/words',{method:'POST',headers:{'X-S2W-Token':TOKEN,'Content-Type':'application/json'},body:JSON.stringify(body)});
-  cur=0;await loadWords();cur=words.findIndex(w=>w.id===r.added);if(cur<0)cur=0;await loadWords();msgEl.textContent='Added. It is selected: press Record.';msgEl.className='good';return true}
+  const ws=await api('/api/words');cur=Math.max(0,ws.findIndex(w=>w.id===r.added));await loadWords();msgEl.textContent='Added. It is selected: press Record.';msgEl.className='good';return true}
  catch(e){msgEl.textContent=e.message;msgEl.className='bad';return false}}
 $('addgo').onclick=async()=>{if(await addWord({label:$('addml').value,manglish:$('addrom').value,source:'typed by hand'},$('addmsg'))){$('addml').value='';$('addrom').value=''}};
 let dtimer=null,dseq=0,dmode=QS.get('tab')==='mine'?'mine':'dict',dq=(QS.get('q')||'').slice(0,60),doff=0,dmore=false,dbusy=false,dname='',dok=true,ditems=[];const DLIM=100;
@@ -1051,7 +1487,10 @@ async function init(){const ws=await api('/api/words'),opts=[];ws.forEach(w=>w.t
  if(!opts.length)$('msg').textContent='No takes with sound boundaries yet. Record and Accept some first.';
  const q=new URLSearchParams(location.search);if(q.get('a')){$('a').value=q.get('a');$('b').value=q.get('b');compare()}}
 function sized(c){const r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=(+c.getAttribute('height'))*d;const g=c.getContext('2d');g.scale(d,d);return[g,r.width,+c.getAttribute('height')]}
-function playSeg(ref,a,b){if(cur){cur.pause();clearInterval(timer)}cur=new Audio('/audio/'+ref);const au=cur;au.addEventListener('loadedmetadata',()=>{au.currentTime=a;au.play();timer=setInterval(()=>{if(au.currentTime>=b||au.paused){au.pause();clearInterval(timer)}},15)})}
+let actx=null,csrc=null;
+async function playSeg(ref,a,b){try{actx=actx||new AudioContext();await actx.resume();if(csrc){try{csrc.stop()}catch(e){}csrc=null}
+ const ab=await actx.decodeAudioData(await (await fetch('/audio/'+ref)).arrayBuffer());const src=actx.createBufferSource();src.buffer=ab;const g=actx.createGain();src.connect(g).connect(actx.destination);
+ const d=Math.max(0.01,b-a),t0=actx.currentTime+0.02;g.gain.setValueAtTime(1,t0);g.gain.setValueAtTime(1,t0+Math.max(0,d-0.004));g.gain.linearRampToValueAtTime(0,t0+d);src.start(t0,a,d);csrc=src}catch(e){}}
 function drawSide(c,S,mx,colOf){const[g,W,H]=sized(c),n=S.peaks.length,X=t=>t/mx*W;g.strokeStyle='#4285d8';
  for(let x=0;x<W;x++){const t=x/W*mx;if(t>S.duration)break;const[lo,hi]=S.peaks[Math.min(n-1,Math.floor(t/S.duration*n))];g.beginPath();g.moveTo(x,H*0.4-hi*H*0.4);g.lineTo(x,H*0.4-lo*H*0.4);g.stroke()}
  S.units.forEach((u,k)=>{const x0=X(S.edges[k]),x1=X(S.edges[k+1]),col=COL[colOf[k]%8];g.fillStyle=col+'2a';g.fillRect(x0,0,x1-x0,H*0.8);g.fillStyle=col;g.fillRect(x0,H*0.8,Math.max(1,x1-x0-1),H*0.2);g.fillStyle='#fff';g.font='bold 11px sans-serif';g.fillText(u.toUpperCase(),x0+3,H*0.8+H*0.15)})}
@@ -1095,12 +1534,16 @@ def main():
     ap.add_argument("--dict-no-header", action="store_true", help="the dictionary file has no header row")
     ap.add_argument("--aligner-url", help="optional local aligner service (tools/s2w_aligner_service.py), e.g. http://host.docker.internal:8780: "
                     "a speech model places the word start/end for the first guess")
+    ap.add_argument("--reference-dir", help="folder (searched recursively) of AI-generated reference clips with meta.json / meta_scored.json; "
+                    "shown as SYNTHETIC play buttons under the selected word so you can check them")
+    ap.add_argument("--unit-audio-dir", help="folder (searched recursively) of generated sound-unit clips with meta_scored.json / meta.json "
+                    "(tools/model_eval/gen_units.py): shown as a 'sounds that build this word' row")
     ap.add_argument("--build", default=os.environ.get("S2W_BUILD", "build"))
     ap.add_argument("--port", type=int, default=8765)
     a = ap.parse_args()
     try:
         dic = Dictionary(a.dictionary, a.dict_ml_col, a.dict_en_col, a.dict_no_header) if a.dictionary else None
-        rec = Recorder(a.record_dir, [parse_word(w) for w in a.word], a.build, dic, a.aligner_url)
+        rec = Recorder(a.record_dir, [parse_word(w) for w in a.word], a.build, dic, a.aligner_url, a.reference_dir, a.unit_audio_dir)
         srv = make_server(rec, a.port)
     except v.ViewerError as e:
         print("error: %s" % e.message, file=sys.stderr)
