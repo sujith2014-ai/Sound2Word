@@ -15,6 +15,7 @@ import array
 import csv
 import json
 import os
+import signal
 import subprocess
 import sys
 import tempfile
@@ -27,6 +28,21 @@ try:
     import numpy as np  # optional: only used for the F0 estimate
 except ImportError:  # pragma: no cover
     np = None
+
+
+class ViewerError(Exception):
+    """An expected, user-explainable failure: carries the HTTP status and a message that contains no file paths."""
+
+    def __init__(self, status, message):
+        super().__init__(message)
+        self.status, self.message = status, message
+
+
+def run_tool(path, args):
+    try:
+        return subprocess.run([path] + args, capture_output=True, text=True)
+    except OSError:
+        raise ViewerError(503, "analysis tool '%s' is not available (run: make all, or pass --build)" % os.path.basename(path))
 
 
 # ---------------------------------------------------------------- data access
@@ -49,14 +65,21 @@ def read_meta(path):
 
 
 def load_wav(path):
-    with wave.open(path, "rb") as w:
-        if w.getsampwidth() != 2 or w.getnchannels() != 1:
-            raise ValueError("viewer reads 16-bit mono WAV only")
-        n, rate = w.getnframes(), w.getframerate()
-        a = array.array("h")
-        a.frombytes(w.readframes(n))
-        if sys.byteorder == "big":
-            a.byteswap()
+    if not os.path.isfile(path):
+        raise ViewerError(404, "audio file is not available")
+    try:
+        with wave.open(path, "rb") as w:
+            if w.getsampwidth() != 2 or w.getnchannels() != 1:
+                raise ViewerError(422, "the viewer reads 16-bit mono WAV only")
+            n, rate = w.getnframes(), w.getframerate()
+            a = array.array("h")
+            a.frombytes(w.readframes(n))
+    except (wave.Error, EOFError) as e:
+        raise ViewerError(422, "cannot read this recording as WAV: %s" % e)
+    if sys.byteorder == "big":
+        a.byteswap()
+    if len(a) == 0:
+        raise ViewerError(422, "the recording contains no samples")
     return a, rate
 
 
@@ -117,7 +140,8 @@ def estimate_segments(mat, hop=0.010, frame=0.025, min_frames=4, jump_bins=3):
     for r in merged:
         b = median([bins[j] for j in r])
         agree = sum(1 for j in r if abs(bins[j] - b) < jump_bins) / len(r)
-        out.append({"start": r[0] * hop, "end": r[-1] * hop + frame, "bin": b, "confidence": round(agree, 2)})
+        # frame i is centred at i*hop + frame/2 and "owns" +/- hop/2 around it, so adjacent segments abut instead of overlapping
+        out.append({"start": r[0] * hop + (frame - hop) / 2, "end": r[-1] * hop + (frame + hop) / 2, "bin": b, "confidence": round(agree, 2)})
     return out
 
 
@@ -142,16 +166,40 @@ def f0_track(samples, rate, lo=60.0, hi=450.0):
 
 
 # ---------------------------------------------------------------- application
+REQUIRED = {"recordings.csv": ("recording_id", "path", "word_id", "speaker_id", "split"), "wordlist.csv": ("word_id", "label"),
+            "queries.csv": ("recording_id", "word_id", "speaker_id", "role", "decision", "usable", "margin_ratio", "quality_warnings", "top1", "top1_distance")}
+
+
+def checked_rows(path, name, kind):
+    if not os.path.isfile(path):
+        raise ViewerError(2, "%s not found: %s" % (kind, path))
+    try:
+        rows = read_tagged_csv(path)
+        with open(path, encoding="utf-8", newline="") as f:
+            ln = f.readline()
+            header = (f.readline() if ln.startswith("#") else ln).strip().split(",")
+    except (OSError, UnicodeDecodeError, csv.Error) as e:
+        raise ViewerError(2, "cannot read %s: %s" % (path, e))
+    missing = [c for c in REQUIRED[name] if c not in header]
+    if missing:
+        raise ViewerError(2, "%s is missing required column(s): %s" % (path, ", ".join(missing)))
+    return rows
+
+
 class App:
     def __init__(self, dataset, run, build="build", review=None):
         self.dataset, self.run, self.build, self.review = dataset, run, build, review
+        if not os.path.isfile(os.path.join(dataset, "dataset_meta.txt")):
+            raise ViewerError(2, "not a dataset directory (no dataset_meta.txt): %s" % dataset)
         self.meta = read_meta(os.path.join(dataset, "dataset_meta.txt"))
-        self.recs = {r["recording_id"]: r for r in read_tagged_csv(os.path.join(dataset, "recordings.csv"))}
-        self.words = {w["word_id"]: w for w in read_tagged_csv(os.path.join(dataset, "wordlist.csv"))}
+        self.recs = {r["recording_id"]: r for r in checked_rows(os.path.join(dataset, "recordings.csv"), "recordings.csv", "recordings file")}
+        self.words = {w["word_id"]: w for w in checked_rows(os.path.join(dataset, "wordlist.csv"), "wordlist.csv", "word list")}
         self.label_to_word = {w["label"]: w["word_id"] for w in self.words.values()}
-        with open(os.path.join(run, "queries.csv"), encoding="utf-8", newline="") as f:
-            self.queries = list(csv.DictReader(f))
-        with open(os.path.join(run, "settings.cfg"), encoding="utf-8") as f:
+        self.queries = checked_rows(os.path.join(run, "queries.csv"), "queries.csv", "run queries file")
+        sp = os.path.join(run, "settings.cfg")
+        if not os.path.isfile(sp):
+            raise ViewerError(2, "run settings not found: %s" % sp)
+        with open(sp, encoding="utf-8") as f:
             self.settings = f.read()
         self.synthetic = self.meta.get("kind") == "synthetic"
 
@@ -184,7 +232,8 @@ class App:
         out = {"id": rid, "speaker": r["speaker_id"], "split": r["split"], "word": r["word_id"], "label": self.words.get(r["word_id"], {}).get("label", ""),
                "sample_rate": rate, "duration": len(samples) / rate, "n_samples": len(samples), "peaks": peaks(samples, bins), "qa": self.qa(path),
                "f0": None if self.synthetic else f0_track(samples, rate), "f0_note": "F0 is not meaningful for synthetic tone signals and is not shown." if self.synthetic else "", "segments": [], "segment_note": "No automatic segmentation for real speech (not implemented)."}
-        feat = subprocess.run([self.tool("s2w_features"), path, "--out", "logmel"], capture_output=True, text=True)
+        out["spec"] = None
+        feat = run_tool(self.tool("s2w_features"), [path, "--out", "logmel"])
         if feat.returncode == 0:
             mat = parse_matrix(feat.stdout, "logmel_raw")
             out["spec"] = {"rows": len(mat), "cols": len(mat[0]), "hop": 0.010, "frame": 0.025, "data": [[round(v, 2) for v in row] for row in mat]}
@@ -194,21 +243,27 @@ class App:
         return out
 
     def qa(self, path):
-        p = subprocess.run([self.tool("s2w_qa"), path], capture_output=True, text=True)
+        p = run_tool(self.tool("s2w_qa"), [path])
+        if p.returncode not in (0, 1, 3):                # 0 ok, 1 marginal, 3 reject; anything else is a tool error
+            raise ViewerError(422, "quality analysis failed for this recording")
         return dict(ln.split("=", 1) for ln in p.stdout.splitlines() if "=" in ln)
 
     def match(self, rid, k=5):
         path = self.wav_path(rid)
         if path is None:
             return None
+        if not os.path.isfile(path):
+            raise ViewerError(404, "audio file is not available")
         enrol = [r for r in self.recs.values() if r["split"] == "enrol"]
         with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as m:
             for r in enrol:                              # one label per template -> per-template ranking from the real engine
                 m.write("%s %s\n" % (r["recording_id"], os.path.join(self.dataset, r["path"])))
         try:
-            p = subprocess.run([self.tool("s2w_match"), m.name, path, "--k", str(k)], capture_output=True, text=True)
+            p = run_tool(self.tool("s2w_match"), [m.name, path, "--k", str(k)])
         finally:
             os.unlink(m.name)
+        if p.returncode not in (0, 1):                   # 0 accepted, 1 rejected; 2 = tool error
+            raise ViewerError(422, "template lookup failed for this recording")
         res = dict(ln.split("=", 1) for ln in p.stdout.splitlines() if "=" in ln)
         ranks = []
         for i in range(1, k + 1):
@@ -230,35 +285,65 @@ class App:
         except ImportError:
             out["note"] += " (openpyxl missing: workbook not read)"
             return out
-        wb = openpyxl.load_workbook(self.review, read_only=True, data_only=True)
-        ws = wb["Master"]
-        rows = list(ws.iter_rows(values_only=True))
-        h = {v: i for i, v in enumerate(rows[0])}
-        def col(prefix):
-            return next(i for v, i in h.items() if str(v).startswith(prefix))
-        c = {"id": col("Word ID"), "word": col("Malayalam word"), "roman": col("Romanisation"), "meaning": col("English meaning"), "pair": col("Contrast pair ID"),
-             "ctype": col("Contrast type"), "proposer": col("Proposed by"), "status": col("Agreement status")}
-        for r in rows[1:]:
-            if r[c["id"]]:
-                w = {k: ("" if r[i] is None else str(r[i])) for k, i in c.items()}
-                if w["status"] == "Empty slot" and w["word"]:
-                    w["status"] = "Pending review (status not recomputed; run review_sheet.py status --write)"
-                out["words"].append(w)
+        try:
+            wb = openpyxl.load_workbook(self.review, read_only=True, data_only=True)
+            ws = wb["Master"]
+            rows = list(ws.iter_rows(values_only=True))
+            h = {v: i for i, v in enumerate(rows[0])}
+
+            def col(prefix):
+                return next(i for v, i in h.items() if str(v).startswith(prefix))
+            c = {"id": col("Word ID"), "word": col("Malayalam word"), "roman": col("Romanisation"), "meaning": col("English meaning"), "pair": col("Contrast pair ID"),
+                 "ctype": col("Contrast type"), "proposer": col("Proposed by"), "status": col("Agreement status")}
+            words = []
+            for r in rows[1:]:
+                if r[c["id"]]:
+                    w = {k: ("" if r[i] is None else str(r[i])) for k, i in c.items()}
+                    if w["status"] == "Empty slot" and w["word"]:
+                        w["status"] = "Pending review (status not recomputed; run review_sheet.py status --write)"
+                    words.append(w)
+        except Exception:                                 # unreadable/malformed workbook: show nothing as verified
+            out["note"] += " The review workbook could not be read, so no statuses are shown."
+            return out
+        out["words"] = words
         out["available"] = True
         return out
 
 
 # ---------------------------------------------------------------- HTTP
+def parse_range(header, size):
+    """Single 'bytes=a-b' / 'bytes=a-' / 'bytes=-n' range -> (first, last) inclusive; None if absent; 'invalid' if unsatisfiable."""
+    if not header:
+        return None
+    if not header.startswith("bytes=") or "," in header:
+        return "invalid"
+    lo, _, hi = header[6:].partition("-")
+    try:
+        if lo == "":
+            n = int(hi)
+            if n <= 0:
+                return "invalid"
+            a, b = max(0, size - n), size - 1
+        else:
+            a, b = int(lo), (int(hi) if hi else size - 1)
+    except ValueError:
+        return "invalid"
+    b = min(b, size - 1)
+    return (a, b) if 0 <= a <= b else "invalid"
+
+
 def make_handler(app):
     class H(BaseHTTPRequestHandler):
         def log_message(self, *a):
             pass
 
-        def send(self, code, body, ctype):
+        def send(self, code, body, ctype, extra=None):
             self.send_response(code)
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
+            for k, val in (extra or {}).items():
+                self.send_header(k, val)
             self.end_headers()
             self.wfile.write(body)
 
@@ -270,6 +355,8 @@ def make_handler(app):
             try:
                 if p == "/":
                     return self.send(200, PAGE.encode(), "text/html; charset=utf-8")
+                if p == "/favicon.ico":
+                    return self.send(204, b"", "image/x-icon")
                 if p == "/api/index":
                     return self.js(app.index())
                 if p == "/api/verification":
@@ -282,11 +369,26 @@ def make_handler(app):
                     path = app.wav_path(p[len("/audio/"):])      # id lookup only: no path is taken from the URL
                     if path is None:
                         return self.js({"error": "unknown recording"}, 404)
+                    if not os.path.isfile(path):
+                        raise ViewerError(404, "audio file is not available")
                     with open(path, "rb") as f:
-                        return self.send(200, f.read(), "audio/wav")
+                        data = f.read()
+                    # Range support is required: without it browsers cannot seek, so region playback would restart from 0.
+                    rng = parse_range(self.headers.get("Range"), len(data))
+                    if rng == "invalid":
+                        return self.send(416, b"", "audio/wav", {"Content-Range": "bytes */%d" % len(data), "Accept-Ranges": "bytes"})
+                    if rng:
+                        a, b = rng
+                        return self.send(206, data[a:b + 1], "audio/wav", {"Content-Range": "bytes %d-%d/%d" % (a, b, len(data)), "Accept-Ranges": "bytes"})
+                    return self.send(200, data, "audio/wav", {"Accept-Ranges": "bytes"})
                 return self.js({"error": "not found"}, 404)
-            except Exception as e:  # report, never crash the server
-                return self.js({"error": str(e)}, 500)
+            except (BrokenPipeError, ConnectionResetError):
+                return                                     # the browser closed the connection (e.g. it navigated away): not an error
+            except ViewerError as e:
+                return self.js({"error": e.message}, e.status)
+            except Exception as e:  # unexpected: log the detail locally, send no internals to the page
+                sys.stderr.write("viewer internal error on %s: %r\n" % (p, e))
+                return self.js({"error": "internal viewer error (see the server log)"}, 500)
 
         def do_POST(self):
             self.js({"error": "read-only viewer"}, 405)
@@ -325,8 +427,8 @@ small{color:var(--mut)}
 <script>
 const $=id=>document.getElementById(id),COL=['#4285d8','#e8a43c','#2d9d78','#9b59b6','#d35400'];
 let IDX,CUR=null,audio=new Audio(),playEnd=null,sel=null,zoom=1,scroll=0;
-const j=u=>fetch(u).then(r=>r.json()),esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-async function init(){IDX=await j('/api/index');
+const j=u=>fetch(u).then(async r=>{const d=await r.json().catch(()=>({error:'bad response'}));if(!r.ok||d.error)throw new Error(d.error||('HTTP '+r.status));return d}),esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+async function init(){try{IDX=await j('/api/index')}catch(e){$('view').innerHTML='<div class="card bad">Cannot load the run: '+esc(e.message)+'</div>';return}
  $('meta').textContent=`dataset ${IDX.dataset_id} · protocol ${IDX.protocol} · run ${IDX.run} · read-only`;
  if(IDX.kind==='synthetic')$('banner').innerHTML='<div class="banner"><b>SYNTHETIC DEMO DATA</b> &mdash; tone signals with placeholder labels (SYNTH_*). Software demonstration only. Not Malayalam speech and not recognition accuracy.</div>';
  const ok=IDX.queries.filter(q=>q.correct).length;$('runinfo').textContent=`${ok}/${IDX.queries.length} top-1 correct (this run)`;
@@ -335,14 +437,16 @@ async function init(){IDX=await j('/api/index');
  if(location.hash.length>1)open(location.hash.slice(1));}
 async function open(id){document.querySelectorAll('.q').forEach(e=>e.classList.toggle('sel',e.dataset.id===id));
  $('view').innerHTML='<div class="card">Loading…</div>';audio.pause();sel=null;zoom=1;scroll=0;
- const [rec,mat,ver]=await Promise.all([j('/api/recording/'+id),j('/api/match/'+id),j('/api/verification')]);
+ const soft=(u,d)=>j(u).catch(e=>({...d,note:'unavailable: '+e.message}));
+ let rec;try{rec=await j('/api/recording/'+id)}catch(e){CUR=null;$('view').innerHTML='<div class="card"><h2>Cannot show this recording</h2><div class="bad">'+esc(e.message)+'</div></div>';return}
+ const [mat,ver]=await Promise.all([soft('/api/match/'+id,{ranks:[]}),soft('/api/verification',{available:false,words:[]})]);
  const q=IDX.queries.find(x=>x.id===id);CUR={rec,mat,q,ver};audio.src='/audio/'+id;render();}
 function fmt(t){return t.toFixed(3)+' s'}
 function render(){const {rec,mat,q,ver}=CUR;
  const segs=rec.segments.map((s,i)=>`<div class="seg"><div class="badge" style="background:${COL[i%5]}">S${i+1}</div><div><b>Spectral segment ${i+1}</b> <span class="tag est">estimate</span><br><small>${fmt(s.start)} – ${fmt(s.end)} · confidence ${s.confidence}</small><canvas class="mini" data-i="${i}" height="40"></canvas></div><div><button data-p="${i}">▶ play</button></div></div>`).join('')||`<small>${esc(rec.segment_note)}</small>`;
  const cand=q.cands.map(c=>`<tr><td>${esc(c.label)}</td><td>${(+c.dist).toFixed(4)}</td></tr>`).join('');
  const tm=(mat.ranks||[]).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.template)}</td><td>${esc(r.label)}</td><td>${esc(r.speaker)}</td><td>${r.dist.toFixed(4)}</td><td><button data-t="${r.template}">▶</button></td></tr>`).join('');
- const qa=rec.qa;
+ const qa=rec.qa||{};
  const vw=ver.available?`<table><tr><th>ID</th><th>Malayalam</th><th>Manglish</th><th>Meaning</th><th>Pair</th><th>Status</th></tr>${ver.words.map(w=>`<tr><td>${esc(w.id)}</td><td>${esc(w.word)}</td><td>${esc(w.roman)}</td><td>${esc(w.meaning)}</td><td>${esc(w.pair)} ${esc(w.ctype)}</td><td><span class="tag pend">${esc(w.status)}</span></td></tr>`).join('')}</table>`:'<small>No review workbook given (--review).</small>';
  const here=IDX.kind==='synthetic'?'This recording is a synthetic placeholder word (<b>'+esc(rec.label)+'</b>): no human verification applies to it.':'';
  $('view').innerHTML=`
@@ -404,14 +508,25 @@ def main():
     ap.add_argument("--build", default=os.environ.get("S2W_BUILD", "build"))
     ap.add_argument("--port", type=int, default=8765)
     a = ap.parse_args()
-    app = App(a.dataset, a.run, a.build, a.review)
-    srv = make_server(app, a.port)
-    print("Sound2Word Acoustic Viewer (read-only) at http://127.0.0.1:%d  - Ctrl+C to stop" % srv.server_address[1])
+    try:
+        app = App(a.dataset, a.run, a.build, a.review)
+        srv = make_server(app, a.port)
+    except ViewerError as e:
+        print("error: %s" % e.message, file=sys.stderr)
+        return 2
+    except OSError as e:
+        print("error: cannot listen on 127.0.0.1:%d (%s)" % (a.port, e.strerror or e), file=sys.stderr)
+        return 2
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+    print("Sound2Word Acoustic Viewer (read-only) at http://127.0.0.1:%d  - Ctrl+C to stop" % srv.server_address[1], flush=True)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
         pass
+    finally:
+        srv.server_close()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
