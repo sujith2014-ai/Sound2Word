@@ -9,6 +9,11 @@ from spectral changes that you drag to where you hear each sound start; every so
 the take with your boundaries; Discard throws it away and nothing is written. /compare lines two takes up sound by sound
 (durations and spectral difference per sound), e.g. KALAM against KAALAM.
 
+Optional dictionary sidebar: --dictionary FILE.csv (e.g. an Olam open dataset you downloaded; it is only READ) lets you search by
+Malayalam, English or Manglish and add a word to your recording list with one click. Dictionary words are only SUGGESTIONS: the
+Manglish spelling is an automatic transliteration (check it), and every added word is logged as UNVERIFIED in
+candidates_unverified.csv. Native-speaker review (docs/WORD_REVIEW.md) is still what makes a word verified.
+
 Sound units come from the Manglish spelling by simple text rules (aa = one long vowel, tt = one geminate consonant, th/ch/zh
 = one consonant); give them explicitly as a third field ("k aa l a m") when the rule is wrong. Boundaries are estimates or
 human-placed, never ground truth: neighbouring sounds overlap in real speech.
@@ -77,13 +82,13 @@ def base_unit(u):
     return u[:h] if len(u) >= 2 and len(u) % 2 == 0 and u[:h] == u[h:] else u
 
 
-def parse_word(spec):
+def parse_word(spec, strict=True):
     parts = [x.strip() for x in spec.split("|")]
     ml, rom = parts[0], (parts[1] if len(parts) > 1 else "")
     if len(parts) not in (2, 3) or not ml or not MANGLISH_RE.match(rom):
         raise v.ViewerError(2, "bad --word %r: use 'MALAYALAM|manglish' or 'MALAYALAM|manglish|k a l a m' with ASCII letters A-Z only" % spec)
     units = parts[2].lower().split() if len(parts) == 3 else split_units(rom)
-    if not units or any(not re.match(r"^[a-z]{1,4}$", u) for u in units) or "".join(units) != rom.lower():
+    if not units or len(units) > 14 or any(not re.match(r"^[a-z]{1,4}$", u) for u in units) or (strict and "".join(units) != rom.lower()):
         raise v.ViewerError(2, "bad sound units for %r: they must be ASCII letters and join up to the Manglish spelling" % rom)
     return {"id": rom.lower(), "label": ml, "manglish": rom, "units": units}
 
@@ -156,6 +161,243 @@ def validate_segments(seg, units, duration):
     return {"units": units, "edges": [round(float(x), 4) for x in ed], "method": seg["method"]}
 
 
+MAL = re.compile("[\u0d00-\u0d7f]")
+_CONS = {"ക": "k", "ഖ": "kh", "ഗ": "g", "ഘ": "gh", "ങ": "ng", "ച": "ch", "ഛ": "chh", "ജ": "j", "ഝ": "jh", "ഞ": "nj", "ട": "t", "ഠ": "th", "ഡ": "d", "ഢ": "dh",
+         "ണ": "n", "ത": "th", "ഥ": "th", "ദ": "d", "ധ": "dh", "ന": "n", "പ": "p", "ഫ": "ph", "ബ": "b", "ഭ": "bh", "മ": "m", "യ": "y", "ര": "r", "ല": "l",
+         "വ": "v", "ശ": "sh", "ഷ": "sh", "സ": "s", "ഹ": "h", "ള": "l", "ഴ": "zh", "റ": "r"}
+_VOW = {"അ": "a", "ആ": "aa", "ഇ": "i", "ഈ": "ee", "ഉ": "u", "ഊ": "oo", "ഋ": "ru", "എ": "e", "ഏ": "e", "ഐ": "ai", "ഒ": "o", "ഓ": "o", "ഔ": "au"}
+_SIGN = {"ാ": "aa", "ി": "i", "ീ": "ee", "ു": "u", "ൂ": "oo", "ൃ": "ru", "െ": "e", "േ": "e", "ൈ": "ai", "ൊ": "o", "ോ": "o", "ൌ": "au", "ൗ": "au"}
+_CHILLU = {"ൺ": "n", "ൻ": "n", "ർ": "r", "ൽ": "l", "ൾ": "l", "ൿ": "k"}
+VIRAMA = "\u0d4d"
+
+
+def ml_to_manglish(word):
+    """Malayalam script -> a SUGGESTED ASCII Manglish spelling (consonant + inherent 'a', vowel signs, virama, chillu, final
+    virama -> 'u'; the geminate RRa 'റ്റ' -> tt). It cannot know voicing (പടി -> pati, not padi) or o/oo length: a reviewer must
+    check it. Characters it does not know are dropped."""
+    w = word.replace("\u200c", "").replace("\u200d", "").replace("റ്റ", "ട്ട").replace("ങ്ങ", "ങ")
+    out, i, n = [], 0, len(w)
+    while i < n:
+        c = w[i]
+        if c in _CONS:
+            out.append(_CONS[c])
+            nxt = w[i + 1] if i + 1 < n else ""
+            if nxt in _SIGN:
+                out.append(_SIGN[nxt])
+                i += 2
+            elif nxt == VIRAMA:
+                if i + 2 >= n or not MAL.match(w[i + 2]):
+                    out.append("u")                       # word-final virama (samvruthokaram)
+                i += 2
+            else:
+                out.append("a")
+                i += 1
+        elif c in _VOW:
+            out.append(_VOW[c])
+            i += 1
+        elif c in _CHILLU:
+            out.append(_CHILLU[c])
+            i += 1
+        elif c == "ം":
+            out.append("m")
+            i += 1
+        elif c == "ഃ":
+            out.append("h")
+            i += 1
+        else:
+            if c.isascii() and c.isalpha():
+                out.append(c.lower())
+            i += 1
+    return "".join(out)
+
+
+_IPA = {"a": "a", "aː": "aa", "i": "i", "iː": "ii", "u": "u", "uː": "uu", "e": "e", "eː": "ee", "o": "o", "oː": "oo", "ə": "u", "ai̯": "ai", "au̯": "au",
+        "k": "k", "ɡ": "g", "ŋ": "ng", "t͡ʃ": "ch", "ɟ": "j", "ɲ": "nj", "ʈ": "t", "ɖ": "d", "ɳ": "n", "t̪": "th", "d": "d", "d̪": "d", "n": "n", "n̪": "n",
+        "p": "p", "b": "b", "m": "m", "j": "y", "ɾ": "r", "r": "rr", "l": "l", "ɭ": "lh", "ɻ": "zh", "ʋ": "v", "ʃ": "sh", "ʂ": "sh", "s": "s", "ɦ": "h",
+        "h": "h", "f": "f", "ṯ": "t"}
+
+
+def ipa_units(phonemes):
+    """mlphon phoneme list -> our ASCII sound units (long vowels aa/ii/uu/ee/oo; doubled consonants merged into one geminate unit,
+    e.g. ʈ ʈ -> tt). None if a symbol is not mapped (then the spelling rule is used instead)."""
+    out = []
+    for ph in phonemes:
+        if ph.strip() == "":
+            continue
+        if ph in _IPA:
+            u = _IPA[ph]
+        elif ph[-1:] in ("ʰ", "ʱ") and ph[:-1] in _IPA and _IPA[ph[:-1]][-1] not in "aeiou":
+            u = _IPA[ph[:-1]] + "h"
+        else:
+            return None
+        if out and out[-1][0] == u and u == "ng" and not out[-1][1]:
+            out[-1] = ("ng", True)                        # ങ്ങ: kept as one 'ng' unit (a 4-letter ngng is not a Manglish habit)
+        elif out and out[-1][0] == u and u[-1] not in "aeiou" and len(u) <= 2 and not out[-1][1]:
+            out[-1] = ((u[0] + u) if u[-1] == "h" else (u + u), True)      # geminate: tt, mm; for aspirate-like units tth, llh, ssh
+        else:
+            out.append((u, False))
+    return [u for u, _ in out] or None
+
+
+_MLPHON = []
+
+
+def g2p(ml):
+    """(units, ipa string) from the optional `mlphon` package (pip install mlphon), or None when it is missing or cannot analyse the
+    word. Pronunciation data is far better than a spelling rule: it keeps vowel length (കോടി vs കൊടി) and gemination."""
+    if not _MLPHON:
+        try:
+            import warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                from mlphon import PhoneticAnalyser, split_as_phonemes
+                _MLPHON.append((PhoneticAnalyser(), split_as_phonemes))
+        except Exception:
+            _MLPHON.append(None)
+    if _MLPHON[0] is None:
+        return None
+    try:
+        an, sp = _MLPHON[0]
+        res = an.analyse(ml)
+        ph = sp(res[0]) if res else None
+        if isinstance(ph, str):                           # split_as_phonemes returns a space-separated string
+            ph = ph.split()
+    except Exception:
+        return None
+    units = ipa_units(ph) if ph else None
+    return (units, " ".join(x for x in ph if x.strip())) if units else None
+
+
+def _sanitise_cell(x):
+    x = str(x).replace("\r", " ").replace("\n", " ")
+    return "'" + x if x[:1] in ("=", "+", "-", "@", "\t") else x
+
+
+class Dictionary:
+    """Read-only search over a local dictionary CSV/TSV (e.g. an Olam open dataset). The layout is detected from the data:
+    a column that is mostly Malayalam script holds the Malayalam words (several per cell are split at , ; / |), an optional
+    mostly-English column holds the meaning. Override with ml_col / en_col (column name or 0-based index)."""
+
+    def __init__(self, path, ml_col=None, en_col=None, no_header=False, max_entries=2000000):
+        import csv as _csv
+        _csv.field_size_limit(10 ** 7)
+        if not os.path.isfile(path):
+            raise v.ViewerError(2, "dictionary file not found: %s" % path)
+        self.name = os.path.basename(path)
+        try:
+            with open(path, encoding="utf-8-sig", newline="") as f:
+                head = f.read(8192)
+                f.seek(0)
+                delim = "\t" if head.count("\t") > head.count(",") else ","
+                rows = [r for r in _csv.reader(f, delimiter=delim) if r]
+        except (OSError, UnicodeDecodeError, _csv.Error) as e:
+            raise v.ViewerError(2, "cannot read dictionary %s: %s" % (self.name, e))
+        if not rows:
+            raise v.ViewerError(2, "dictionary %s is empty" % self.name)
+        header = (not no_header and not any(MAL.search(c) for c in rows[0]) and len(rows) > 1 and any(MAL.search(c) for c in rows[1])
+                  and all(len(c) <= 40 for c in rows[0]))
+        names = [c.strip().lower() for c in rows[0]] if header else []
+        data = rows[1:] if header else rows
+        ncol = max(len(r) for r in data[:500]) if data else 0
+        sample = data[:500]
+
+        def frac(ci, pred):
+            cells = [r[ci] for r in sample if ci < len(r) and r[ci].strip()]
+            return sum(1 for c in cells if pred(c)) / len(cells) if cells else 0.0
+        isml = lambda c: bool(MAL.search(c))
+        isen = lambda c: bool(re.search("[A-Za-z]", c)) and not MAL.search(c)
+
+        def resolve(spec):
+            if spec is None:
+                return None
+            if str(spec).isdigit() and int(spec) < ncol:
+                return int(spec)
+            if str(spec).lower() in names:
+                return names.index(str(spec).lower())
+            raise v.ViewerError(2, "dictionary column %r not found (columns: %s)" % (spec, ", ".join(names) or "0.." + str(ncol - 1)))
+        mlc, enc = resolve(ml_col), resolve(en_col)
+        if mlc is None and "word_ml" in names:                  # a lexicon built by tools/s2w_lexicon.py
+            mlc = names.index("word_ml")
+        if enc is None and "meaning_en" in names:
+            enc = names.index("meaning_en")
+        pre = {k: names.index(k) for k in ("manglish", "sound_units", "ipa", "meaning_ml", "g2p") if k in names}
+        if mlc is None:
+            cands = [ci for ci in range(ncol) if frac(ci, isml) >= 0.5]
+            if not cands:
+                raise v.ViewerError(2, "no Malayalam-script column found in %s (use --dict-ml-col)" % self.name)
+            pref = [ci for ci in cands if names and any(k in names[ci] for k in ("malayalam", "word", "head", "ml"))]
+            mlc = (pref or cands)[0]
+        if enc is None:
+            cands = [ci for ci in range(ncol) if ci != mlc and frac(ci, isen) >= 0.5 and sum(len(r[ci]) for r in sample if ci < len(r)) / max(1, len(sample)) < 120]
+            pref = [ci for ci in cands if names and any(k in names[ci] for k in ("english", "meaning", "en", "word"))]
+            enc = (pref or cands or [None])[0]
+        other_ml = [ci for ci in range(ncol) if ci not in (mlc, enc) and frac(ci, isml) >= 0.5]
+        self.entries, seen = [], set()
+        for r in data:
+            if mlc >= len(r):
+                continue
+            meaning = r[enc].strip() if enc is not None and enc < len(r) else (r[other_ml[0]].strip() if other_ml and other_ml[0] < len(r) else "")
+            if not meaning and "meaning_ml" in pre and pre["meaning_ml"] < len(r):
+                meaning = r[pre["meaning_ml"]].strip()
+            cellv = lambda k: r[pre[k]].strip() if k in pre and pre[k] < len(r) else ""
+            cell = re.sub(r"\([^)]*\)", " ", r[mlc])
+            for tok in re.split(r"[;,/|\n]+", cell):
+                t = tok.strip(" .:-\u2013\u2014\"'")
+                if not t or not MAL.search(t) or len(t) > 60 or (t, meaning) in seen:
+                    continue
+                seen.add((t, meaning))
+                single = " " not in t and all(MAL.match(ch) or ch in "\u200c\u200d" for ch in t)
+                tr = (cellv("manglish") or ml_to_manglish(t)) if single else ""
+                su = cellv("sound_units").split()
+                pre_units = (su, cellv("ipa"), cellv("g2p") == "yes") if single and su and all(re.match(r"^[a-z]{1,4}$", x) for x in su) else None
+                self.entries.append((t, meaning[:240], tr, meaning[:240].lower(), pre_units))
+                if len(self.entries) >= max_entries:
+                    break
+            if len(self.entries) >= max_entries:
+                break
+        if not self.entries:
+            raise v.ViewerError(2, "dictionary %s contained no usable Malayalam entries" % self.name)
+        self.columns = {"malayalam": names[mlc] if names else mlc, "meaning": (names[enc] if names else enc) if enc is not None else None}
+
+    def search(self, q, limit=40):
+        q = q.strip().lower()
+        if not q or len(q) > 60:
+            return []
+        scored = []
+        if MAL.search(q):
+            for i, (ml, mean, tr, ml_lc, _pu) in enumerate(self.entries):
+                rank = 0 if ml == q else 1 if ml.startswith(q) else 2 if q in ml else None
+                if rank is not None:
+                    scored.append((rank, len(ml), i))
+        else:
+            for i, (ml, mean, tr, mean_lc, _pu) in enumerate(self.entries):
+                if tr == q:
+                    rank = 0
+                elif tr and tr.startswith(q):
+                    rank = 1
+                elif mean_lc.startswith(q):
+                    rank = 2
+                elif (" " + q) in (" " + mean_lc):
+                    rank = 3
+                elif tr and q in tr:
+                    rank = 4
+                else:
+                    continue
+                scored.append((rank, len(ml), i))
+        scored.sort()
+        out = []
+        for _, _, i in scored[:limit]:
+            ml, mean, tr, _lc, pu = self.entries[i]
+            g = g2p(ml) if tr and not pu else None
+            if pu:
+                out.append({"ml": ml, "meaning": mean, "manglish": tr, "units": pu[0], "ipa": pu[1], "g2p": pu[2], "can_add": True})
+            elif g:
+                out.append({"ml": ml, "meaning": mean, "manglish": "".join(g[0]), "units": g[0], "ipa": g[1], "g2p": True, "can_add": True})
+            else:
+                out.append({"ml": ml, "meaning": mean, "manglish": tr, "units": split_units(tr) if tr else [], "ipa": "", "g2p": False, "can_add": bool(tr)})
+        return out
+
+
 def validate_wav(data):
     """-> (sample_rate, n_frames). Raises ViewerError(422) for anything that is not a usable 16-bit mono WAV."""
     try:
@@ -178,13 +420,73 @@ def validate_wav(data):
 
 
 class Recorder:
-    def __init__(self, record_dir, words, build="build"):
-        self.dir, self.build = record_dir, build
+    MAX_WORDS = 200
+
+    def __init__(self, record_dir, words, build="build", dictionary=None):
+        self.dir, self.build, self.dictionary = record_dir, build, dictionary
         self.words = {w["id"]: w for w in words}
-        if not self.words:
-            raise v.ViewerError(2, "give at least one --word 'MALAYALAM|manglish'")
         os.makedirs(self.dir, exist_ok=True)
         self.token = secrets.token_urlsafe(16)
+        self.load_saved_words()
+        if not self.words and dictionary is None:
+            raise v.ViewerError(2, "give at least one --word 'MALAYALAM|manglish' (or run with --dictionary and add words in the sidebar)")
+
+    def words_file(self):
+        return os.path.join(self.dir, "words.json")
+
+    def load_saved_words(self):
+        try:
+            with open(self.words_file(), encoding="utf-8") as f:
+                saved = json.load(f)
+        except (OSError, ValueError):
+            return
+        for e in saved if isinstance(saved, list) else []:
+            try:
+                w = parse_word("%s|%s|%s" % (e["label"], e["manglish"], " ".join(e["units"])), strict=not e.get("g2p"))
+                w["g2p"] = bool(e.get("g2p"))
+            except (v.ViewerError, KeyError, TypeError):
+                continue
+            if w["id"] not in self.words and len(self.words) < self.MAX_WORDS:
+                w["meaning"], w["source"] = str(e.get("meaning", ""))[:240], str(e.get("source", ""))[:80]
+                self.words[w["id"]] = w
+
+    def add_word(self, label, manglish, units=None, meaning="", source="", g2p_units=False):
+        """Add a word to the recording list (persisted in words.json) and log it as an UNVERIFIED candidate."""
+        if not isinstance(label, str) or not isinstance(manglish, str) or not label.strip() or len(label) > 60 or any(c in label for c in "|\n\r\t"):
+            raise v.ViewerError(422, "give the Malayalam word (up to 60 characters, no | or line breaks)")
+        try:
+            w = parse_word("%s|%s%s" % (label.strip(), manglish.strip(), "|" + " ".join(units) if units else ""), strict=not (g2p_units and units))
+        except v.ViewerError as e:
+            raise v.ViewerError(422, "The Manglish spelling must use the letters A-Z only (no accents or spaces)" if "bad --word" in e.message else
+                                "The sound units must be letters A-Z and join up to the Manglish spelling")
+        w["g2p"] = bool(g2p_units and units)
+        if w["id"] in self.words:
+            raise v.ViewerError(409, "'%s' is already in your word list" % w["manglish"])
+        if len(self.words) >= self.MAX_WORDS:
+            raise v.ViewerError(422, "word list is full (%d words)" % self.MAX_WORDS)
+        w["meaning"], w["source"] = str(meaning)[:240], str(source)[:80]
+        self.words[w["id"]] = w
+        saved = []
+        try:
+            with open(self.words_file(), encoding="utf-8") as f:
+                saved = json.load(f)
+        except (OSError, ValueError):
+            pass
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        saved.append({"label": w["label"], "manglish": w["manglish"], "units": w["units"], "g2p": w["g2p"], "meaning": w["meaning"], "source": w["source"], "added_utc": now})
+        tmp = self.words_file() + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(saved, f, ensure_ascii=False, indent=1)
+        os.replace(tmp, self.words_file())
+        cand = os.path.join(self.dir, "candidates_unverified.csv")
+        new = not os.path.exists(cand)
+        with open(cand, "a", newline="", encoding="utf-8") as f:
+            cw = csv.writer(f)
+            if new:
+                cw.writerow(["word_ml", "manglish_suggested", "sound_units", "meaning_en", "source", "added_utc", "status", "note"])
+            cw.writerow([_sanitise_cell(w["label"]), w["manglish"], " ".join(w["units"]), _sanitise_cell(w["meaning"]), _sanitise_cell(w["source"]), now, "UNVERIFIED",
+                         "dictionary/typed suggestion: spelling, meaning, familiarity and pronunciation still need the two-reviewer review"])
+        return w
 
     def tool(self, name):
         return os.path.join(self.build, name)
@@ -206,6 +508,11 @@ class Recorder:
 
     def listing(self):
         return [dict(w, takes=self.takes(w["id"])) for w in self.words.values()]
+
+    def dict_search(self, q):
+        if self.dictionary is None:
+            return {"available": False, "results": [], "note": "No dictionary loaded. Start the recorder with --dictionary FILE (see --help)."}
+        return {"available": True, "name": self.dictionary.name, "count": len(self.dictionary.entries), "results": self.dictionary.search(q)}
 
     def segments(self, wid, name):
         p = self.take_path(wid, name)
@@ -370,6 +677,8 @@ def make_handler(rec):
                     return self.send(200, COMPARE.replace("__STYLE__", STYLE).replace("__TOKEN__", rec.token).encode(), "text/html; charset=utf-8")
                 if p == "/api/words":
                     return self.js(rec.listing())
+                if p == "/api/dict":
+                    return self.js(rec.dict_search((parse_qs(urlparse(self.path).query).get("q") or [""])[0]))
                 if p == "/api/compare":
                     q = parse_qs(urlparse(self.path).query)
                     return self.js(rec.compare((q.get("a") or [""])[0], (q.get("b") or [""])[0]))
@@ -394,7 +703,7 @@ def make_handler(rec):
             except (BrokenPipeError, ConnectionResetError):
                 return
             except v.ViewerError as e:
-                return self.js({"error": e.message}, e.status)
+                return self.js({"error": e.message}, e.status if e.status >= 400 else 422)
             except Exception as e:
                 sys.stderr.write("recorder internal error on %s: %r\n" % (self.path, e))
                 return self.js({"error": "internal recorder error (see the server log)"}, 500)
@@ -405,9 +714,30 @@ def make_handler(rec):
                     return self.js({"error": "forbidden host"}, 403)
                 if self.headers.get("X-S2W-Token") != rec.token:
                     return self.js({"error": "missing or wrong token (reload the page)"}, 403)
-                if (self.headers.get("Content-Type") or "").split(";")[0].strip() != "audio/wav":
-                    return self.js({"error": "Content-Type must be audio/wav"}, 415)
                 u = urlparse(self.path)
+                ctype = (self.headers.get("Content-Type") or "").split(";")[0].strip()
+                if u.path == "/api/words":
+                    if ctype != "application/json":
+                        return self.js({"error": "Content-Type must be application/json"}, 415)
+                    try:
+                        n = int(self.headers.get("Content-Length", ""))
+                    except ValueError:
+                        raise v.ViewerError(411, "Content-Length required")
+                    if n > 4096:
+                        raise v.ViewerError(413, "request too large")
+                    try:
+                        d = json.loads(self.rfile.read(n).decode("utf-8"))
+                    except (ValueError, UnicodeDecodeError):
+                        raise v.ViewerError(422, "request is not valid JSON")
+                    if not isinstance(d, dict):
+                        raise v.ViewerError(422, "request must be a JSON object")
+                    units = d.get("units")
+                    if units is not None and not (isinstance(units, list) and all(isinstance(x, str) for x in units)):
+                        raise v.ViewerError(422, "units must be a list of strings")
+                    w = rec.add_word(d.get("label"), d.get("manglish"), units, d.get("meaning", ""), d.get("source", ""), d.get("g2p") is True)
+                    return self.js({"added": w["id"], "words": len(rec.words)})
+                if ctype != "audio/wav":
+                    return self.js({"error": "Content-Type must be audio/wav"}, 415)
                 data = self.body()
                 q = parse_qs(u.query)
                 wid = (q.get("word") or [""])[0]
@@ -428,7 +758,7 @@ def make_handler(rec):
             except (BrokenPipeError, ConnectionResetError):
                 return
             except v.ViewerError as e:
-                return self.js({"error": e.message}, e.status)
+                return self.js({"error": e.message}, e.status if e.status >= 400 else 422)
             except Exception as e:
                 sys.stderr.write("recorder internal error on %s: %r\n" % (self.path, e))
                 return self.js({"error": "internal recorder error (see the server log)"}, 500)
@@ -451,6 +781,8 @@ STYLE = r"""
 @media(prefers-color-scheme:dark){:root{--bg:#14171d;--card:#1d222b;--ink:#e8ebf1;--mut:#8f98aa;--line:#2b323f}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,sans-serif}
 header{padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line)}h1{margin:0;font-size:18px}nav{margin-top:6px;font-size:14px}nav a{color:var(--blue);text-decoration:none}
+.layout{display:grid;grid-template-columns:330px minmax(0,1fr);gap:16px;max-width:1440px;margin:0 auto;padding:16px 20px}.layout>main{padding:0;max-width:none;margin:0;min-width:0}@media(max-width:900px){.layout{grid-template-columns:1fr}}
+.side input[type=text],.side input:not([type]){font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;width:100%;background:var(--card);color:var(--ink)}.dr{padding:8px 0;border-bottom:1px solid var(--line)}.mlw{font-size:20px}.dr .dm{width:130px;display:inline-block;margin-right:6px}.dr button,.side button{padding:5px 10px;font-size:13px}#dres{max-height:60vh;overflow:auto}
 .banner{margin-top:8px;padding:8px 12px;border-radius:8px;background:#fff3cd;color:#664d03;font-size:13px}
 main{max-width:1000px;margin:0 auto;padding:16px 20px}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
 .chips{display:flex;gap:8px;flex-wrap:wrap}.chip{padding:6px 14px;border:1px solid var(--line);border-radius:99px;cursor:pointer;background:var(--card);color:var(--ink)}.chip.sel{border-color:var(--blue);background:var(--bg);font-weight:600}
@@ -470,9 +802,16 @@ PAGE = r"""<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name
 <title>Sound2Word Voice Recorder</title><style>__STYLE__</style></head><body>
 <header><h1>Sound2Word &mdash; Voice Recorder</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a></nav>
 <div class="banner"><b>PERSONAL TEST RECORDINGS</b> &mdash; for trying the screen and playback only. Not experiment data, not a verified vocabulary, and not evidence of recognition accuracy. Audio stays on this computer.</div></header>
+<div class="layout"><aside class="side card" id="side"><h2 style="margin:0 0 6px;font-size:16px">Word search</h2>
+ <div class="mut" id="dinfo">Search a dictionary by Malayalam, English or Manglish.</div>
+ <input type="text" id="dq" placeholder="e.g. pot, kalam, കലം" autocomplete="off" aria-label="Search dictionary"><div id="dres" style="margin-top:8px"></div>
+ <h3 style="margin:14px 0 4px;font-size:14px">Add a word by hand</h3>
+ <input type="text" id="addml" placeholder="Malayalam, e.g. കലം" style="margin-bottom:6px"><input type="text" id="addrom" placeholder="Manglish, letters A-Z only, e.g. kalam" style="margin-bottom:6px">
+ <button type="button" id="addgo">＋ Add to my words</button><div class="mut" id="addmsg" style="margin-top:6px"></div>
+ <div class="mut" style="margin-top:10px">Dictionary words are only suggestions. The Manglish spelling is automatic: check it. Added words are listed as UNVERIFIED in <code>candidates_unverified.csv</code>; they are not part of the verified word list until native speakers review them.</div></aside>
 <main>
 <div class="card"><div class="chips" id="chips"></div>
- <div class="word"><div class="ml" id="ml"></div><div class="rom" id="rom"></div><div class="units" id="units"></div></div>
+ <div class="word"><div class="ml" id="ml"></div><div class="rom" id="rom"></div><div class="units" id="units"></div><div class="mut" id="meaning"></div></div>
  <div class="row" style="justify-content:center"><button id="rec" class="rec">&#9679; Record</button><button id="stop" disabled>&#9632; Stop</button><span id="timer" class="mut">0.0 s</span></div>
  <canvas id="live" height="130"></canvas><div id="status" role="status"></div></div>
 <div class="card" id="review" hidden><h2 style="margin:0 0 4px;font-size:16px">Your recording</h2>
@@ -484,7 +823,7 @@ PAGE = r"""<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name
  <div id="qa" class="mut" style="margin-top:8px"></div>
  <div class="row"><button id="play">&#9654; Play whole word</button><button id="accept" class="ok">&#10003; Accept</button><button id="discard">&#10007; Discard</button><span class="mut">Discard throws this recording away (nothing is saved) and you can record again.</span></div></div>
 <div class="card"><h2 style="margin:0 0 6px;font-size:16px">Accepted takes for this word</h2><div id="takes" class="mut">None yet.</div></div>
-</main>
+</main></div>
 <script>
 const TOKEN='__TOKEN__',$=id=>document.getElementById(id),COL=['#4285d8','#e8a43c','#2d9d78','#9b59b6','#d35400','#16a085','#c0392b','#7f8c8d'];
 let words=[],cur=0,state='idle',ctx,stream,node,chunks=[],rate=0,start=0,live=[],raf=0,pcm=null,wav=null,rev=null,analysis=null,units=[],edges=[],method='suggested',stopAt=null,drag=-1,pausedMid=false,view=[0,1],zoomed=true;
@@ -494,7 +833,9 @@ async function api(u,opt){const r=await fetch(u,opt);const d=await r.json().catc
 async function loadWords(){words=await api('/api/words');if(cur>=words.length)cur=0;
  $('chips').innerHTML=words.map((w,i)=>`<span class="chip${i===cur?' sel':''}" data-i="${i}">${esc(w.label)} · ${esc(w.manglish)} (${w.takes.length})</span>`).join('');
  document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{if(state==='idle'){cur=+c.dataset.i;clearReview();loadWords()}});
- const w=words[cur];$('ml').textContent=w.label;$('rom').textContent=w.manglish;$('units').textContent=w.units.map(u=>u.toUpperCase()).join(' · ');
+ if(!words.length){$('ml').textContent='';$('rom').textContent='';$('units').textContent='';$('meaning').textContent='No words yet: search the dictionary on the left and press ＋ Add, or add a word by hand.';$('takes').textContent='None yet.';if(state==='idle')$('rec').disabled=true;return}
+ if(state==='idle'&&$('rec').disabled&&!pcm)$('rec').disabled=false;
+ const w=words[cur];$('ml').textContent=w.label;$('rom').textContent=w.manglish;$('units').textContent=w.units.map(u=>u.toUpperCase()).join(' · ');$('meaning').textContent=w.meaning?w.meaning+(w.source?' ('+w.source+', unverified)':''):'';
  $('takes').innerHTML=w.takes.length?w.takes.map(t=>`<div class="take"><button data-t="${t.name}">&#9654;</button><span>${t.name}</span><span class="mut">${t.duration==null?'':t.duration.toFixed(2)+' s'} · ${t.segments?'sounds marked':'no sound boundaries'}</span></div>`).join(''):'None yet.';
  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>new Audio('/audio/'+w.id+'/'+b.dataset.t).play())}
 function sized(c){const r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=(+c.getAttribute('height'))*d;const g=c.getContext('2d');g.scale(d,d);return[g,r.width,+c.getAttribute('height')]}
@@ -574,6 +915,18 @@ async function accept(){if(state!=='review')return;$('accept').disabled=true;
 $('rec').onclick=startRec;$('stop').onclick=stopRec;$('discard').onclick=discard;$('accept').onclick=accept;
 $('play').onclick=()=>{if(!rev)return;if(rev.paused){if(!pausedMid)rev.currentTime=0;pausedMid=false;stopAt=null;rev.play();$('play').textContent='❚❚ Pause';rafPlay()}else{rev.pause();pausedMid=stopAt==null;stopAt=null;$('play').textContent=pausedMid?'▶ Resume':'▶ Play whole word'}};
 addEventListener('resize',()=>{if(state==='review'){renderCards();drawReview()}});
+async function addWord(body,msgEl){if(state!=='idle'){msgEl.textContent='Finish or discard the current recording first.';msgEl.className='bad';return false}
+ try{const r=await api('/api/words',{method:'POST',headers:{'X-S2W-Token':TOKEN,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  cur=0;await loadWords();cur=words.findIndex(w=>w.id===r.added);if(cur<0)cur=0;await loadWords();msgEl.textContent='Added. It is selected: press Record.';msgEl.className='good';return true}
+ catch(e){msgEl.textContent=e.message;msgEl.className='bad';return false}}
+$('addgo').onclick=async()=>{if(await addWord({label:$('addml').value,manglish:$('addrom').value,source:'typed by hand'},$('addmsg'))){$('addml').value='';$('addrom').value=''}};
+let dtimer=null,dseq=0;
+function renderDict(d){const el=$('dres');if(!d.available){$('dinfo').textContent=d.note;el.innerHTML='';return}
+ $('dinfo').textContent='Dictionary: '+d.name+' ('+d.count.toLocaleString()+' entries)';
+ el.innerHTML=d.results.length?d.results.map((r,i)=>`<div class="dr"><div><b class="mlw">${esc(r.ml)}</b> <span class="mut">${esc(r.meaning)}</span></div>${r.ipa?`<div class="mut">/${esc(r.ipa)}/ &rarr; ${esc(r.units.join(' · ').toUpperCase())}</div>`:''}${r.can_add?`<div style="margin-top:4px"><input type="text" class="dm" data-i="${i}" value="${esc(r.manglish)}" aria-label="Manglish spelling"><button type="button" data-add="${i}">＋ Add</button> <span class="mut" data-m="${i}"></span></div>`:'<div class="mut">phrase: add single words only</div>'}</div>`).join(''):'<div class="mut">No match.</div>';
+ el.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const i=+b.dataset.add,r=d.results[i];const mg=el.querySelector(`.dm[data-i="${i}"]`).value.trim(),keep=r.g2p&&mg===r.manglish;addWord(Object.assign({label:r.ml,manglish:mg,meaning:r.meaning,source:'dictionary: '+d.name+(keep?' + mlphon pronunciation':'')},keep?{units:r.units,g2p:true}:{}),el.querySelector(`[data-m="${i}"]`))})}
+$('dq').oninput=()=>{clearTimeout(dtimer);dtimer=setTimeout(async()=>{const q=$('dq').value.trim(),my=++dseq;if(!q){$('dres').innerHTML='';return}try{const d=await api('/api/dict?q='+encodeURIComponent(q));if(my===dseq)renderDict(d)}catch(e){$('dres').textContent=e.message}},180)};
+fetch('/api/dict?q=').then(r=>r.json()).then(d=>{if(!d.available)$('dinfo').textContent=d.note;else $('dinfo').textContent='Dictionary: '+d.name+' ('+d.count.toLocaleString()+' entries)'}).catch(()=>{});
 loadWords().catch(e=>say('Cannot load words: '+e.message,'bad'));
 </script></body></html>"""
 
@@ -632,11 +985,16 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--record-dir", required=True, help="where accepted takes are saved (use a git-ignored folder)")
     ap.add_argument("--word", action="append", default=[], help="'MALAYALAM|manglish' (repeatable); Manglish is ASCII letters only")
+    ap.add_argument("--dictionary", help="optional dictionary CSV/TSV for the search sidebar (read-only), e.g. an Olam open dataset")
+    ap.add_argument("--dict-ml-col", help="dictionary column (name or 0-based index) holding the Malayalam words")
+    ap.add_argument("--dict-en-col", help="dictionary column holding the English meaning")
+    ap.add_argument("--dict-no-header", action="store_true", help="the dictionary file has no header row")
     ap.add_argument("--build", default=os.environ.get("S2W_BUILD", "build"))
     ap.add_argument("--port", type=int, default=8765)
     a = ap.parse_args()
     try:
-        rec = Recorder(a.record_dir, [parse_word(w) for w in a.word], a.build)
+        dic = Dictionary(a.dictionary, a.dict_ml_col, a.dict_en_col, a.dict_no_header) if a.dictionary else None
+        rec = Recorder(a.record_dir, [parse_word(w) for w in a.word], a.build, dic)
         srv = make_server(rec, a.port)
     except v.ViewerError as e:
         print("error: %s" % e.message, file=sys.stderr)

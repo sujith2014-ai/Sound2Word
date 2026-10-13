@@ -1,8 +1,10 @@
 """Tests for tools/s2w_recorder.py (stdlib unittest). No microphone is used; uploads are built from the SYNTHETIC fixture."""
+import hashlib
 import http.client
 import io
 import json
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -58,6 +60,88 @@ def free_port():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
+
+
+def read_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def read_csv(path):
+    import csv
+    with open(path, encoding="utf-8", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def sha_file(path):
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
+def write_file(path, text):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return path
+
+
+class PureLexicon(unittest.TestCase):
+    def test_ml_to_manglish(self):
+        for ml, rom in (("കലം", "kalam"), ("കാലം", "kaalam"), ("പട്ടി", "patti"), ("പടി", "pati"), ("മഴ", "mazha"), ("ആന", "aana"), ("ചെവി", "chevi"),
+                        ("പുസ്തകം", "pusthakam"), ("വള്ളം", "vallam"), ("കുറ്റി", "kutti"), ("കാട്", "kaatu"), ("അമ്മ", "amma"), ("തേങ്ങ", "thenga"), ("ചക്ക", "chakka"),
+                        ("ആകാശം", "aakaasham"), ("വിദ്യാലയം", "vidyaalayam"), ("ഓണം", "onam")):
+            self.assertEqual(r.ml_to_manglish(ml), rom, ml)
+        self.assertEqual(r.ml_to_manglish("abc ക"), "abcka")      # unknown characters never crash
+
+    def test_ipa_units_keep_length_and_gemination(self):
+        U = lambda s_: r.ipa_units(s_.split())
+        self.assertEqual(U("k aː l a m"), ["k", "aa", "l", "a", "m"])
+        self.assertEqual(U("p a ʈ ʈ i"), ["p", "a", "tt", "i"])
+        self.assertEqual(U("p a ʈ i"), ["p", "a", "t", "i"])
+        self.assertEqual(U("k oː ʈ i"), ["k", "oo", "t", "i"])
+        self.assertEqual(U("k o ʈ i"), ["k", "o", "t", "i"])
+        self.assertEqual(U("t̪ eː ŋ ŋ a"), ["th", "ee", "ng", "a"])
+        self.assertEqual(U("k u ṯ ṯ i"), ["k", "u", "tt", "i"])
+        self.assertEqual(U("ai̯ k j a m"), ["ai", "k", "y", "a", "m"])
+        self.assertEqual(U("bʱ a"), ["bh", "a"])
+        self.assertIsNone(U("k ? a"))
+        self.assertIsNone(r.ipa_units([]))
+        self.assertTrue(all(re.match(r"^[a-z]{1,4}$", u) for u in U("ʋ a ɭ ɭ a m")))
+        self.assertEqual(U("ʋ a ɭ ɭ a m"), ["v", "a", "llh", "a", "m"])
+        self.assertEqual(U("p a t̪ t̪ a"), ["p", "a", "tth", "a"])
+        self.assertEqual(U("a m m a"), ["a", "mm", "a"])
+
+    def test_dictionary_layouts_and_search(self):
+        d = tempfile.mkdtemp()
+        enml = write_file(os.path.join(d, "enml.csv"), "id,english_word,part_of_speech,malayalam_definition\n1,pot,n,\"കലം, കുടം\"\n2,time,n,കാലം\n3,dog,n,പട്ടി; നായ\n4,cooking pot,n,\"കലം (പാചകത്തിന്)\"\n5,say hello,v,ഹലോ പറയുക\n")
+        dic = r.Dictionary(enml)
+        words = {e[0] for e in dic.entries}
+        self.assertTrue({"കലം", "കുടം", "കാലം", "പട്ടി", "നായ"} <= words)
+        self.assertEqual({(x["ml"]) for x in dic.search("pot")}, {"കലം", "കുടം"})
+        self.assertEqual(dic.search("kalam")[0]["ml"], "കലം")                        # typed Manglish finds the Malayalam word
+        self.assertEqual(dic.search("kaal")[0]["ml"], "കാലം")                        # prefix
+        self.assertEqual(dic.search("കല")[0]["ml"], "കലം")                            # Malayalam prefix
+        self.assertEqual(dic.search("patti")[0]["meaning"], "dog")
+        self.assertEqual(dic.search(""), [])
+        self.assertLessEqual(len(dic.search("a", limit=3)), 3)
+        phrase = next(x for x in dic.search("hello") if " " in x["ml"])
+        self.assertFalse(phrase["can_add"])                                          # a phrase cannot be added as a word
+        self.assertEqual(dic.search("kalam")[0]["manglish"], "kalam")
+        tsv = write_file(os.path.join(d, "mlml.tsv"), "കലം\tപാചകത്തിനുള്ള പാത്രം\nകാലം\tസമയം\n")
+        d2 = r.Dictionary(tsv, no_header=True)
+        self.assertEqual({e[0] for e in d2.entries}, {"കലം", "കാലം"})
+        self.assertEqual(d2.search("kaalam")[0]["meaning"], "സമയം")
+        one = write_file(os.path.join(d, "one.csv"), "word\nകലം\nമഴ\n")
+        self.assertEqual(len(r.Dictionary(one).entries), 2)
+        named = write_file(os.path.join(d, "named.csv"), "a,b\nsky,ആകാശം\n")
+        self.assertEqual(r.Dictionary(named, ml_col="b", en_col="a").search("sky")[0]["ml"], "ആകാശം")
+
+    def test_dictionary_errors(self):
+        d = tempfile.mkdtemp()
+        for bad in (os.path.join(d, "nope.csv"), write_file(os.path.join(d, "empty.csv"), ""), write_file(os.path.join(d, "eng.csv"), "a,b\nx,y\n")):
+            with self.assertRaises(v.ViewerError):
+                r.Dictionary(bad)
+        with self.assertRaises(v.ViewerError):
+            r.Dictionary(write_file(os.path.join(d, "ok.csv"), "english,malayalam\npot,കലം\n"), ml_col="missing")
 
 
 class Pure(unittest.TestCase):
@@ -290,9 +374,118 @@ class Seg(Base):
         self.assertIn(b"Compare two words", page)
 
 
+class Sidebar(Base):
+    WORDS = [r.parse_word("കലം|kalam")]
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dict_dir = tempfile.mkdtemp()
+        cls.dict_path = write_file(os.path.join(cls.dict_dir, "enml.csv"), "english,malayalam\npot,\"കലം, കുടം\"\ntime,കാലം\ndog,പട്ടി\n=cmd|' /C calc'!A0,പടി\n")
+        cls.dict_hash = sha_file(cls.dict_path)
+        cls.tmp = tempfile.mkdtemp()
+        cls.dir = os.path.join(cls.tmp, "voice")
+        cls.rec = r.Recorder(cls.dir, cls.WORDS, BUILD, r.Dictionary(cls.dict_path))
+        cls.srv = r.make_server(cls.rec, 0)
+        cls.port = cls.srv.server_address[1]
+        threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
+
+    def jpost(self, body, token=True, ctype="application/json", raw=None):
+        h = {"Content-Type": ctype}
+        if token:
+            h["X-S2W-Token"] = self.rec.token
+        return self.req("POST", "/api/words", raw if raw is not None else json.dumps(body, ensure_ascii=False).encode("utf-8"), h)
+
+    def test_dict_search_endpoint(self):
+        d = json.loads(self.req("GET", "/api/dict?q=pot")[1])
+        self.assertTrue(d["available"])
+        self.assertEqual(d["name"], "enml.csv")
+        self.assertEqual({x["ml"] for x in d["results"]}, {"കലം", "കുടം"})
+        self.assertEqual(json.loads(self.req("GET", "/api/dict?q=")[1])["results"], [])
+        self.assertEqual(json.loads(self.req("GET", "/api/dict?q=" + "x" * 200)[1])["results"], [])
+
+    def test_no_dictionary_is_reported(self):
+        plain = r.Recorder(os.path.join(self.tmp, "plain"), WORDS, BUILD)
+        self.assertFalse(plain.dict_search("pot")["available"])
+
+    def test_add_word_persists_logs_unverified_and_reloads(self):
+        before = self.dict_hash
+        st, body, _ = self.jpost({"label": "കാലം", "manglish": "kaalam", "meaning": "time", "source": "dictionary: enml.csv"})
+        self.assertEqual((st, json.loads(body)["added"]), (200, "kaalam"))
+        self.assertIn("kaalam", [w["id"] for w in json.loads(self.req("GET", "/api/words")[1])])
+        saved = read_json(os.path.join(self.dir, "words.json"))
+        self.assertEqual((saved[-1]["label"], saved[-1]["units"]), ("കാലം", ["k", "aa", "l", "a", "m"]))
+        rows = read_csv(os.path.join(self.dir, "candidates_unverified.csv"))
+        self.assertEqual((rows[-1]["word_ml"], rows[-1]["status"], rows[-1]["manglish_suggested"]), ("കാലം", "UNVERIFIED", "kaalam"))
+        self.assertEqual(r.Recorder(self.dir, [], BUILD).words["kaalam"]["units"], ["k", "aa", "l", "a", "m"])      # survives a restart
+        self.assertEqual(sha_file(self.dict_path), before)                     # dictionary only read
+
+    def test_add_word_rejects_bad_requests(self):
+        before = self.rec.words.copy()
+        self.assertEqual(self.jpost({"label": "പടി", "manglish": "pati"}, token=False)[0], 403)
+        self.assertEqual(self.jpost({"label": "പടി", "manglish": "pati"}, ctype="text/plain")[0], 415)
+        self.assertEqual(self.jpost(None, raw=b"not json")[0], 422)
+        self.assertEqual(self.jpost(None, raw=b"[1,2]")[0], 422)
+        self.assertEqual(self.jpost({"label": "പടി", "manglish": "paḍi"})[0], 422)           # non-ASCII Manglish
+        self.assertEqual(self.jpost({"label": "പടി", "manglish": "pa di"})[0], 422)
+        self.assertEqual(self.jpost({"label": "", "manglish": "pati"})[0], 422)
+        self.assertEqual(self.jpost({"label": "പ|ടി", "manglish": "pati"})[0], 422)
+        self.assertEqual(self.jpost({"label": "പടി", "manglish": "pati", "units": "p a t i"})[0], 422)
+        self.assertEqual(self.jpost({"label": "പടി", "manglish": "pati", "units": ["p", "a", "t"]})[0], 422)   # units must join up to the spelling
+        self.assertEqual(self.jpost({"label": "കലം", "manglish": "kalam"})[0], 409)                          # already there
+        self.assertEqual(self.jpost(None, raw=b"x" * 5000)[0], 413)
+        self.assertEqual(self.rec.words, before)
+
+    def test_pronunciation_units_allowed_to_differ_from_spelling_only_when_flagged(self):
+        ok = self.jpost({"label": "കോടി", "manglish": "kodi", "units": ["k", "oo", "t", "i"], "g2p": True, "source": "mlphon"})
+        self.assertEqual(ok[0], 200, ok[1])
+        self.assertEqual(self.rec.words["kodi"]["units"], ["k", "oo", "t", "i"])
+        self.assertEqual(self.jpost({"label": "കോടി", "manglish": "kodi2", "units": ["k", "oo", "t", "i"]})[0], 422)
+        self.assertEqual(r.Recorder(self.dir, [], BUILD).words["kodi"]["units"], ["k", "oo", "t", "i"])
+
+    def test_candidate_csv_is_safe_to_open_in_a_spreadsheet(self):
+        self.assertEqual(self.jpost({"label": "പടി", "manglish": "padi", "meaning": "=1+1", "source": "@x"})[0], 200)
+        rows = read_csv(os.path.join(self.dir, "candidates_unverified.csv"))
+        row = next(x for x in rows if x["manglish_suggested"] == "padi")
+        self.assertTrue(row["meaning_en"].startswith("'=") and row["source"].startswith("'@"))
+
+    def test_limit_on_word_list_size(self):
+        small = r.Recorder(os.path.join(self.tmp, "small"), WORDS, BUILD)      # starts with 2 words
+        small.MAX_WORDS = 3
+        small.add_word("മഴ", "mazha")
+        with self.assertRaises(v.ViewerError) as c:
+            small.add_word("പടി", "pati")
+        self.assertEqual(c.exception.status, 422)
+
+
 class Cli(unittest.TestCase):
     def run_cli(self, *a):
         return subprocess.run([sys.executable, TOOL, "--build", BUILD] + list(a), capture_output=True, text=True, timeout=30)
+
+    def test_dictionary_errors_are_clean_and_words_optional_with_a_dictionary(self):
+        d = tempfile.mkdtemp()
+        res = self.run_cli("--record-dir", d, "--dictionary", os.path.join(d, "missing.csv"), "--port", str(free_port()))
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("dictionary file not found", res.stderr)
+        self.assertNotIn("Traceback", res.stderr)
+        csvp = write_file(os.path.join(d, "d.csv"), "english,malayalam\npot,കലം\n")
+        port = free_port()
+        p = subprocess.Popen([sys.executable, TOOL, "--build", BUILD, "--record-dir", d, "--dictionary", csvp, "--port", str(port)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            for _ in range(50):
+                try:
+                    page = urllib.request.urlopen("http://127.0.0.1:%d/api/dict?q=pot" % port).read().decode()
+                    break
+                except OSError:
+                    time.sleep(0.1)
+            self.assertIn("കലം", json.loads(page)["results"][0]["ml"])
+            p.send_signal(signal.SIGTERM)
+            self.assertEqual(p.wait(timeout=10), 0)
+        finally:
+            if p.poll() is None:
+                p.kill()
+                p.wait()
+            p.stdout.close()
+            p.stderr.close()
 
     def test_no_word_or_bad_word_is_a_clean_error(self):
         d = tempfile.mkdtemp()
