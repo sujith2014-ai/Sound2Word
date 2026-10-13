@@ -54,6 +54,7 @@ docker run -d --name s2w-rec -p 127.0.0.1:8765:8766 `
   -v "D:\Apps\Sound2Word\data\private\dictionary:/dict:ro" `
   -v "$T\lfm_first10:/ref/lfm_first10:ro" -v "$T\lfm_common10:/ref/lfm_common10:ro" -v "$T\parler_cap_dot_trim200:/ref/parler_cap_dot_trim200:ro" `
   -v "$T\units_anjali_trim:/units:ro" `
+  -v "$T\top50_lfm_trim\units_raw:/units_lfm:ro" -v "$T\top50_harish_trim\units_raw:/units_harish:ro" `
   ubuntu:24.04 bash /src/tools/run_recorder_container.sh
 ```
 

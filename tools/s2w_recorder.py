@@ -207,10 +207,17 @@ def suggest_edges(mat, n, hop=0.010, frame=0.025, min_frames=4, units=None):
     return [round(first * hop + (frame - hop) / 2, 4)] + [t(c) for c in cuts] + [round(last * hop + (frame + hop) / 2, 4)]
 
 
-def load_units(root):
+def load_units(roots):
     """{NFC unit text: clip} from the meta_scored.json / meta.json written by tools/model_eval/gen_units.py (+ trim + roundtrip).
-    Prefers a clip the recogniser heard exactly; only files inside `root` are indexed."""
+    `roots` is one folder or a list (several voices): per unit the clip the recogniser heard exactly wins; on a tie the earlier folder wins.
+    Only files inside each root are indexed."""
     out = {}
+    for root in ([roots] if isinstance(roots, str) else (roots or [])):
+        _load_units_one(root, out)
+    return out
+
+
+def _load_units_one(root, out):
     if not root or not os.path.isdir(root):
         return out
     real = os.path.realpath(root)
@@ -1294,7 +1301,7 @@ async function loadUnits(id){const el=$('unitrow');
   el.innerHTML='<div class="mut"><span class="tag">SYNTHETIC</span>Sounds that build this word, '+d.units.length+' unit'+(d.units.length===1?'':'s')+' (each generated alone; &#10003; = the recogniser heard exactly that unit)</div>'
    +'<div class="chips" style="margin:6px 0">'+d.units.map(u=>`<span class="chip" style="cursor:default;display:inline-flex;gap:6px;align-items:center${u.have?'':';opacity:.5'}">`
      +(u.have?`<button type="button" data-uk="${u.k}" title="play this unit">&#9654;</button>`:'')
-     +`<b style="font-size:20px">${esc(u.text)}</b><span class="mut">${esc(u.kind)}</span>`
+     +`<b style="font-size:20px" title="${esc(u.voice||'')}">${esc(u.text)}</b><span class="mut">${esc(u.kind)}${u.voice?' · '+esc(u.voice.split(' ')[0]):''}</span>`
      +(u.have?(u.exact?'<span class="good">&#10003;</span>':`<span class="bad" title="heard: ${esc(u.heard||'')}">&#10007; ${esc((u.heard||'').slice(0,8))}</span>`):'<span class="bad">no clip</span>')+'</span>').join('')+'</div>'
    +(missing?`<div class="mut">${missing} unit(s) have no generated clip yet.</div>`:
      '<div class="row" style="margin:4px 0"><button type="button" id="uplay">&#9654; Play composed word</button><button type="button" id="ugraph">&#9636; Graph (units glued together)</button><button type="button" id="utest">Test: how close to the real word?</button><span class="mut" id="uscore"></span></div>');
@@ -1536,8 +1543,9 @@ def main():
                     "a speech model places the word start/end for the first guess")
     ap.add_argument("--reference-dir", help="folder (searched recursively) of AI-generated reference clips with meta.json / meta_scored.json; "
                     "shown as SYNTHETIC play buttons under the selected word so you can check them")
-    ap.add_argument("--unit-audio-dir", help="folder (searched recursively) of generated sound-unit clips with meta_scored.json / meta.json "
-                    "(tools/model_eval/gen_units.py): shown as a 'sounds that build this word' row")
+    ap.add_argument("--unit-audio-dir", nargs="+", help="one or more folders (searched recursively) of generated sound-unit clips with "
+                    "meta_scored.json / meta.json (tools/model_eval/gen_units.py): shown as a 'sounds that build this word' row; with several "
+                    "voices the clip the recogniser heard exactly is used for each unit")
     ap.add_argument("--build", default=os.environ.get("S2W_BUILD", "build"))
     ap.add_argument("--port", type=int, default=8765)
     a = ap.parse_args()
