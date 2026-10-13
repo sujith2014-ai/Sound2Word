@@ -61,13 +61,14 @@ test: $(TESTS)
 	@$(MAKE) --no-print-directory test-review BUILD=$(BUILD)
 
 # Word-list review tooling (skipped automatically without python3 + openpyxl)
-test-review: $(BUILD)/s2w_make_fixture $(BUILD)/s2w_dataset_check $(BUILD)/s2w_ingest $(BUILD)/s2w_qa $(BUILD)/s2w_eval $(BUILD)/s2w_degrade
+test-review: $(BUILD)/s2w_make_fixture $(BUILD)/s2w_dataset_check $(BUILD)/s2w_ingest $(BUILD)/s2w_qa $(BUILD)/s2w_eval $(BUILD)/s2w_degrade $(BUILD)/s2w_features $(BUILD)/s2w_match
 	@S2W_BUILD=$(BUILD) python3 -I tools/test_review_sheet.py
 	@S2W_BUILD=$(BUILD) python3 -I tools/test_ingest.py
 	@S2W_BUILD=$(BUILD) python3 -I tools/test_robustness.py
 	@S2W_BUILD=$(BUILD) python3 -I tools/test_enrolment_experiment.py
 	@S2W_BUILD=$(BUILD) python3 -I tools/test_pilot_plan.py
 	@S2W_BUILD=$(BUILD) python3 -I tools/test_consent_gate.py
+	@S2W_BUILD=$(BUILD) python3 -I tools/test_viewer.py
 
 # Same suite under AddressSanitizer + UndefinedBehaviorSanitizer (leaks fail the run).
 test-asan:
