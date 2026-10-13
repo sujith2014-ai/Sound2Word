@@ -404,6 +404,13 @@ class Sidebar(Base):
         self.assertEqual({x["ml"] for x in d["results"]}, {"കലം", "കുടം"})
         self.assertEqual(json.loads(self.req("GET", "/api/dict?q=")[1])["results"], [])
         self.assertEqual(json.loads(self.req("GET", "/api/dict?q=" + "x" * 200)[1])["results"], [])
+        page = json.loads(self.req("GET", "/api/dict?browse=1&offset=0&limit=2")[1])["results"]              # the default sidebar list
+        self.assertEqual(len(page), 2)
+        every = json.loads(self.req("GET", "/api/dict?browse=1&offset=0&limit=200")[1])["results"]
+        self.assertEqual(page, every[:2])
+        self.assertEqual(json.loads(self.req("GET", "/api/dict?browse=1&offset=1&limit=1")[1])["results"], every[1:2])
+        self.assertEqual(json.loads(self.req("GET", "/api/dict?browse=1&offset=999999&limit=5")[1])["results"], [])
+        self.assertEqual(len(json.loads(self.req("GET", "/api/dict?browse=1&offset=junk&limit=junk")[1])["results"]), len(every[:40]))
 
     def test_no_dictionary_is_reported(self):
         plain = r.Recorder(os.path.join(self.tmp, "plain"), WORDS, BUILD)

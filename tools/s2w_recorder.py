@@ -148,6 +148,44 @@ def suggest_edges(mat, n, hop=0.010, frame=0.025, min_frames=4):
     return [round(first * hop + (frame - hop) / 2, 4)] + [t(c) for c in cuts] + [round(last * hop + (frame + hop) / 2, 4)]
 
 
+def call_aligner(url, data, duration, timeout=120):
+    """Ask the optional local aligner service (tools/s2w_aligner_service.py) where the spoken word starts and ends.
+    -> {"ok": True, "start", "end", "text", "model", "words"} or {"ok": False, "error"}. Never raises: the recorder works without it."""
+    import urllib.error
+    import urllib.request
+    pu = urlparse(url)
+    if pu.scheme != "http" or pu.hostname not in ("127.0.0.1", "localhost", "host.docker.internal"):
+        return {"ok": False, "error": "the aligner URL must be http://127.0.0.1:PORT, http://localhost:PORT or http://host.docker.internal:PORT"}
+    req = urllib.request.Request(url.rstrip("/") + "/align?lang=ml", data=data, headers={"Content-Type": "audio/wav"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            d = json.loads(r.read(1 << 20).decode("utf-8"))
+    except (OSError, ValueError, urllib.error.URLError) as e:
+        return {"ok": False, "error": "aligner service not reachable: %s" % e}
+    if not isinstance(d, dict) or not d.get("ok"):
+        return {"ok": False, "error": str(d.get("error", "aligner failed"))[:200] if isinstance(d, dict) else "bad aligner response"}
+    st, en = d.get("start"), d.get("end")
+    if not all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in (st, en)) or not (0 <= st < en <= duration + 0.05) or en - st < 0.05:
+        return {"ok": False, "error": "the aligner returned an unusable word span"}
+    return {"ok": True, "start": float(st), "end": min(float(en), duration), "text": str(d.get("text", ""))[:80], "model": str(d.get("model", ""))[:40]}
+
+
+def aligned_edges(mat, n_units, a0, a1, hop=0.010):
+    """Unit edges inside the model's word span [a0, a1]: outer edges are the span, inner ones come from spectral change computed
+    only within the span (even split when that fails). -> (edges, "spectral" | "even")."""
+    inner = None
+    i0, i1 = int(a0 / hop), int(a1 / hop) + 1
+    if n_units > 1 and i1 - i0 > 5 * n_units:
+        sub = suggest_edges(mat[i0:i1], n_units)
+        if sub:
+            inner = [round(i0 * hop + x, 4) for x in sub[1:-1]]
+    if inner is not None:
+        edges = [round(a0, 4)] + inner + [round(a1, 4)]
+        if all(b - a >= 0.012 for a, b in zip(edges, edges[1:])):
+            return edges, "spectral"
+    return [round(a0 + k * (a1 - a0) / n_units, 4) for k in range(n_units + 1)], "even"
+
+
 def validate_segments(seg, units, duration):
     if not isinstance(seg, dict) or seg.get("units") != units:
         raise v.ViewerError(422, "segment units do not match the word")
@@ -156,7 +194,7 @@ def validate_segments(seg, units, duration):
         raise v.ViewerError(422, "segments need %d numeric edges" % (len(units) + 1))
     if ed[0] < -1e-6 or ed[-1] > duration + 1e-3 or any(b - a < 0.01 for a, b in zip(ed, ed[1:])):
         raise v.ViewerError(422, "segment edges must increase (each sound at least 10 ms) and lie inside the recording")
-    if seg.get("method") not in ("suggested", "edited", "default-split"):
+    if seg.get("method") not in ("suggested", "edited", "default-split", "model-aligned"):
         raise v.ViewerError(422, "unknown segment method")
     return {"units": units, "edges": [round(float(x), 4) for x in ed], "method": seg["method"]}
 
@@ -357,6 +395,7 @@ class Dictionary:
                 break
         if not self.entries:
             raise v.ViewerError(2, "dictionary %s contained no usable Malayalam entries" % self.name)
+        self.entries.sort(key=lambda e: e[0])                                         # the sidebar lists the dictionary A-Z
         self.columns = {"malayalam": names[mlc] if names else mlc, "meaning": (names[enc] if names else enc) if enc is not None else None}
 
     def search(self, q, limit=40):
@@ -386,17 +425,21 @@ class Dictionary:
                 scored.append((rank, len(ml), i))
         scored.sort()
         top = sorted(scored[:limit], key=lambda t: (self.entries[t[2]][0], t[0], t[2]))      # best `limit` matches, listed alphabetically
-        out = []
-        for _, _, i in top:
-            ml, mean, tr, _lc, pu = self.entries[i]
-            g = g2p(ml) if tr and not pu else None
-            if pu:
-                out.append({"ml": ml, "meaning": mean, "manglish": tr, "units": pu[0], "ipa": pu[1], "g2p": pu[2], "can_add": True})
-            elif g:
-                out.append({"ml": ml, "meaning": mean, "manglish": "".join(g[0]), "units": g[0], "ipa": g[1], "g2p": True, "can_add": True})
-            else:
-                out.append({"ml": ml, "meaning": mean, "manglish": tr, "units": split_units(tr) if tr else [], "ipa": "", "g2p": False, "can_add": bool(tr)})
-        return out
+        return [self._row(i) for _, _, i in top]
+
+    def browse(self, offset=0, limit=100):
+        """A page of the dictionary in file order (the lexicon builder writes it alphabetically)."""
+        offset = max(0, int(offset))
+        return [self._row(i) for i in range(offset, min(len(self.entries), offset + max(1, int(limit))))]
+
+    def _row(self, i):
+        ml, mean, tr, _lc, pu = self.entries[i]
+        g = g2p(ml) if tr and not pu else None
+        if pu:
+            return {"ml": ml, "meaning": mean, "manglish": tr, "units": pu[0], "ipa": pu[1], "g2p": pu[2], "can_add": True}
+        if g:
+            return {"ml": ml, "meaning": mean, "manglish": "".join(g[0]), "units": g[0], "ipa": g[1], "g2p": True, "can_add": True}
+        return {"ml": ml, "meaning": mean, "manglish": tr, "units": split_units(tr) if tr else [], "ipa": "", "g2p": False, "can_add": bool(tr)}
 
 
 def validate_wav(data):
@@ -423,8 +466,8 @@ def validate_wav(data):
 class Recorder:
     MAX_WORDS = 200
 
-    def __init__(self, record_dir, words, build="build", dictionary=None):
-        self.dir, self.build, self.dictionary = record_dir, build, dictionary
+    def __init__(self, record_dir, words, build="build", dictionary=None, aligner_url=None):
+        self.dir, self.build, self.dictionary, self.aligner_url = record_dir, build, dictionary, aligner_url
         self.words = {w["id"]: w for w in words}
         os.makedirs(self.dir, exist_ok=True)
         self.token = secrets.token_urlsafe(16)
@@ -510,10 +553,13 @@ class Recorder:
     def listing(self):
         return [dict(w, takes=self.takes(w["id"])) for w in self.words.values()]
 
-    def dict_search(self, q):
+    def dict_search(self, q, limit=40, offset=None):
+        """offset=None: search; an integer offset: a page of the whole dictionary (the sidebar's default alphabetical list)."""
         if self.dictionary is None:
             return {"available": False, "results": [], "note": "No dictionary loaded. Start the recorder with --dictionary FILE (see --help)."}
-        return {"available": True, "name": self.dictionary.name, "count": len(self.dictionary.entries), "results": self.dictionary.search(q)}
+        limit = max(1, min(int(limit), 200))
+        res = self.dictionary.search(q, limit) if offset is None else self.dictionary.browse(offset, limit)
+        return {"available": True, "name": self.dictionary.name, "count": len(self.dictionary.entries), "results": res}
 
     def segments(self, wid, name):
         p = self.take_path(wid, name)
@@ -591,17 +637,23 @@ class Recorder:
             with open(p, "wb") as f:
                 f.write(data)
             qa = v.App.qa(self, p)
+            al = None
             feat = v.run_tool(self.tool("s2w_features"), [p, "--out", "logmel"])
             spec = None
             if feat.returncode == 0:
                 mat = v.parse_matrix(feat.stdout, "logmel_raw")
                 spec = {"rows": len(mat), "cols": len(mat[0]), "hop": 0.010, "data": [[round(x, 2) for x in r] for r in mat]}
                 if wid in self.words:
-                    sug = suggest_edges(mat, len(self.words[wid]["units"]))
+                    nu = len(self.words[wid]["units"])
+                    sug = suggest_edges(mat, nu)
                     if sug and sug[-1] > n / rate:
                         sug[-1] = round(n / rate, 4)
+                    if self.aligner_url:
+                        al = call_aligner(self.aligner_url, data, n / rate)
+                        if al["ok"]:
+                            sug, al["split"] = aligned_edges(mat, nu, al["start"], al["end"])
                     spec["suggest"] = sug
-        return {"qa": qa, "spec": spec, "duration": n / rate, "rate": rate, "units": self.words[wid]["units"] if wid in self.words else None}
+        return {"qa": qa, "spec": spec, "duration": n / rate, "rate": rate, "units": self.words[wid]["units"] if wid in self.words else None, "aligner": al}
 
     def accept(self, wid, data, segments=None):
         if wid not in self.words:
@@ -679,7 +731,9 @@ def make_handler(rec):
                 if p == "/api/words":
                     return self.js(rec.listing())
                 if p == "/api/dict":
-                    return self.js(rec.dict_search((parse_qs(urlparse(self.path).query).get("q") or [""])[0]))
+                    qs = parse_qs(urlparse(self.path).query)
+                    num = lambda k, d: int((qs.get(k) or [d])[0]) if re.fullmatch(r"\d{1,7}", (qs.get(k) or [str(d)])[0]) else d
+                    return self.js(rec.dict_search((qs.get("q") or [""])[0], num("limit", 40), num("offset", 0) if "browse" in qs else None))
                 if p == "/api/compare":
                     q = parse_qs(urlparse(self.path).query)
                     return self.js(rec.compare((q.get("a") or [""])[0], (q.get("b") or [""])[0]))
@@ -783,7 +837,10 @@ STYLE = r"""
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,sans-serif}
 header{padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line)}h1{margin:0;font-size:18px}nav{margin-top:6px;font-size:14px}nav a{color:var(--blue);text-decoration:none}
 .layout{display:grid;grid-template-columns:330px minmax(0,1fr);gap:16px;max-width:1440px;margin:0 auto;padding:16px 20px}.layout>main{padding:0;max-width:none;margin:0;min-width:0}@media(max-width:900px){.layout{grid-template-columns:1fr}}
-.side input[type=text],.side input:not([type]){font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;width:100%;background:var(--card);color:var(--ink)}.dr{padding:8px 0;border-bottom:1px solid var(--line)}.mlw{font-size:20px}.dr .dm{width:130px;display:inline-block;margin-right:6px}.dr button,.side button{padding:5px 10px;font-size:13px}#dres{max-height:60vh;overflow:auto}
+.side input[type=text],.side input:not([type]){font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;width:100%;background:var(--card);color:var(--ink)}.side button{padding:5px 10px;font-size:13px}.tabs{display:flex;gap:6px;margin:8px 0}.tabs .tab{flex:1;border-radius:8px}.tabs .tab.on{border-color:var(--blue);background:var(--bg);font-weight:600}
+#dres{max-height:56vh;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:8px}.dr{padding:7px 10px;border-bottom:1px solid var(--line);border-left:4px solid transparent;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:0 8px}
+.dr:hover{background:var(--bg)}.dr.active{border-left-color:var(--blue);background:var(--bg);box-shadow:inset 0 0 0 1px var(--blue)}.mlw{font-size:20px}.dg{color:var(--mut);font-size:13px;text-align:right;align-self:center}
+.dmean{grid-column:1/-1;color:var(--mut);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dt{color:var(--green);font-size:12px;grid-column:1/-1}.dt:empty{display:none}
 .banner{margin-top:8px;padding:8px 12px;border-radius:8px;background:#fff3cd;color:#664d03;font-size:13px}
 main{max-width:1000px;margin:0 auto;padding:16px 20px}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
 .chips{display:flex;gap:8px;flex-wrap:wrap}.chip{padding:6px 14px;border:1px solid var(--line);border-radius:99px;cursor:pointer;background:var(--card);color:var(--ink)}.chip.sel{border-color:var(--blue);background:var(--bg);font-weight:600}
@@ -805,7 +862,8 @@ PAGE = r"""<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name
 <div class="banner"><b>PERSONAL TEST RECORDINGS</b> &mdash; for trying the screen and playback only. Not experiment data, not a verified vocabulary, and not evidence of recognition accuracy. Audio stays on this computer.</div></header>
 <div class="layout"><aside class="side card" id="side"><h2 style="margin:0 0 6px;font-size:16px">Word search</h2>
  <div class="mut" id="dinfo">Search a dictionary by Malayalam, English or Manglish.</div>
- <input type="text" id="dq" placeholder="e.g. pot, kalam, കലം" autocomplete="off" aria-label="Search dictionary"><div id="dres" style="margin-top:8px"></div>
+ <div class="tabs"><button type="button" class="tab on" id="tdict">Dictionary</button><button type="button" class="tab" id="tmine">My words (<span id="nmine">0</span>)</button></div>
+ <input type="text" id="dq" placeholder="Search: pot, kalam, കലം" autocomplete="off" aria-label="Search the word list"><div class="mut" id="dcount" role="status" style="margin-top:6px"></div><div id="dres" role="listbox" aria-label="Words"></div><div class="mut" id="dmsg" style="margin-top:6px"></div>
  <h3 style="margin:14px 0 4px;font-size:14px">Add a word by hand</h3>
  <input type="text" id="addml" placeholder="Malayalam, e.g. കലം" style="margin-bottom:6px"><input type="text" id="addrom" placeholder="Manglish, letters A-Z only, e.g. kalam" style="margin-bottom:6px">
  <button type="button" id="addgo">＋ Add to my words</button><div class="mut" id="addmsg" style="margin-top:6px"></div>
@@ -827,15 +885,18 @@ PAGE = r"""<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name
 </main></div>
 <script>
 const TOKEN='__TOKEN__',$=id=>document.getElementById(id),COL=['#4285d8','#e8a43c','#2d9d78','#9b59b6','#d35400','#16a085','#c0392b','#7f8c8d'];
+const QS=new URLSearchParams(location.search);let urlWord=QS.get('word');
 let words=[],cur=0,state='idle',ctx,stream,node,chunks=[],rate=0,start=0,live=[],raf=0,pcm=null,wav=null,rev=null,analysis=null,units=[],edges=[],method='suggested',stopAt=null,drag=-1,pausedMid=false,view=[0,1],zoomed=true;
 const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 function say(t,cls){const s=$('status');s.textContent=t;s.className=cls||''}
 async function api(u,opt){const r=await fetch(u,opt);const d=await r.json().catch(()=>({error:'bad response'}));if(!r.ok||d.error)throw new Error(d.error||('HTTP '+r.status));return d}
-async function loadWords(){words=await api('/api/words');if(cur>=words.length)cur=0;
+async function loadWords(){words=await api('/api/words');if(urlWord!==null){const k=words.findIndex(w=>w.id===urlWord);if(k>=0)cur=k;urlWord=null}if(cur>=words.length)cur=0;if(window.syncUrl)syncUrl();
  $('chips').innerHTML=words.map((w,i)=>`<span class="chip${i===cur?' sel':''}" data-i="${i}">${esc(w.label)} · ${esc(w.manglish)} (${w.takes.length})</span>`).join('');
  document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{if(state==='idle'){cur=+c.dataset.i;clearReview();loadWords()}});
+ $('nmine').textContent=words.length;if(!words.length&&window.afterWords)afterWords();
  if(!words.length){$('ml').textContent='';$('rom').textContent='';$('units').textContent='';$('meaning').textContent='No words yet: search the dictionary on the left and press ＋ Add, or add a word by hand.';$('takes').textContent='None yet.';if(state==='idle')$('rec').disabled=true;return}
  if(state==='idle'&&$('rec').disabled&&!pcm)$('rec').disabled=false;
+ if(window.afterWords)afterWords();
  const w=words[cur];$('ml').textContent=w.label;$('rom').textContent=w.manglish;$('units').textContent=w.units.map(u=>u.toUpperCase()).join(' · ');$('meaning').textContent=w.meaning?w.meaning+(w.source?' ('+w.source+', unverified)':''):'';
  $('takes').innerHTML=w.takes.length?w.takes.map(t=>`<div class="take"><button data-t="${t.name}">&#9654;</button><span>${t.name}</span><span class="mut">${t.duration==null?'':t.duration.toFixed(2)+' s'} · ${t.segments?'sounds marked':'no sound boundaries'}</span></div>`).join(''):'None yet.';
  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>new Audio('/audio/'+w.id+'/'+b.dataset.t).play())}
@@ -871,14 +932,14 @@ const dur=()=>pcm.length/rate;
 function fixEdges(){const d=dur(),N=units.length;let ok=edges.length===N+1;for(let k=1;ok&&k<=N;k++){if(!(edges[k]-edges[k-1]>=0.012))edges[k]=edges[k-1]+0.012}
  if(!ok||edges[N]>d||edges[0]<0){edges=units.map((_,k)=>k*d/N).concat([d]);method='default-split'}}
 function initSegments(){units=words[cur].units;const sug=analysis&&analysis.spec&&analysis.spec.suggest;
- if(sug&&sug.length===units.length+1){edges=sug.slice();method='suggested'}else{edges=[];method='default-split'}fixEdges();zoomed=true;setView()}
+ if(sug&&sug.length===units.length+1){edges=sug.slice();method=analysis.aligner&&analysis.aligner.ok?'model-aligned':'suggested'}else{edges=[];method='default-split'}fixEdges();zoomed=true;setView()}
 function setView(){const d=dur(),N=units.length;view=zoomed?[Math.max(0,edges[0]-0.15),Math.min(d,edges[N]+0.15)]:[0,d];if(view[1]-view[0]<0.2)view=[0,d];$('vz').textContent=zoomed?'Show whole recording':'Zoom to the word';$('vinfo').textContent=zoomed?'zoomed to the word':'whole recording';$('comb').textContent=units.join('').toUpperCase()}
 function ensureVisible(){if(zoomed){const N=units.length;view=[Math.min(view[0],Math.max(0,edges[0]-0.05)),Math.max(view[1],Math.min(dur(),edges[N]+0.05))]}}
 function peaksOf(a,b,W){const out=[],n=pcm.length,s0=Math.floor(a*rate),s1=Math.floor(b*rate);for(let x=0;x<W;x++){let lo=1,hi=-1;const i0=s0+Math.floor(x*(s1-s0)/W),i1=Math.max(i0+1,s0+Math.floor((x+1)*(s1-s0)/W));for(let i=Math.max(0,i0);i<i1&&i<n;i++){const y=pcm[i];if(y<lo)lo=y;if(y>hi)hi=y}out.push([lo,hi])}return out}
 function showReview(){$('review').hidden=false;rev=new Audio(URL.createObjectURL(wav));rev.onended=()=>{$('play').textContent='▶ Play whole word';stopAt=null;pausedMid=false;drawReview()};initSegments();
- if(analysis){const q=analysis.qa;$('qa').innerHTML=`<span class="tag">measured</span>duration ${analysis.duration.toFixed(2)} s · ${analysis.rate} Hz · SNR ${q.snr_db_estimate} dB · level ${q.speech_level_dbfs} dBFS · clipping ${q.clipped_run_samples} · QA verdict <b>${esc(q.verdict)}</b> (${esc(q.flags)})`}else $('qa').textContent='';
+ if(analysis){const q=analysis.qa;$('qa').innerHTML=`<span class="tag">measured</span>duration ${analysis.duration.toFixed(2)} s · ${analysis.rate} Hz · SNR ${q.snr_db_estimate} dB · level ${q.speech_level_dbfs} dBFS · clipping ${q.clipped_run_samples} · QA verdict <b>${esc(q.verdict)}</b> (${esc(q.flags)})`;const al=analysis.aligner;if(al)$('qa').innerHTML+='<br>'+(al.ok?`<span class="tag">speech model</span>${esc(al.model)} places the word at ${al.start.toFixed(2)}–${al.end.toFixed(2)} s and heard “${esc(al.text)}”; the split inside the word is spectral ('${esc(al.split)}')`:`<span class="tag">speech model unavailable</span>${esc(al.error)} (using the spectral first guess)`)}else $('qa').textContent='';
  renderCards();drawReview();$('play').disabled=false;$('accept').disabled=false;$('discard').disabled=false}
-function tagText(){return method==='edited'?'placed by you':method==='suggested'?'first guess':'even split (no guess available)'}
+function tagText(){return method==='edited'?'placed by you':method==='model-aligned'?'word span from the speech model':method==='suggested'?'first guess':'even split (no guess available)'}
 function renderCards(){$('cards').innerHTML=units.map((u,k)=>`<div class="seg"><div class="badge" style="background:${COL[k%8]}">${esc(u.toUpperCase())}</div><div><b>Sound ${k+1}: ${esc(u.toUpperCase())}</b> <span class="tag">${tagText()}</span><br><span class="mut">${edges[k].toFixed(3)} – ${edges[k+1].toFixed(3)} s · ${Math.round((edges[k+1]-edges[k])*1000)} ms</span>
  <span class="nudge mut"> start <button type="button" data-n="${k}:-1">&#9664;</button><button type="button" data-n="${k}:1">&#9654;</button> end <button type="button" data-n="${k+1}:-1">&#9664;</button><button type="button" data-n="${k+1}:1">&#9654;</button></span><canvas class="mini" data-k="${k}" height="40"></canvas></div><button data-u="${k}" title="play this sound">&#9654;</button></div>`).join('');
  document.querySelectorAll('[data-n]').forEach(b=>b.onclick=e=>{const[i,dir]=b.dataset.n.split(':').map(Number),N=units.length,step=(e.shiftKey?0.05:0.01)*dir,lo=i>0?edges[i-1]+0.012:0,hi=i<N?edges[i+1]-0.012:dur();edges[i]=Math.max(lo,Math.min(hi,edges[i]+step));method='edited';ensureVisible();renderCards();drawReview()});
@@ -888,7 +949,7 @@ function drawReview(){if(!pcm)return;const[v0,v1]=view;let[g,W,H]=sized($('wave'
  units.forEach((u,k)=>{g.fillStyle=COL[k%8]+'33';g.fillRect(X(edges[k]),0,X(edges[k+1])-X(edges[k]),H)});
  g.strokeStyle='#4285d8';peaksOf(v0,v1,Math.floor(W)).forEach(([lo,hi],x)=>{g.beginPath();g.moveTo(x,H/2-hi*H/2);g.lineTo(x,H/2-lo*H/2);g.stroke()});
  edges.forEach((t,k)=>{const outer=k===0||k===units.length;g.fillStyle=outer?'#8f98aa':'#1c2230';g.fillRect(X(t)-1,0,2,H);g.fillRect(X(t)-8,0,16,20);g.fillStyle='#fff';g.font='bold 11px sans-serif';g.fillText('◂▸',X(t)-7,14)});
- if(rev&&rev.duration){g.strokeStyle='#d93025';g.lineWidth=2;const x=X(rev.currentTime);g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}
+ if(rev&&rev.duration&&(!rev.paused||pausedMid)){g.strokeStyle='#d93025';g.lineWidth=2;const x=X(rev.currentTime);g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}
  [g,W,H]=sized($('segbar'));units.forEach((u,k)=>{const x0=X(edges[k]),x1=X(edges[k+1]);g.fillStyle=COL[k%8];g.fillRect(x0,0,Math.max(1,x1-x0-1),H);if(x1-x0>16){g.fillStyle='#fff';g.font='bold 13px sans-serif';g.fillText(u.toUpperCase(),x0+5,22)}});
  edges.forEach(t=>{g.fillStyle='#1c2230';g.fillRect(X(t)-1,0,2,H)});
  [g,W,H]=sized($('spec'));const sp=analysis&&analysis.spec;if(!sp){g.fillStyle='#8f98aa';g.fillText('spectrogram unavailable',8,16);return}
@@ -921,14 +982,56 @@ async function addWord(body,msgEl){if(state!=='idle'){msgEl.textContent='Finish 
   cur=0;await loadWords();cur=words.findIndex(w=>w.id===r.added);if(cur<0)cur=0;await loadWords();msgEl.textContent='Added. It is selected: press Record.';msgEl.className='good';return true}
  catch(e){msgEl.textContent=e.message;msgEl.className='bad';return false}}
 $('addgo').onclick=async()=>{if(await addWord({label:$('addml').value,manglish:$('addrom').value,source:'typed by hand'},$('addmsg'))){$('addml').value='';$('addrom').value=''}};
-let dtimer=null,dseq=0;
-function renderDict(d){const el=$('dres');if(!d.available){$('dinfo').textContent=d.note;el.innerHTML='';return}
- $('dinfo').textContent='Dictionary: '+d.name+' ('+d.count.toLocaleString()+' entries)';
- el.innerHTML=d.results.length?d.results.map((r,i)=>`<div class="dr"><div><b class="mlw">${esc(r.ml)}</b> <span class="mut">${esc(r.meaning)}</span></div>${r.ipa?`<div class="mut">/${esc(r.ipa)}/ &rarr; ${esc(r.units.join(' · ').toUpperCase())}</div>`:''}${r.can_add?`<div style="margin-top:4px"><input type="text" class="dm" data-i="${i}" value="${esc(r.manglish)}" aria-label="Manglish spelling"><button type="button" data-add="${i}">＋ Add</button> <span class="mut" data-m="${i}"></span></div>`:'<div class="mut">phrase: add single words only</div>'}</div>`).join(''):'<div class="mut">No match.</div>';
- el.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const i=+b.dataset.add,r=d.results[i];const mg=el.querySelector(`.dm[data-i="${i}"]`).value.trim(),keep=r.g2p&&mg===r.manglish;addWord(Object.assign({label:r.ml,manglish:mg,meaning:r.meaning,source:'dictionary: '+d.name+(keep?' + mlphon pronunciation':'')},keep?{units:r.units,g2p:true}:{}),el.querySelector(`[data-m="${i}"]`))})}
-$('dq').oninput=()=>{clearTimeout(dtimer);dtimer=setTimeout(async()=>{const q=$('dq').value.trim(),my=++dseq;if(!q){$('dres').innerHTML='';return}try{const d=await api('/api/dict?q='+encodeURIComponent(q));if(my===dseq)renderDict(d)}catch(e){$('dres').textContent=e.message}},180)};
-fetch('/api/dict?q=').then(r=>r.json()).then(d=>{if(!d.available)$('dinfo').textContent=d.note;else $('dinfo').textContent='Dictionary: '+d.name+' ('+d.count.toLocaleString()+' entries)'}).catch(()=>{});
-loadWords().catch(e=>say('Cannot load words: '+e.message,'bad'));
+let dtimer=null,dseq=0,dmode=QS.get('tab')==='mine'?'mine':'dict',dq=(QS.get('q')||'').slice(0,60),doff=0,dmore=false,dbusy=false,dname='',dok=true,ditems=[];const DLIM=100;
+$('dq').value=dq;$('tdict').classList.toggle('on',dmode==='dict');$('tmine').classList.toggle('on',dmode==='mine');
+window.syncUrl=()=>{try{const u=new URL(location.href);if(words[cur])u.searchParams.set('word',words[cur].id);else u.searchParams.delete('word');
+ if(dq)u.searchParams.set('q',dq);else u.searchParams.delete('q');if(dmode==='mine')u.searchParams.set('tab','mine');else u.searchParams.delete('tab');history.replaceState(null,'',u)}catch(e){}};
+const setCount=t=>{$('dcount').textContent=t};
+function rowHtml(r,i){return `<div class="dr" role="option" tabindex="0" data-i="${i}" data-ml="${esc(r.ml)}"><span class="mlw">${esc(r.ml)}</span><span class="dg">${esc(r.manglish||'')}</span><span class="dt"></span><span class="dmean">${esc(r.meaning||'')}</span></div>`}
+function markActive(){const a=words[cur]?words[cur].label:null,mine=new Map(words.map(w=>[w.label,w.takes.length]));let act=null;
+ document.querySelectorAll('#dres .dr').forEach(e=>{const m=e.dataset.ml,on=m===a;if(on)act=e;e.classList.toggle('active',on);e.classList.toggle('mine',mine.has(m));e.setAttribute('aria-selected',on?'true':'false');
+  const t=e.querySelector('.dt'),n=mine.get(m);t.textContent=mine.has(m)?'✓ in my words · '+n+' take'+(n===1?'':'s'):''});
+ if(act){const el=$('dres'),top=act.offsetTop-el.offsetTop;if(top<el.scrollTop||top+act.offsetHeight>el.scrollTop+el.clientHeight)el.scrollTop=Math.max(0,top-el.clientHeight/2)}}
+window.afterWords=()=>{if(dmode==='mine')dload(true);else markActive()};
+function dmsg(t,cls){$('dmsg').textContent=t||'';$('dmsg').className='mut '+(cls||'')}
+async function pick(i){const r=ditems[i];if(!r)return;
+ if(state!=='idle'){dmsg('Finish or discard the current recording first.','bad');return}
+ const k=words.findIndex(w=>w.label===r.ml);
+ if(k>=0){cur=k;clearReview();dmsg('');await loadWords();return}
+ if(!r.can_add){dmsg('That entry is a phrase: only single words can be recorded.','bad');return}
+ clearReview();
+ await addWord(Object.assign({label:r.ml,manglish:r.manglish,meaning:r.meaning,source:'dictionary: '+dname+(r.g2p?' + mlphon pronunciation':'')},r.g2p?{units:r.units,g2p:true}:{}),$('dmsg'))}
+async function dload(reset){
+ if(dmode==='mine'){const q=dq.toLowerCase();
+  ditems=words.map(w=>({ml:w.label,manglish:w.manglish,meaning:w.meaning||'',can_add:true})).filter(r=>!q||r.ml.includes(dq)||r.manglish.includes(q)||r.meaning.toLowerCase().includes(q));
+  $('dres').innerHTML=ditems.length?ditems.map(rowHtml).join(''):'<div class="mut" style="padding:10px">'+(words.length?'No match.':'No words yet. Pick one from the Dictionary tab.')+'</div>';
+  $('dinfo').textContent='Words you have added to record';
+  setCount(!words.length?'No words in your list yet.':ditems.length?(dq?ditems.length+' of '+words.length+' words match “'+dq+'”':words.length+' word'+(words.length===1?'':'s')+' in your list'):'No words match “'+dq+'”.');
+  markActive();return}
+ if(!dok)return;
+ if(dbusy&&!reset)return;
+ const my=reset?++dseq:dseq;dbusy=true;
+ try{const d=await api(dq?'/api/dict?q='+encodeURIComponent(dq)+'&limit=100':'/api/dict?browse=1&offset='+(reset?0:doff)+'&limit='+DLIM);
+  if(my!==dseq)return;
+  if(!d.available){dok=false;$('dinfo').textContent=d.note;$('tdict').disabled=true;dmode='mine';$('tdict').classList.remove('on');$('tmine').classList.add('on');dload(true);return}
+  dname=d.name;
+  if(reset){ditems=[];doff=0;$('dres').innerHTML='';$('dres').scrollTop=0}
+  const base=ditems.length;ditems=ditems.concat(d.results);doff+=d.results.length;dmore=!dq&&d.results.length===DLIM;
+  $('dinfo').textContent='Dictionary: '+d.name+' ('+d.count.toLocaleString()+' entries), listed A–Z';
+  const n=ditems.length;setCount(!n?(dq?'No words match “'+dq+'”.':'No words in the dictionary.'):dq?(n>=100?'Showing the best 100 matches: type more letters to narrow it':n+' match'+(n===1?'':'es')):'Showing '+n.toLocaleString()+' of '+d.count.toLocaleString()+(dmore?' · scroll for more':''));
+  if(!n)$('dres').innerHTML='';
+  else $('dres').insertAdjacentHTML('beforeend',d.results.map((r,i)=>rowHtml(r,base+i)).join(''));
+  markActive()}
+ catch(e){if(my===dseq)$('dres').textContent=e.message}
+ finally{if(my===dseq)dbusy=false}}
+function setMode(m){if(m==='dict'&&!dok)return;dmode=m;syncUrl();$('tdict').classList.toggle('on',m==='dict');$('tmine').classList.toggle('on',m==='mine');dload(true)}
+$('tdict').onclick=()=>setMode('dict');$('tmine').onclick=()=>setMode('mine');
+$('dq').oninput=()=>{clearTimeout(dtimer);dtimer=setTimeout(()=>{dq=$('dq').value.trim();syncUrl();dload(true)},180)};
+$('dres').onclick=e=>{const r=e.target.closest('.dr');if(r)pick(+r.dataset.i)};
+$('dres').onkeydown=e=>{const r=e.target.closest&&e.target.closest('.dr');if(!r)return;
+ if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(+r.dataset.i)}else if(e.key==='ArrowDown'&&r.nextElementSibling){e.preventDefault();r.nextElementSibling.focus()}else if(e.key==='ArrowUp'&&r.previousElementSibling){e.preventDefault();r.previousElementSibling.focus()}};
+$('dres').onscroll=()=>{const el=$('dres');if(dmode==='dict'&&!dq&&dmore&&!dbusy&&el.scrollTop+el.clientHeight>el.scrollHeight-240)dload(false)};
+loadWords().then(()=>dload(true)).catch(e=>say('Cannot load words: '+e.message,'bad'));
 </script></body></html>"""
 
 COMPARE = r"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -990,12 +1093,14 @@ def main():
     ap.add_argument("--dict-ml-col", help="dictionary column (name or 0-based index) holding the Malayalam words")
     ap.add_argument("--dict-en-col", help="dictionary column holding the English meaning")
     ap.add_argument("--dict-no-header", action="store_true", help="the dictionary file has no header row")
+    ap.add_argument("--aligner-url", help="optional local aligner service (tools/s2w_aligner_service.py), e.g. http://host.docker.internal:8780: "
+                    "a speech model places the word start/end for the first guess")
     ap.add_argument("--build", default=os.environ.get("S2W_BUILD", "build"))
     ap.add_argument("--port", type=int, default=8765)
     a = ap.parse_args()
     try:
         dic = Dictionary(a.dictionary, a.dict_ml_col, a.dict_en_col, a.dict_no_header) if a.dictionary else None
-        rec = Recorder(a.record_dir, [parse_word(w) for w in a.word], a.build, dic)
+        rec = Recorder(a.record_dir, [parse_word(w) for w in a.word], a.build, dic, a.aligner_url)
         srv = make_server(rec, a.port)
     except v.ViewerError as e:
         print("error: %s" % e.message, file=sys.stderr)
