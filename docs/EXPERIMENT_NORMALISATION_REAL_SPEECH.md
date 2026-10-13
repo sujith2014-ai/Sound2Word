@@ -25,6 +25,18 @@ Anything adopted from it must be confirmed on new speakers (section 9).
 2. **Consenting speakers.** At least 3, under `docs/PILOT_RECRUITMENT_AND_CONSENT.md`; each appears in the output of
    `tools/consent_gate.py eligible` before recording. Four is better (section 9, locked check).
 
+## 2a. Gates for this experiment
+
+These are the experiment's own gates. They are **not** the pilot's Gate A/B/C in `docs/PILOT_DATA_COLLECTION.md` (vocabulary
+approval, rehearsal, main pilot); the vocabulary gate is the same check, the other two are specific to this experiment.
+Each must pass, in order, before the next step starts.
+
+| Gate | Must be true | Evidence |
+|---|---|---|
+| **A: vocabulary** | Both reviewers independently approved spelling, meaning, familiarity, pronunciation variants and the intended contrast of every word. A pair either reviewer finds not genuine is replaced **before** any recording. | `review_sheet.py export` succeeded; `wordlist.provenance.json`; `s2w_dataset_check --require-verified` passes |
+| **B: recordings** | Every speaker passed `consent_gate.py eligible` before recording. QA-rejected takes were re-recorded at the session where possible. The fourth speaker's audio is held out of development and configuration selection entirely. | consent register output, session logs, `s2w_qa` results, fold manifests that do not contain the held-back speaker |
+| **C: experiment integrity** | Configurations, metrics, thresholds and fold assignments are committed before the first run. Every configuration is reported, regressions included, with per-speaker and per-word results. | commit hash and manifest hashes quoted in the report; all 21 run directories accounted for |
+
 ## 3. Vocabulary (chosen by the native speaker, not by us)
 
 8 words (range 5-10):
