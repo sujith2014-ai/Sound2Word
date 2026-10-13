@@ -461,7 +461,7 @@ button:hover:not(:disabled){border-color:var(--blue)}button:disabled{opacity:.45
 #status{min-height:1.5em;font-weight:600}.bad{color:var(--red)}.good{color:var(--green)}.mut{color:var(--mut);font-size:13px}.tag{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;background:#e4e8fb;color:#2b3a8f;margin-right:6px}
 .take{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .seg{display:grid;grid-template-columns:48px 1fr 56px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.badge{min-width:44px;height:44px;border-radius:10px;color:#fff;font-weight:700;display:grid;place-items:center;padding:0 4px}
-#wave{touch-action:none;cursor:ew-resize}table{border-collapse:collapse;width:100%}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
+#wave,#segbar{touch-action:none;cursor:ew-resize;user-select:none}.nudge button{padding:0 7px;margin:0 2px;font-size:11px;border-radius:6px}table{border-collapse:collapse;width:100%}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
 .rel{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px}.same{background:#d6efe6;color:#0b5a3f}.len{background:#fde7c7;color:#7a4300}.diff{background:#fbd9d5;color:#8a1c12}.only{background:#e4e8fb;color:#2b3a8f}
 .dbar{height:10px;border-radius:5px;background:#4285d8;min-width:2px}
 """
@@ -477,7 +477,8 @@ PAGE = r"""<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name
  <canvas id="live" height="130"></canvas><div id="status" role="status"></div></div>
 <div class="card" id="review" hidden><h2 style="margin:0 0 4px;font-size:16px">Your recording</h2>
  <div class="mut" style="margin-bottom:8px">Drag the dark handles on the graph to where you hear each sound begin and end. The first positions are only a guess from spectral changes. Sounds overlap in real speech, so boundaries are approximate.</div>
- <canvas id="wave" height="150"></canvas><canvas id="segbar" height="36" style="margin-top:6px"></canvas>
+ <div class="row" style="margin:0 0 6px"><button id="vz" type="button">Show whole recording</button><span class="mut" id="vinfo"></span></div>
+ <canvas id="wave" height="150"></canvas><canvas id="segbar" height="36" style="margin-top:6px"></canvas><div class="mut" style="margin-top:4px">Combined word: <b id="comb"></b> &middot; you can also drag on the coloured bar, or use the &#9664; &#9654; buttons on each sound (Shift = 50 ms).</div>
  <h3 style="margin:14px 0 2px;font-size:15px">Each sound on its own</h3><div id="cards"></div>
  <canvas id="spec" height="120" style="margin-top:10px"></canvas>
  <div id="qa" class="mut" style="margin-top:8px"></div>
@@ -486,7 +487,7 @@ PAGE = r"""<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name
 </main>
 <script>
 const TOKEN='__TOKEN__',$=id=>document.getElementById(id),COL=['#4285d8','#e8a43c','#2d9d78','#9b59b6','#d35400','#16a085','#c0392b','#7f8c8d'];
-let words=[],cur=0,state='idle',ctx,stream,node,chunks=[],rate=0,start=0,live=[],raf=0,pcm=null,wav=null,rev=null,analysis=null,units=[],edges=[],method='suggested',stopAt=null,drag=-1,pausedMid=false;
+let words=[],cur=0,state='idle',ctx,stream,node,chunks=[],rate=0,start=0,live=[],raf=0,pcm=null,wav=null,rev=null,analysis=null,units=[],edges=[],method='suggested',stopAt=null,drag=-1,pausedMid=false,view=[0,1],zoomed=true;
 const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 function say(t,cls){const s=$('status');s.textContent=t;s.className=cls||''}
 async function api(u,opt){const r=await fetch(u,opt);const d=await r.json().catch(()=>({error:'bad response'}));if(!r.ok||d.error)throw new Error(d.error||('HTTP '+r.status));return d}
@@ -528,31 +529,39 @@ const dur=()=>pcm.length/rate;
 function fixEdges(){const d=dur(),N=units.length;let ok=edges.length===N+1;for(let k=1;ok&&k<=N;k++){if(!(edges[k]-edges[k-1]>=0.012))edges[k]=edges[k-1]+0.012}
  if(!ok||edges[N]>d||edges[0]<0){edges=units.map((_,k)=>k*d/N).concat([d]);method='default-split'}}
 function initSegments(){units=words[cur].units;const sug=analysis&&analysis.spec&&analysis.spec.suggest;
- if(sug&&sug.length===units.length+1){edges=sug.slice();method='suggested'}else{edges=[];method='default-split'}fixEdges()}
+ if(sug&&sug.length===units.length+1){edges=sug.slice();method='suggested'}else{edges=[];method='default-split'}fixEdges();zoomed=true;setView()}
+function setView(){const d=dur(),N=units.length;view=zoomed?[Math.max(0,edges[0]-0.15),Math.min(d,edges[N]+0.15)]:[0,d];if(view[1]-view[0]<0.2)view=[0,d];$('vz').textContent=zoomed?'Show whole recording':'Zoom to the word';$('vinfo').textContent=zoomed?'zoomed to the word':'whole recording';$('comb').textContent=units.join('').toUpperCase()}
+function ensureVisible(){if(zoomed){const N=units.length;view=[Math.min(view[0],Math.max(0,edges[0]-0.05)),Math.max(view[1],Math.min(dur(),edges[N]+0.05))]}}
 function peaksOf(a,b,W){const out=[],n=pcm.length,s0=Math.floor(a*rate),s1=Math.floor(b*rate);for(let x=0;x<W;x++){let lo=1,hi=-1;const i0=s0+Math.floor(x*(s1-s0)/W),i1=Math.max(i0+1,s0+Math.floor((x+1)*(s1-s0)/W));for(let i=Math.max(0,i0);i<i1&&i<n;i++){const y=pcm[i];if(y<lo)lo=y;if(y>hi)hi=y}out.push([lo,hi])}return out}
 function showReview(){$('review').hidden=false;rev=new Audio(URL.createObjectURL(wav));rev.onended=()=>{$('play').textContent='▶ Play whole word';stopAt=null;pausedMid=false;drawReview()};initSegments();
  if(analysis){const q=analysis.qa;$('qa').innerHTML=`<span class="tag">measured</span>duration ${analysis.duration.toFixed(2)} s · ${analysis.rate} Hz · SNR ${q.snr_db_estimate} dB · level ${q.speech_level_dbfs} dBFS · clipping ${q.clipped_run_samples} · QA verdict <b>${esc(q.verdict)}</b> (${esc(q.flags)})`}else $('qa').textContent='';
  renderCards();drawReview();$('play').disabled=false;$('accept').disabled=false;$('discard').disabled=false}
 function tagText(){return method==='edited'?'placed by you':method==='suggested'?'first guess':'even split (no guess available)'}
-function renderCards(){$('cards').innerHTML=units.map((u,k)=>`<div class="seg"><div class="badge" style="background:${COL[k%8]}">${esc(u.toUpperCase())}</div><div><b>Sound ${k+1}: ${esc(u.toUpperCase())}</b> <span class="tag">${tagText()}</span><br><span class="mut">${edges[k].toFixed(3)} – ${edges[k+1].toFixed(3)} s · ${Math.round((edges[k+1]-edges[k])*1000)} ms</span><canvas class="mini" data-k="${k}" height="40"></canvas></div><button data-u="${k}" title="play this sound">&#9654;</button></div>`).join('');
+function renderCards(){$('cards').innerHTML=units.map((u,k)=>`<div class="seg"><div class="badge" style="background:${COL[k%8]}">${esc(u.toUpperCase())}</div><div><b>Sound ${k+1}: ${esc(u.toUpperCase())}</b> <span class="tag">${tagText()}</span><br><span class="mut">${edges[k].toFixed(3)} – ${edges[k+1].toFixed(3)} s · ${Math.round((edges[k+1]-edges[k])*1000)} ms</span>
+ <span class="nudge mut"> start <button type="button" data-n="${k}:-1">&#9664;</button><button type="button" data-n="${k}:1">&#9654;</button> end <button type="button" data-n="${k+1}:-1">&#9664;</button><button type="button" data-n="${k+1}:1">&#9654;</button></span><canvas class="mini" data-k="${k}" height="40"></canvas></div><button data-u="${k}" title="play this sound">&#9654;</button></div>`).join('');
+ document.querySelectorAll('[data-n]').forEach(b=>b.onclick=e=>{const[i,dir]=b.dataset.n.split(':').map(Number),N=units.length,step=(e.shiftKey?0.05:0.01)*dir,lo=i>0?edges[i-1]+0.012:0,hi=i<N?edges[i+1]-0.012:dur();edges[i]=Math.max(lo,Math.min(hi,edges[i]+step));method='edited';ensureVisible();renderCards();drawReview()});
  document.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>playRegion(edges[+b.dataset.u],edges[+b.dataset.u+1]));
  document.querySelectorAll('canvas.mini').forEach(c=>{const k=+c.dataset.k,[g,W,H]=sized(c);g.strokeStyle=COL[k%8];peaksOf(edges[k],edges[k+1],Math.floor(W)).forEach(([lo,hi],x)=>{g.beginPath();g.moveTo(x,H/2-hi*H/2);g.lineTo(x,H/2-lo*H/2);g.stroke()})})}
-function drawReview(){if(!pcm)return;const d=dur();let[g,W,H]=sized($('wave')),X=t=>t/d*W;
+function drawReview(){if(!pcm)return;const[v0,v1]=view;let[g,W,H]=sized($('wave')),X=t=>(t-v0)/(v1-v0)*W;
  units.forEach((u,k)=>{g.fillStyle=COL[k%8]+'33';g.fillRect(X(edges[k]),0,X(edges[k+1])-X(edges[k]),H)});
- g.strokeStyle='#4285d8';peaksOf(0,d,Math.floor(W)).forEach(([lo,hi],x)=>{g.beginPath();g.moveTo(x,H/2-hi*H/2);g.lineTo(x,H/2-lo*H/2);g.stroke()});
- edges.forEach((t,k)=>{g.fillStyle=(k===0||k===units.length)?'#8f98aa':'#1c2230';g.fillRect(X(t)-1,0,2,H);g.fillRect(X(t)-6,0,12,14)});
- if(rev&&rev.duration){g.strokeStyle='#d93025';g.lineWidth=2;const x=rev.currentTime/rev.duration*W;g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}
- [g,W,H]=sized($('segbar'));X=t=>t/d*W;units.forEach((u,k)=>{g.fillStyle=COL[k%8];g.fillRect(X(edges[k]),0,Math.max(1,X(edges[k+1])-X(edges[k])-1),H);g.fillStyle='#fff';g.font='bold 13px sans-serif';g.fillText(u.toUpperCase(),X(edges[k])+6,22)});
- g.fillStyle='#8f98aa';g.font='12px sans-serif';g.textAlign='right';g.fillText('= '+units.join('').toUpperCase(),W-6,22);g.textAlign='left';
+ g.strokeStyle='#4285d8';peaksOf(v0,v1,Math.floor(W)).forEach(([lo,hi],x)=>{g.beginPath();g.moveTo(x,H/2-hi*H/2);g.lineTo(x,H/2-lo*H/2);g.stroke()});
+ edges.forEach((t,k)=>{const outer=k===0||k===units.length;g.fillStyle=outer?'#8f98aa':'#1c2230';g.fillRect(X(t)-1,0,2,H);g.fillRect(X(t)-8,0,16,20);g.fillStyle='#fff';g.font='bold 11px sans-serif';g.fillText('◂▸',X(t)-7,14)});
+ if(rev&&rev.duration){g.strokeStyle='#d93025';g.lineWidth=2;const x=X(rev.currentTime);g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}
+ [g,W,H]=sized($('segbar'));units.forEach((u,k)=>{const x0=X(edges[k]),x1=X(edges[k+1]);g.fillStyle=COL[k%8];g.fillRect(x0,0,Math.max(1,x1-x0-1),H);if(x1-x0>16){g.fillStyle='#fff';g.font='bold 13px sans-serif';g.fillText(u.toUpperCase(),x0+5,22)}});
+ edges.forEach(t=>{g.fillStyle='#1c2230';g.fillRect(X(t)-1,0,2,H)});
  [g,W,H]=sized($('spec'));const sp=analysis&&analysis.spec;if(!sp){g.fillStyle='#8f98aa';g.fillText('spectrogram unavailable',8,16);return}
  const lo=Math.min(...sp.data.map(r=>Math.min(...r))),hi=Math.max(...sp.data.map(r=>Math.max(...r)));
- for(let x=0;x<W;x++){const f=Math.min(sp.rows-1,Math.floor(x/W*sp.rows));for(let m=0;m<sp.cols;m++){const t=(sp.data[f][m]-lo)/(hi-lo||1);g.fillStyle=`hsl(${240-240*t},80%,${15+45*t}%)`;g.fillRect(x,H-(m+1)*H/sp.cols,1.5,H/sp.cols+1)}}
- edges.forEach(t=>{g.fillStyle='#ffffff99';g.fillRect(X(t),0,1,H)})}
-function tAt(e){const r=$('wave').getBoundingClientRect();return Math.max(0,Math.min(dur(),(e.clientX-r.left)/r.width*dur()))}
-$('wave').addEventListener('pointerdown',e=>{if(!pcm)return;const t=tAt(e),r=$('wave').getBoundingClientRect(),px=r.width/dur();let best=-1,bd=1e9;edges.forEach((x,k)=>{const dd=Math.abs(x-t)*px;if(dd<bd){bd=dd;best=k}});
- if(bd<=12){drag=best;$('wave').setPointerCapture(e.pointerId)}});
-$('wave').addEventListener('pointermove',e=>{if(drag<0)return;const t=tAt(e),N=units.length,lo=drag>0?edges[drag-1]+0.012:0,hi=drag<N?edges[drag+1]-0.012:dur();edges[drag]=Math.max(lo,Math.min(hi,t));method='edited';renderCards();drawReview()});
-$('wave').addEventListener('pointerup',()=>{drag=-1});
+ for(let x=0;x<W;x++){const t=v0+x/W*(v1-v0),f=Math.min(sp.rows-1,Math.max(0,Math.floor(t/sp.hop)));for(let m=0;m<sp.cols;m++){const q=(sp.data[f][m]-lo)/(hi-lo||1);g.fillStyle=`hsl(${240-240*q},80%,${15+45*q}%)`;g.fillRect(x,H-(m+1)*H/sp.cols,1.5,H/sp.cols+1)}}
+ edges.forEach(t=>{g.fillStyle='#ffffffaa';g.fillRect(X(t),0,1,H)})}
+function tAt(e,c){const r=c.getBoundingClientRect();return Math.max(view[0],Math.min(view[1],view[0]+(e.clientX-r.left)/r.width*(view[1]-view[0])))}
+function bindDrag(c){
+ c.addEventListener('pointerdown',e=>{if(!pcm)return;e.preventDefault();const t=tAt(e,c),px=c.getBoundingClientRect().width/(view[1]-view[0]);let best=-1,bd=1e9;
+  edges.forEach((x,k)=>{const dd=Math.abs(x-t)*px;if(dd<bd||(dd===bd&&k>best&&t>x)){bd=dd;best=k}});
+  if(bd<=20){drag=best;c.setPointerCapture(e.pointerId)}});
+ c.addEventListener('pointermove',e=>{if(drag<0)return;e.preventDefault();const t=tAt(e,c),N=units.length,lo=drag>0?edges[drag-1]+0.012:0,hi=drag<N?edges[drag+1]-0.012:dur();edges[drag]=Math.max(lo,Math.min(hi,t));method='edited';renderCards();drawReview()});
+ c.addEventListener('pointerup',()=>{drag=-1});c.addEventListener('pointercancel',()=>{drag=-1})}
+bindDrag($('wave'));bindDrag($('segbar'));
+$('vz').onclick=()=>{zoomed=!zoomed;setView();drawReview()};
 function playRegion(a,b){if(!rev)return;pausedMid=false;rev.currentTime=a;stopAt=b;rev.play();$('play').textContent='❚❚ Pause';rafPlay()}
 function rafPlay(){drawReview();if(rev&&!rev.paused){if(stopAt!=null&&rev.currentTime>=stopAt){rev.pause();stopAt=null;pausedMid=false;$('play').textContent='▶ Play whole word';drawReview();return}requestAnimationFrame(rafPlay)}}
 function clearReview(){if(rev){rev.pause();rev=null}$('review').hidden=true;pcm=null;wav=null;analysis=null;stopAt=null;pausedMid=false;$('play').textContent='▶ Play whole word'}

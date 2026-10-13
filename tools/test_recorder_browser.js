@@ -50,26 +50,60 @@ function stepsWav(file, rate) {   // 0.1 s silence, five 0.3 s tones (300..1500 
   rec('combined bar drawn', (await colours('segbar')) > 3);
   const cards = await page.evaluate(() => [...document.querySelectorAll('#cards .badge')].map(b => b.textContent));
   rec('one card per sound: K A L A M', JSON.stringify(cards) === JSON.stringify(['K', 'A', 'L', 'A', 'M']), JSON.stringify(cards));
-  const st0 = await page.evaluate(() => ({ edges: edges.slice(), method, dur: dur() }));
+  const st0 = await page.evaluate(() => ({ edges: edges.slice(), method, dur: dur(), view: view.slice() }));
+  rec('graph starts zoomed to the word and always shows every boundary', st0.view[1] - st0.view[0] <= st0.dur + 1e-9 && st0.view[0] <= st0.edges[0] + 1e-9 && st0.view[1] >= st0.edges[5] - 1e-9 && /zoomed to the word/.test(await page.textContent('#vinfo')), JSON.stringify(st0.view.map(x => +x.toFixed(2))) + ' of ' + st0.dur.toFixed(2));
+  const zz = await page.evaluate(() => { const keep = edges.slice(); edges = [0.4, 0.45, 0.5, 0.55, 0.6, 0.65]; zoomed = true; setView(); const out = { v: view.slice(), d: dur() }; edges = keep; setView(); return out; });
+  rec('with silence around the word, the view shrinks to the word plus 150 ms margins', Math.abs(zz.v[0] - 0.25) < 1e-9 && Math.abs(zz.v[1] - 0.8) < 1e-9 && zz.v[1] - zz.v[0] < zz.d, JSON.stringify(zz));
+  rec('combined word caption shown', (await page.textContent('#comb')) === 'KALAM');
   rec('first-guess boundaries: 6 edges, increasing, inside the recording, tagged as a guess', st0.edges.length === 6 && st0.edges.every((x, i) => i === 0 || x > st0.edges[i - 1]) && st0.edges[5] <= st0.dur + 1e-6 && st0.edges[0] >= 0 && st0.method === 'suggested' && /first guess/.test(await page.textContent('#cards')), JSON.stringify(st0.edges.map(x => +x.toFixed(2))));
   rec('nothing saved yet', wavs().length === 0);
 
   // drag boundary 2 (between L... index 2) by 40 px
   const box = await page.locator('#wave').boundingBox();
-  const hx = box.x + st0.edges[2] / st0.dur * box.width;
+  const X0 = (tt, vw, bx) => bx.x + (tt - vw[0]) / (vw[1] - vw[0]) * bx.width, span0 = st0.view[1] - st0.view[0];
+  const hx = X0(st0.edges[2], st0.view, box);
   await page.mouse.move(hx, box.y + 7); await page.mouse.down(); await page.mouse.move(hx + 20, box.y + 7); await page.mouse.move(hx + 40, box.y + 7); await page.mouse.up();
   const st1 = await page.evaluate(() => ({ edges: edges.slice(), method }));
-  const want = st0.edges[2] + 40 / box.width * st0.dur;
+  const want = st0.edges[2] + 40 / box.width * span0;
   rec('dragging a handle moves exactly that boundary', Math.abs(st1.edges[2] - want) < 0.03 && st1.edges.every((x, i) => i === 2 || Math.abs(x - st0.edges[i]) < 1e-9), `moved ${(st1.edges[2] - st0.edges[2]).toFixed(3)} s, wanted ${(want - st0.edges[2]).toFixed(3)}`);
   rec('after a drag the boundaries are tagged as placed by you', st1.method === 'edited' && /placed by you/.test(await page.textContent('#cards')));
-  const bx = box.x + st1.edges[2] / st0.dur * box.width;
+  const bx = X0(st1.edges[2], st0.view, box);
   await page.mouse.move(bx, box.y + 7); await page.mouse.down(); await page.mouse.move(box.x + box.width * 0.99, box.y + 7); await page.mouse.up();
   const st2 = await page.evaluate(() => edges.slice());
   rec('a boundary cannot be dragged past its neighbour', st2[2] < st2[3] - 0.011 && st2.every((x, i) => i === 0 || x > st2[i - 1]), JSON.stringify(st2.map(x => +x.toFixed(3))));
-  const cx = box.x + st2[2] / st0.dur * box.width;                                  // put it back with a real drag from where it is now
+  const cx = X0(st2[2], st0.view, box);                                  // put it back with a real drag from where it is now
   await page.mouse.move(cx, box.y + 7); await page.mouse.down(); await page.mouse.move(hx, box.y + 7); await page.mouse.up();
   const st3 = await page.evaluate(() => edges.slice());
   rec('the boundary can be dragged back', Math.abs(st3[2] - st0.edges[2]) < 0.03 && st3[3] - st3[2] > 0.1, JSON.stringify(st3.map(x => +x.toFixed(3))));
+
+  // the narrow last sound (M) and the end handle: grabbable and movable; dragging on the colour bar works; no page scroll
+  const sy0 = await page.evaluate(() => window.scrollY);
+  const bar = await page.locator('#segbar').boundingBox(), cur = await page.evaluate(() => ({ e: edges.slice(), v: view.slice() }));
+  await page.mouse.move(X0(cur.e[4], cur.v, bar), bar.y + 14); await page.mouse.down(); await page.mouse.move(X0(cur.e[4], cur.v, bar) - 12, bar.y + 14); await page.mouse.up();
+  const mv4 = await page.evaluate(() => edges.slice());
+  rec('the handle in front of the last (narrow) sound can be dragged on the colour bar', mv4[4] < cur.e[4] - 0.005 && mv4.every((x, i) => i === 4 || Math.abs(x - cur.e[i]) < 1e-9), `${cur.e[4].toFixed(3)} -> ${mv4[4].toFixed(3)}`);
+  await page.mouse.move(X0(mv4[5], cur.v, box), box.y + 7); await page.mouse.down(); await page.mouse.move(X0(mv4[5], cur.v, box) - 10, box.y + 7); await page.mouse.up();
+  const mv5 = await page.evaluate(() => edges.slice());
+  rec('the end handle can be dragged', mv5[5] < mv4[5] - 0.003 && mv5[5] > mv5[4], `${mv4[5].toFixed(3)} -> ${mv5[5].toFixed(3)}`);
+  rec('dragging handles does not scroll the page', (await page.evaluate(() => window.scrollY)) === sy0);
+  await page.evaluate(e => { edges = e.slice(); renderCards(); drawReview(); }, cur.e);
+
+  // nudge buttons: exact 10 ms / 50 ms steps and clamping
+  const n0 = await page.evaluate(() => edges.slice());
+  await page.click('[data-n="2:1"]'); const n1 = await page.evaluate(() => edges.slice());
+  await page.click('[data-n="2:-1"]', { modifiers: ['Shift'] }); const n2 = await page.evaluate(() => edges.slice());
+  rec('nudge moves one boundary by exactly 10 ms, Shift by 50 ms', Math.abs(n1[2] - n0[2] - 0.01) < 1e-9 && Math.abs(n2[2] - n1[2] + 0.05) < 1e-9 && n2.every((x, i) => i === 2 || x === n0[i]), `${n0[2].toFixed(3)} ${n1[2].toFixed(3)} ${n2[2].toFixed(3)}`);
+  await page.evaluate(() => { for (let i = 0; i < 80; i++) document.querySelector('[data-n="2:-1"]').click(); });
+  const n3 = await page.evaluate(() => edges.slice());
+  rec('nudging can never push a boundary past its neighbour', n3[2] >= n3[1] + 0.0119 && n3.every((x, i) => i === 0 || x > n3[i - 1]), JSON.stringify(n3.map(x => +x.toFixed(3))));
+  await page.evaluate(() => { for (let i = 0; i < 80; i++) document.querySelector('[data-n="2:1"]').click(); });
+  const n4 = await page.evaluate(() => edges.slice());
+  rec('and not past the other neighbour either', n4[2] <= n4[3] - 0.0119 && n4.every((x, i) => i === 0 || x > n4[i - 1]));
+  await page.click('#vz'); const vw1 = await page.evaluate(() => ({ v: view.slice(), d: dur() }));
+  rec('Show whole recording switches the view to the full recording and back', vw1.v[0] === 0 && Math.abs(vw1.v[1] - vw1.d) < 1e-9 && /whole recording/.test(await page.textContent('#vinfo')));
+  await page.click('#vz'); rec('and back to the zoomed word', await page.evaluate(() => zoomed === true && /zoomed to the word/.test(document.getElementById('vinfo').textContent)));
+  // put boundary 2 back where the test below expects it
+  await page.evaluate(w => { edges[2] = w; method = 'edited'; renderCards(); drawReview(); }, st0.edges[2]);
 
   // play one sound on its own
   const p3 = await page.evaluate(() => new Promise(res => { document.querySelector('[data-u="3"]').click(); setTimeout(() => res({ t: rev.currentTime, paused: rev.paused, a: edges[3], b: edges[4] }), 40); }));
@@ -92,8 +126,8 @@ function stepsWav(file, rate) {   // 0.1 s silence, five 0.3 s tones (300..1500 
   rec('Discard writes nothing and allows a new recording', wavs().length === 0 && (await page.isHidden('#review')) && !(await page.isDisabled('#rec')) && /nothing was saved/.test(await page.textContent('#status')));
 
   await recordOnce();
-  const box2 = await page.locator('#wave').boundingBox(), e2 = await page.evaluate(() => ({ edges: edges.slice(), dur: dur() }));
-  await page.mouse.move(box2.x + e2.edges[1] / e2.dur * box2.width, box2.y + 7); await page.mouse.down(); await page.mouse.move(box2.x + e2.edges[1] / e2.dur * box2.width + 25, box2.y + 7); await page.mouse.up();
+  const box2 = await page.locator('#wave').boundingBox(), e2 = await page.evaluate(() => ({ edges: edges.slice(), dur: dur(), view: view.slice() }));
+  await page.mouse.move(X0(e2.edges[1], e2.view, box2), box2.y + 7); await page.mouse.down(); await page.mouse.move(X0(e2.edges[1], e2.view, box2) + 25, box2.y + 7); await page.mouse.up();
   const sent = await page.evaluate(() => ({ edges: edges.map(x => +x.toFixed(4)), method }));
   await page.click('#accept'); await page.waitForFunction(() => /Saved take_001|Could not save/.test(document.getElementById('status').textContent), null, { timeout: 8000 });
   rec('Accept saves the take and its sound boundaries', /Saved take_001/.test(await page.textContent('#status')) && JSON.stringify(wavs()) === JSON.stringify(['kalam/take_001.segments.json', 'kalam/take_001.wav']), JSON.stringify(wavs()));
