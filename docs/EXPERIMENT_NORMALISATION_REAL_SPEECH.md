@@ -135,7 +135,7 @@ Notes:
   **exploratory**, and cannot support a claim.
 - Total: 7 configs x 3 folds = 21 runs. Run the baseline first on every fold. Command per run:
   `build/s2w_eval run --dataset FOLD --settings cX.cfg --split calib --run-id <fold>_<config>`.
-  Run directories are git-ignored (per-query files can identify speakers). `queries.csv` keeps the per-query top-5 words,
+  Run directories are git-ignored (per-query files can identify speakers). `queries.csv` keeps the per-query top-3 words (the matcher keeps 5 internally, but only 3 are written),
   distances, margin, quality flags and the warp alpha used.
 
 ## 8. Metrics
@@ -149,8 +149,8 @@ Per configuration, per fold (= per held-out speaker) and pooled. Always show num
 4. **Word-by-word confusion matrix** from `queries.csv` (`word_id` vs `top1`), built in a spreadsheet; no new tool.
 5. **Paired comparison against C0**: join on `recording_id`, count queries *fixed* (wrong in C0, right in Cx) and *broken*
    (right in C0, wrong in Cx). Report these two counts, not a p-value.
-6. **Partner-distance ratio** for pair-word queries: when the partner is in the top-5, `partner_distance / correct_distance`
-   from `queries.csv`. If the partner is not in the top-5 only a lower bound exists; record it as such.
+6. **Partner-distance ratio** for pair-word queries: when the partner is in the top-3, `partner_distance / correct_distance`
+   from `queries.csv`. If the partner is not in the top-3 only a lower bound exists; record it as such. The viewer's nearest-template lookup (5 templates) can show the partner's distance when it is missing here.
 7. **Rate stress** (optional blocks): top-1 for `slow` and `fast` queries vs `normal`, per config.
 8. **Warp diagnostics** (C3a/C3b): distribution of chosen alpha per held-out speaker next to that speaker's measured F0.
 9. **Median distances** are shown for context only; their scale differs across normalisation/denoise settings, so they are
@@ -215,5 +215,5 @@ forced-alignment/duration measurement for the vowel-length and gemination pairs.
 - 3 speakers, 1 device, 1 room: no claim about speakers, children, accents, devices or noise.
 - Query-side warp is the only vocal-tract technique tested; Kaldi-style VTLN with speaker adaptation, fMLLR, RNNoise,
   forced alignment and self-supervised models are not available in this repository and are not evaluated.
-- Top-5 export means pair distance ratios are sometimes only lower bounds.
+- The 3-candidate export means pair distance ratios are sometimes only lower bounds.
 - Endpointing, QA thresholds and the F0 estimator are untuned on real speech.
