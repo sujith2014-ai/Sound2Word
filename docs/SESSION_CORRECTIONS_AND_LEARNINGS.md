@@ -39,6 +39,7 @@ the measurements. Numbers come from experiments recorded in `LOCAL_MODELS_AND_TT
 | 29 | "Still **ഗേ**, not **ga**: why?" | Formants show the Parler Anjali clip really contains an "e"; the LFM clip is a true "a". The recorder now chooses per unit among several voices. | Done |
 | 30 | **List all my corrections and the learnings as a doc.** | This document. | Done |
 | 31 | "Do not use ങ ങ instead of ങ്ങ" (they sound different; the word may still be typed *angane*). | A written conjunct is ONE unit everywhere: `s2w_units.decompose` and `build_unit_inventory.py` no longer split by default (`whole=True`); the alphabet has 163 conjuncts and their modified forms as their own entries; `NeverSplitAConjunct` tests guard it. Splitting only by an explicit `whole=False` / `S2W_SPLIT_ALL=1` for comparison experiments. | Done; unit clips must be re-generated from the whole-unit inventory |
+| 32 | "Construct words from the alphabet and search on the words: full voice matching with the alphabet voice labels." | `s2w_joiner.py` (proper joins + measurements), `s2w_wordsearch.py` (composed-template DTW, label edit-distance, fusion, eval), recorder page `/search`. Found and fixed missing variance normalisation. See `VOICE_SEARCH.md`. | Built; tested on synthetic tones only |
 
 ## Part 2. What we learned (measured)
 

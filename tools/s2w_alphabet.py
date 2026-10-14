@@ -705,7 +705,7 @@ PAGE = r"""<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name
 .clip{border-top:1px solid var(--line);padding:8px 0}.vb button{padding:4px 10px;font-size:13px;margin-right:4px}.vb .on{border-color:var(--blue);font-weight:700}.warn{color:#b06000}table.m td,table.m th{padding:3px 6px;font-size:13px}
 input.s{font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);min-width:220px}
 </style></head><body>
-<header><h1>Sound2Word &mdash; Malayalam alphabet</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a> &middot; <a href="/alphabet">Alphabet</a></nav>
+<header><h1>Sound2Word &mdash; Malayalam alphabet</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a> &middot; <a href="/alphabet">Alphabet</a> &middot; <a href="/search">Search by voice</a></nav>
 <div class="banner"><b>Machine-generated audio, unverified.</b> Measurements only compare clips with each other. Whether a clip really sounds like its label can be confirmed only by a person listening: use &#10003; / &#10007; / ? on each clip. Not experiment data.</div></header>
 <div class="al"><main style="padding:0;max-width:none;margin:0;min-width:0">
  <div class="card"><div id="summary" class="mut">Loading&hellip;</div>

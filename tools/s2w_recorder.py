@@ -648,6 +648,9 @@ class Recorder:
         self.token = secrets.token_urlsafe(16)
         os.makedirs(self.dir, exist_ok=True)
         lex = alphabet_lexicon or _lexicon_path(dictionary)
+        self.search_lexicon = lex
+        self.last_join_report = []
+        self._search = {}                                         # cached word list + composer for the voice search
         self.alphabet = al.Alphabet(self.dir, alphabet_audio_dir, lex, build, alphabet_clusters_top)
         self.load_saved_words()
         if not self.words and dictionary is None:
@@ -747,6 +750,38 @@ class Recorder:
         with open(clips[i]["path"], "rb") as f:
             return f.read(20 * 1024 * 1024)
 
+
+    # ---- search the dictionary by voice (composed unit templates + recogniser text) ---------------------------------------------
+    def _wordsearch(self):
+        try:
+            import s2w_wordsearch as ws
+            import s2w_joiner as jn
+        except ImportError as e:                                  # numpy missing: the rest of the recorder still works
+            raise v.ViewerError(503, "voice search needs numpy (%s)" % e)
+        return ws, jn
+
+    def voice_search(self, wid, take, heard="", top=5):
+        ws, _jn = self._wordsearch()
+        p = self.take_path(wid, take)
+        if p is None:
+            raise v.ViewerError(404, "no such take")
+        if not self.unit_clips:
+            raise v.ViewerError(404, "no unit clips: start the recorder with --unit-audio-dir (clips made by tools/model_eval/gen_units.py)")
+        if not self.search_lexicon or not os.path.isfile(self.search_lexicon):
+            raise v.ViewerError(404, "no dictionary: start the recorder with --dictionary or --alphabet-lexicon (a lexicon.csv)")
+        if "words" not in self._search:
+            self._search["words"] = ws.load_words(self.search_lexicon)
+            self._search["composer"] = ws.Composer({u: c["path"] for u, c in self.unit_clips.items()})
+        heard = unicodedata.normalize("NFC", (heard or "").strip())
+        try:
+            r = ws.search_with(p, self._search["composer"], self._search["words"], heard or None, top)
+        except ValueError as e:
+            raise v.ViewerError(422, str(e))
+        r["query"] = {"word": wid, "take": take, "heard": heard}
+        r["dictionary_words"] = len(self._search["words"])
+        r["note"] = (r.get("note") or "") + " Unverified: the units are generated clips, not evidence about real speakers."
+        return r
+
     # ---- the generated sound units that build a word -------------------------------------------------------------------------
     def unit_list(self, wid):
         w = self.words.get(wid)
@@ -772,10 +807,29 @@ class Recorder:
             return f.read(5 * 1024 * 1024)
 
     def unit_join(self, wid, fade_ms=2.0):
-        """The unit clips of a word glued end to end (tiny fades at the joins) -> (wav bytes, units, edges in seconds)."""
+        """The unit clips of a word glued end to end -> (wav bytes, units, edges in seconds). With numpy the clips are trimmed, level-matched and
+        crossfaded (tools/s2w_joiner.py) and self.last_join_report holds the measured step at every join; without numpy only 2 ms fades are used."""
         lst = self.unit_list(wid)["units"]
         if not lst or not all(x["have"] for x in lst):
             raise v.ViewerError(404, "not every unit of this word has a generated clip")
+        try:
+            import s2w_joiner as jn
+        except ImportError:
+            jn = None
+        if jn is not None:
+            clips, rate = [], None
+            for x in lst:
+                try:
+                    r, a = jn.read_wav(self.unit_clips[unicodedata.normalize("NFC", x["text"])]["path"])
+                except ValueError as e:
+                    raise v.ViewerError(409, str(e))
+                rate = rate or r
+                if r != rate:
+                    raise v.ViewerError(409, "unit clips have different sample rates")
+                clips.append(a)
+            audio, edges = jn.join(clips, rate)
+            self.last_join_report = jn.measure_joins(audio, edges, rate)
+            return jn.write_wav_bytes(audio, rate), [x["text"] for x in lst], edges
         rate, frames, edges, pos = None, [], [0.0], 0
         for x in lst:
             r, data = _read_pcm16(self.unit_clips[unicodedata.normalize("NFC", x["text"])]["path"])
@@ -1109,6 +1163,12 @@ def make_handler(rec):
                     return self.js({"error": "not found"}, 404)
                 if p == "/compare":
                     return self.send(200, COMPARE.replace("__STYLE__", STYLE).replace("__TOKEN__", rec.token).encode(), "text/html; charset=utf-8")
+                if p == "/search":
+                    return self.send(200, SEARCH.replace("__STYLE__", STYLE).replace("__TOKEN__", rec.token).encode(), "text/html; charset=utf-8")
+                if p == "/api/search":
+                    qs = parse_qs(urlparse(self.path).query)
+                    g = lambda k: (qs.get(k) or [""])[0]
+                    return self.js(rec.voice_search(g("word"), g("take"), g("heard")))
                 if p == "/api/words":
                     return self.js(rec.listing())
                 if p == "/api/units":
@@ -1121,7 +1181,7 @@ def make_handler(rec):
                     qs = parse_qs(urlparse(self.path).query)
                     data, units, edges = rec.unit_join((qs.get("word") or [""])[0])
                     if "meta" in qs:
-                        return self.js({"composed": True, "units": units, "edges": edges, "method": "composed"})
+                        return self.js({"composed": True, "units": units, "edges": edges, "method": "composed", "joins": rec.last_join_report})
                     return self.send(200, data, "audio/wav")
                 if p == "/api/unitscore":
                     return self.js(rec.unit_score((parse_qs(urlparse(self.path).query).get("word") or [""])[0]))
@@ -1294,7 +1354,7 @@ button:hover:not(:disabled){border-color:var(--blue)}button:disabled{opacity:.45
 
 PAGE = r"""<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sound2Word Voice Recorder</title><style>__STYLE__</style></head><body>
-<header><h1>Sound2Word &mdash; Voice Recorder</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a> &middot; <a href="/alphabet">Alphabet</a></nav>
+<header><h1>Sound2Word &mdash; Voice Recorder</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a> &middot; <a href="/alphabet">Alphabet</a> &middot; <a href="/search">Search by voice</a></nav>
 <div class="banner"><b>PERSONAL TEST RECORDINGS</b> &mdash; for trying the screen and playback only. Not experiment data, not a verified vocabulary, and not evidence of recognition accuracy. Audio stays on this computer.</div></header>
 <div class="layout"><aside class="side card" id="side"><h2 style="margin:0 0 6px;font-size:16px">Word search</h2>
  <div class="mut" id="dinfo">Search a dictionary by Malayalam, English or Manglish.</div>
@@ -1541,9 +1601,31 @@ $('dres').onscroll=()=>{const el=$('dres');if(dmode==='dict'&&!dq&&dmore&&!dbusy
 loadWords().then(()=>dload(true)).catch(e=>say('Cannot load words: '+e.message,'bad'));
 </script></body></html>"""
 
+SEARCH = r"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sound2Word Search by Voice</title><style>__STYLE__</style></head><body>
+<header><h1>Sound2Word &mdash; Search the dictionary by voice</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a> &middot; <a href="/alphabet">Alphabet</a> &middot; <a href="/search">Search by voice</a></nav>
+<div class="banner"><b>EXPERIMENT</b> &mdash; ranks dictionary words against your recorded take using (1) the alphabet's unit clips joined into each word and (2) text a recogniser heard. Generated clips are not evidence about real speakers; this is not recognition accuracy.</div></header>
+<main><div class="card"><div class="row"><label>Word <select id="w"></select></label><label>Take <select id="t"></select></label>
+<label>What a recogniser heard (Malayalam script, optional) <input id="h" size="22" lang="ml"></label><button id="go" class="ok">Search</button></div>
+<div id="msg" class="mut">Pick a recorded take. The correct word is not given to the search.</div></div><div id="out"></div></main>
+<script>
+const $=id=>document.getElementById(id);let WORDS=[];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function takes(){const w=WORDS.find(x=>x.id===$('w').value);$('t').innerHTML=(w?w.takes:[]).map(t=>`<option>${esc(t.name)}</option>`).join('')}
+fetch('/api/words').then(r=>r.json()).then(j=>{WORDS=j.filter(w=>w.takes.length);$('w').innerHTML=WORDS.map(w=>`<option value="${esc(w.id)}">${esc(w.label)} (${esc(w.manglish||w.id)})</option>`).join('');takes();if(!WORDS.length)$('msg').textContent='No recorded takes yet. Record a word first.'});
+$('w').onchange=takes;
+function table(title,rows,truth){if(!rows||!rows.length)return `<h3>${title}</h3><div class="mut">no result</div>`;
+ return `<h3>${title}</h3><table><tr><th>#</th><th>Word</th><th>score</th></tr>${rows.map((r,i)=>`<tr><td>${i+1}</td><td lang="ml">${esc(r[0])}</td><td>${(+r[1]).toFixed(3)}</td></tr>`).join('')}</table>`}
+$('go').onclick=async()=>{$('msg').textContent='Searching...';$('out').innerHTML='';
+ try{const q=new URLSearchParams({word:$('w').value,take:$('t').value,heard:$('h').value});const r=await fetch('/api/search?'+q);const j=await r.json();if(!r.ok)throw new Error(j.error||r.status);
+  $('msg').textContent=`${j.candidates_with_clips} of ${j.dictionary_words} dictionary words had plausible length and every unit clip (${j.words_without_all_unit_clips} had a missing unit clip). ${j.note||''}`;
+  $('out').innerHTML=`<div class="card">${table('Composed from unit clips (DTW distance, lower is better)',j.composed)}${j.labels&&j.labels.length?table('From the recogniser text (edit distance)',j.labels)+table('Fused',j.fused):''}</div>`}
+ catch(e){$('msg').textContent='Cannot search: '+e.message}};
+</script></body></html>"""
+
 COMPARE = r"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sound2Word Compare Words</title><style>__STYLE__</style></head><body>
-<header><h1>Sound2Word &mdash; Compare two words, sound by sound</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a> &middot; <a href="/alphabet">Alphabet</a></nav>
+<header><h1>Sound2Word &mdash; Compare two words, sound by sound</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a> &middot; <a href="/alphabet">Alphabet</a> &middot; <a href="/search">Search by voice</a></nav>
 <div class="banner"><b>PERSONAL TEST RECORDINGS</b> &mdash; boundaries are estimates or placed by hand; differences shown are uncalibrated measurements, not recognition accuracy.</div></header>
 <main>
 <div class="card"><div class="row"><label>Word A <select id="a"></select></label><label>Word B <select id="b"></select></label><button id="go" class="ok">Compare</button></div><div id="msg" class="mut">Only takes accepted with sound boundaries can be compared.</div></div>
