@@ -79,6 +79,45 @@ OWNER_VOWELS = {"അ": "a", "ആ": "aa", "ഇ": "i", "ഈ": "ee", "ഉ": "u", "�
                 "ൠ": "rri", "ൡ": "lrri"}
 OWNER_SIGNS = {"ാ": "aa", "ി": "i", "ീ": "ee", "ു": "u", "ൂ": "oo", "ൃ": "ri", "െ": "e", "േ": "ee", "ൈ": "ai", "ൊ": "o", "ോ": "oo", "ൗ": "au"}
 OWNER_CHILLU = {"ൺ": "n", "ൻ": "n", "ർ": "r", "ൽ": "l", "ൾ": "la", "ൿ": "k"}
+
+# ---------------------------------------------------------------- exact voice labels (curated; a native speaker must confirm them)
+# letter -> (id tag, say-as, example word, meaning). Written for every letter that shares its Manglish with another, so each gets
+# an unmistakable name, an articulation description and a real word to hear it in.
+LETTER_NOTES = {
+    "ശ": ("soft", "soft sh: blade of the tongue flat against the hard palate (palatal ś)", "ശരി", "yes, correct (shari)"),
+    "ഷ": ("hard", "hard sh: tongue tip curled back (retroflex ṣ)", "കഷ്ടം", "hardship (kashtam)"),
+    "സ": ("", "s as in 'sun'", "സമയം", "time (samayam)"),
+    "ന": ("dental", "n with the tongue tip on the upper teeth (dental)", "നാവ്", "tongue (naavu)"),
+    "ണ": ("retroflex", "n with the tongue tip curled back (retroflex ṇ)", "ആണ്", "is (aanu)"),
+    "ര": ("tap", "r as a single quick tap of the tongue tip", "രസം", "taste (rasam)"),
+    "റ": ("trill", "r as a rolled trill", "പറ", "say / rock (para)"),
+    "ല": ("plain", "l with the tongue tip at the ridge behind the teeth", "ലോകം", "world (lokam)"),
+    "ള": ("retroflex", "l with the tongue tip curled back (retroflex ḷ)", "കളി", "play (kali)"),
+    "ഴ": ("", "zha: retroflex approximant, tongue curled back, no English equivalent", "മഴ", "rain (mazha)"),
+    "ദ": ("dental", "d with the tongue tip on the upper teeth (dental)", "ദാനം", "gift (daanam)"),
+    "ഡ": ("retroflex", "d with the tongue tip curled back (retroflex ḍ)", "ഡോക്ടർ", "doctor"),
+    "ധ": ("dental", "dha: breathy dental d (aspirated)", "ധനം", "wealth (dhanam)"),
+    "ഢ": ("retroflex", "dha: breathy retroflex d (aspirated, rare)", "ഗൂഢം", "secret (gooDham)"),
+    "ത": ("dental", "t with the tongue tip on the upper teeth, no puff of air (not English 'th')", "താരം", "star (thaaram)"),
+    "ഥ": ("aspirated", "dental t with a puff of air (aspirated, not English 'th')", "കഥ", "story (katha)"),
+    "ഠ": ("retroflex-aspirated", "retroflex t with a puff of air (aspirated, rare)", "പഠനം", "study (paTanam)"),
+    "ട": ("", "t with the tongue tip curled back (retroflex ṭ)", "പടി", "step (padi)"),
+    "എ": ("short", "short e, as in 'bed'", "എല്ലാം", "all (ellaam)"),
+    "ഏ": ("long", "long ē, held, without the glide of English 'say'", "ഏഴ്", "seven (ezhu)"),
+    "ഒ": ("short", "short o", "ഒന്ന്", "one (onnu)"),
+    "ഓ": ("long", "long ō, held", "ഓണം", "Onam"),
+    "ൺ": ("retroflex", "chillu: pure retroflex n, no vowel", "കൺ", "eye (kan)"),
+    "ൻ": ("dental", "chillu: pure dental n, no vowel", "അവൻ", "he (avan)"),
+    "ൽ": ("plain", "chillu: pure l, no vowel", "കാൽ", "leg (kaal)"),
+    "ൾ": ("retroflex", "chillu: pure retroflex l, no vowel", "ആൾ", "person (aal)"),
+    "ർ": ("", "chillu: pure r, no vowel", "വർഷം", "year (varsham)"),
+}
+SIGN_NOTES = {   # shown on the consonant ക
+    "ീ": ("long-i", "long ī", "കീഴ്", "below (keezh)"),
+    "േ": ("long-e", "long ē", "കേൾ", "listen (kel)"),
+    "ൂ": ("long-u", "long ū", "പൂ", "flower (poo)"),
+    "ോ": ("long-o", "long ō", "പോ", "go (po)"),
+}
 # acoustic neighbours (easy to confuse even when the Manglish differs)
 NEIGHBOURS = [("sibilants: ശ ഷ സ", "ശഷസ"), ("nasals: ന ണ ങ ഞ", "നണങഞ"), ("rhotics: ര റ", "രറ"), ("laterals: ല ള ഴ", "ലളഴ"), ("t: ത ട ഥ ഠ", "തടഥഠ"), ("d: ദ ഡ ധ ഢ", "ദഡധഢ")]
 
@@ -157,7 +196,76 @@ def build_inventory(lexicon_path=None, clusters_top=450):
             label = "%s (%s)" % (it["manglish"], ", ".join(tags)) if tags else it["manglish"]
         it["label"] = label
         it["neighbours"] = [n for n, letters in NEIGHBOURS if (it["consonant"] or it["text"][:1]) in letters]
+        add_voice_label(it)
+    if lexicon_path:
+        carriers = carriers_from_lexicon(lexicon_path, {i["text"] for i in items})
+        for it in items:
+            w, k = carriers.get(it["text"], ("", -1))
+            it["carrier_word"], it["carrier_index"] = w, k
+    else:
+        for it in items:
+            it["carrier_word"], it["carrier_index"] = "", -1
     return items
+
+
+def _slug(*parts):
+    return "-".join(re.sub(r"[^a-z0-9]+", "-", p.lower()).strip("-") for p in parts if p)
+
+
+def add_voice_label(it):
+    """sound_id (unique: code points + Manglish + a distinguishing tag when the Manglish is shared), say_as, example and voice_label."""
+    cons, form = it["consonant"], it["form"]
+    letter = cons or it["text"]
+    tags = []
+    if it["lookalike"]:
+        n = LETTER_NOTES.get(letter)
+        if n and n[0]:
+            tags.append(n[0])
+        sg = SIGN_NOTES.get(form) if it["group"] == "cv" else None
+        if sg:
+            tags.append(sg[0])
+    it["sound_id"] = "ml-" + _slug("-".join("%04x" % ord(c) for c in it["text"]), it["manglish"], *tags)
+    base = LETTER_NOTES.get(letter)
+    say = base[1] if base else (CONS[cons][2] if cons else it["desc"])
+    ex = ex_gloss = ""
+    if it["group"] == "cv" and form not in ("", VIR, ANU, VIS):
+        sg = SIGN_NOTES.get(form)
+        say = "%s + %s" % (say, sg[1] if sg else SIGNS[form][2])
+        if sg and cons == "ക":                                   # the sign examples contain കീ കേ ... (not the other consonants)
+            ex, ex_gloss = sg[2], sg[3]
+    elif it["group"] == "cv" and form == "":
+        say = say + " + inherent a"
+        if base:
+            ex, ex_gloss = base[2], base[3]
+    elif it["group"] == "cv":
+        say = "%s + %s" % (say, {VIR: "no vowel", ANU: "anusvara (m)", VIS: "visarga (h)"}[form])
+    elif base:
+        ex, ex_gloss = base[2], base[3]
+    it["say_as"], it["example"], it["example_gloss"] = say, ex, ex_gloss
+    it["voice_label"] = " · ".join(x for x in (it["text"], it["label"], "/%s/" % it["ipa"], say, ("as in %s = %s" % (ex, ex_gloss)) if ex else "") if x)
+
+
+def carriers_from_lexicon(path, wanted):
+    """{akshara: (word, index)}: for each wanted akshara a short real word that contains it (2-5 written units, closest to 3, then the
+    most sources, then alphabetical), so a voice model can say the word and the unit be cut out of it instead of being spoken alone."""
+    csv.field_size_limit(10 ** 7)
+    best = {}
+    with open(path, encoding="utf-8", newline="") as f:
+        rd = csv.DictReader(f)
+        col = "word_ml" if "word_ml" in (rd.fieldnames or []) else (rd.fieldnames or ["word"])[0]
+        for r in rd:
+            w = r.get(col, "")
+            n = su.normalise(w)
+            segs = su.AKS.findall(n)
+            if not segs or "".join(segs) != n or not 2 <= len(segs) <= 5:
+                continue
+            ns = len((r.get("sources") or "").split("+"))
+            for k, a in enumerate(segs):
+                if a in wanted:
+                    key = (abs(len(segs) - 3), -ns, w)
+                    if a not in best or key < best[a][0]:
+                        best[a] = (key, (w, k))
+    return {a: v for a, (_k, v) in best.items()}
 
 
 def su_manglish(text):
@@ -440,12 +548,12 @@ class Alphabet:
         import io
         buf = io.StringIO()
         w = csv.writer(buf)
-        w.writerow(["text", "codepoints", "group", "manglish", "label", "ipa", "description", "same_manglish_as", "clips", "verdict_ok", "verdict_wrong", "verdict_unsure"])
+        w.writerow(["text", "codepoints", "group", "manglish", "label", "sound_id", "ipa", "say_as", "example", "description", "same_manglish_as", "clips", "verdict_ok", "verdict_wrong", "verdict_unsure"])
         for it in self.items:
             rv = self.review.get(it["text"], {})
             cnt = {k: sum(1 for x in rv.values() if x["verdict"] == k) for k in VERDICTS}
-            w.writerow([it["text"], it["codes"], it["group"], it["manglish"], it["label"], it["ipa"], it["desc"], " ".join(it["same_manglish_as"]), len(self.clips.get(it["text"], [])),
-                        cnt["ok"], cnt["wrong"], cnt["unsure"]])
+            w.writerow([it["text"], it["codes"], it["group"], it["manglish"], it["label"], it["sound_id"], it["ipa"], it["say_as"], it["example"], it["desc"], " ".join(it["same_manglish_as"]),
+                        len(self.clips.get(it["text"], [])), cnt["ok"], cnt["wrong"], cnt["unsure"]])
         return buf.getvalue()
 
 
@@ -506,7 +614,7 @@ function play(t,k,then){audio.pause();audio=new Audio('/api/alphabet/clip?text='
 async function select(t){cur=t;history.replaceState(null,'','#'+encodeURIComponent(t));document.querySelectorAll('.cell').forEach(e=>e.classList.toggle('sel',e.dataset.x===t));
  const i=D.items.find(x=>x.text===t);if(!i){$('detail').textContent='Unknown entry';return}
  const same=i.same_manglish_as.map(x=>`<span class="chip2" data-go="${esc(x)}">${esc(x)}</span>`).join('');
- $('detail').innerHTML=`<div class="big">${esc(i.text)}</div><div><b>${esc(i.label)}</b> <span class="mut">/${esc(i.ipa)}/ · ${esc(i.codes)}</span></div><div class="mut">${esc(i.desc)}${i.rare?' (rare)':''}</div>
+ $('detail').innerHTML=`<div class="big">${esc(i.text)}</div><div><b>${esc(i.label)}</b> <span class="mut">/${esc(i.ipa)}/ · ${esc(i.codes)}</span></div><div class="mut">${esc(i.desc)}${i.rare?' (rare)':''}</div><div style="margin-top:6px"><b>Say it as:</b> ${esc(i.say_as)}</div>${i.example?`<div><b>Hear it in:</b> <span style="font-size:20px">${esc(i.example)}</span> <span class="mut">${esc(i.example_gloss)}</span></div>`:''}${i.carrier_word?`<div class="mut">dictionary word to cut it from: ${esc(i.carrier_word)} (unit ${i.carrier_index+1})</div>`:''}<div class="mut" style="font-size:12px">id: <code>${esc(i.sound_id)}</code></div>
   ${same?`<p><b>Same Manglish, different letter:</b> <span class="chips">${same}</span></p>`:''}${i.neighbours.length?`<div class="mut">Easy to confuse: ${esc(i.neighbours.join('; '))}</div>`:''}
   <div id="clips">${i.clips.length?'':'<p class="mut">No audio for this entry yet. Generate it with the local TTS scripts on inventory.json (see tools/s2w_alphabet.py), then restart with --alphabet-audio-dir.</p>'}</div><div id="grp"></div>`;
  document.querySelectorAll('[data-go]').forEach(e=>e.onclick=()=>select(e.dataset.go));
@@ -538,15 +646,17 @@ def write_inventory(out_dir, items):
     os.makedirs(out_dir, exist_ok=True)
     kinds = {"vowel": "vowel", "vowel+sign": "vowel", "chillu": "chillu", "cluster": "cluster"}
     inv = [{"id": i, "text": it["text"], "kind": (su.kind(it["text"]) if it["group"] == "cv" else kinds.get(it["group"], "syllable")), "uses": it["uses"],
-            "manglish": it["manglish"], "label": it["label"], "group": it["group"]} for i, it in enumerate(items)]
+            "manglish": it["manglish"], "label": it["label"], "group": it["group"], "sound_id": it["sound_id"], "say_as": it["say_as"], "example": it["example"],
+            "carrier_word": it["carrier_word"], "carrier_index": it["carrier_index"]} for i, it in enumerate(items)]
     with open(os.path.join(out_dir, "inventory.json"), "w", encoding="utf-8") as f:
         json.dump(inv, f, ensure_ascii=False, indent=0)
     with open(os.path.join(out_dir, "alphabet.csv"), "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["id", "text", "codepoints", "group", "manglish", "label", "ipa", "description", "same_manglish_as", "neighbour_sets", "rare", "uses"])
+        w.writerow(["id", "text", "codepoints", "group", "manglish", "label", "sound_id", "ipa", "say_as", "example", "example_meaning", "carrier_word", "carrier_index", "description",
+                    "same_manglish_as", "neighbour_sets", "rare", "uses"])
         for i, it in enumerate(items):
-            w.writerow([i, it["text"], it["codes"], it["group"], it["manglish"], it["label"], it["ipa"], it["desc"], " ".join(it["same_manglish_as"]), "; ".join(it["neighbours"]),
-                        "yes" if it["rare"] else "", it["uses"]])
+            w.writerow([i, it["text"], it["codes"], it["group"], it["manglish"], it["label"], it["sound_id"], it["ipa"], it["say_as"], it["example"], it["example_gloss"], it["carrier_word"],
+                        it["carrier_index"] if it["carrier_word"] else "", it["desc"], " ".join(it["same_manglish_as"]), "; ".join(it["neighbours"]), "yes" if it["rare"] else "", it["uses"]])
     return len(inv)
 
 
@@ -558,6 +668,7 @@ def main():
     a.add_argument("--lexicon")
     a.add_argument("--clusters-top", type=int, default=450)
     sub.add_parser("unicode", help="print the Unicode Malayalam block partition")
+    sub.add_parser("labels", help="print the exact voice label of every look-alike letter")
     lk = sub.add_parser("lookalikes", help="list the different letters that share one Manglish")
     lk.add_argument("--convention", choices=("common", "owner", "rule"), default="common")
     args = ap.parse_args()
@@ -566,6 +677,16 @@ def main():
         print("Unicode %s: %d assigned code points in U+0D00..U+0D7F" % (u["unicode_version"], u["assigned"]))
         for g in u["groups"]:
             print("  %3d  %s" % (g["count"], g["name"]))
+        return 0
+    if args.cmd == "labels":
+        try:
+            for it in build_inventory():
+                base = it["lookalike"] and (it["group"] in ("vowel", "chillu") or (it["group"] == "cv" and it["form"] == ""))
+                sign = it["lookalike"] and it["group"] == "cv" and it["consonant"] == "ക" and it["form"] in SIGN_NOTES      # the sign collisions, shown once on ക
+                if base or sign:
+                    print("%-26s %s" % (it["sound_id"], it["voice_label"]))
+        except BrokenPipeError:
+            pass
         return 0
     if args.cmd == "lookalikes":
         rep = lookalike_report(args.convention)

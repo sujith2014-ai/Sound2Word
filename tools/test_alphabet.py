@@ -9,6 +9,7 @@ import json
 import math
 import os
 import random
+import re
 import subprocess
 import sys
 import tempfile
@@ -171,6 +172,109 @@ class Inventory(unittest.TestCase):
         bad = subprocess.run([sys.executable, TOOL, "inventory", "--out", os.path.join(d, "a"), "--lexicon", os.path.join(d, "nope.csv")], capture_output=True, text=True)
         self.assertEqual(bad.returncode, 2)
         self.assertNotIn("Traceback", bad.stderr)
+
+
+class VoiceLabels(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.items = al.build_inventory()
+        cls.by = {i["text"]: i for i in cls.items}
+
+    def test_sound_ids_are_unique_ascii_and_reversible(self):
+        ids = [i["sound_id"] for i in self.items]
+        self.assertEqual(len(ids), len(set(ids)))
+        for i in self.items:
+            self.assertRegex(i["sound_id"], r"^ml(-[0-9a-f]{4})+(-[a-z0-9]+)+$")
+            cps = []
+            for part in i["sound_id"].split("-")[1:]:
+                if re.fullmatch(r"[0-9a-f]{4}", part) and len(cps) < len(i["text"]):
+                    cps.append(chr(int(part, 16)))
+                else:
+                    break
+            self.assertEqual("".join(cps), i["text"], i["sound_id"])                 # the id gives back the exact letters
+
+    def test_every_lookalike_letter_has_an_exact_label_say_as_and_example(self):
+        rep = al.lookalike_report("common")
+        for kind in ("consonant letters", "vowel letters", "chillu letters"):
+            for k, letters in rep[kind].items():
+                tags, says = [], []
+                for t in letters:
+                    it = self.by[t]
+                    self.assertTrue(it["say_as"] and it["example"], t)
+                    self.assertIn(t, it["example"], (t, it["example"]))               # the example word really contains the letter
+                    self.assertEqual(it["example"], unicodedata.normalize("NFC", it["example"]))
+                    tags.append(it["sound_id"])
+                    says.append(it["say_as"])
+                self.assertEqual(len(set(tags)), len(letters), k)
+                self.assertEqual(len(set(says)), len(letters), k)                      # no two look-alikes are described the same way
+        for sg, (_tag, _say, ex, _gloss) in al.SIGN_NOTES.items():
+            self.assertIn(sg, ex)                                                      # each sign example really contains the sign
+
+    def test_the_sha_pair_exactly(self):
+        a, b = self.by["ശ"], self.by["ഷ"]
+        self.assertEqual((a["sound_id"], b["sound_id"]), ("ml-0d36-sha-soft", "ml-0d37-sha-hard"))
+        self.assertNotEqual(a["say_as"], b["say_as"])
+        self.assertIn("palatal", a["say_as"])
+        self.assertIn("retroflex", b["say_as"])
+        self.assertEqual((a["example"], b["example"]), ("ശരി", "കഷ്ടം"))
+        for form in ("ാ", "ി", "ു"):                                                   # every form keeps the distinction
+            x, y = self.by["ശ" + form], self.by["ഷ" + form]
+            self.assertEqual(x["manglish"], y["manglish"])
+            self.assertNotEqual(x["sound_id"], y["sound_id"])
+            self.assertTrue(x["sound_id"].endswith("-soft") and y["sound_id"].endswith("-hard"))
+
+    def test_sign_collisions_are_told_apart_in_the_id(self):
+        ids = {t: self.by[t]["sound_id"] for t in ("കീ", "കേ", "കൂ", "കോ")}
+        self.assertEqual(len(set(ids.values())), 4)
+        self.assertTrue(ids["കീ"].endswith("long-i") and ids["കേ"].endswith("long-e") and ids["കൂ"].endswith("long-u") and ids["കോ"].endswith("long-o"))
+
+    def test_sign_examples_only_on_the_consonant_that_appears_in_them(self):
+        self.assertEqual(self.by["കീ"]["example"], "കീഴ്")
+        self.assertEqual(self.by["ഖീ"]["example"], "")                                  # കീഴ് does not contain ഖീ: no misleading example
+        self.assertTrue(self.by["ഖീ"]["say_as"])
+
+    def test_voice_label_contains_glyph_label_ipa_and_example(self):
+        vl = self.by["ഷ"]["voice_label"]
+        for part in ("ഷ", "sha (hard sha)", "/ʂa/", "retroflex", "കഷ്ടം"):
+            self.assertIn(part, vl)
+
+    def test_labels_are_in_the_generator_inventory_and_csv(self):
+        d = tempfile.mkdtemp()
+        al.write_inventory(d, self.items)
+        with open(os.path.join(d, "inventory.json"), encoding="utf-8") as f:
+            inv = json.load(f)
+        self.assertEqual(next(x for x in inv if x["text"] == "ഷ")["sound_id"], "ml-0d37-sha-hard")
+        with open(os.path.join(d, "alphabet.csv"), encoding="utf-8", newline="") as f:
+            rows = {r_["text"]: r_ for r_ in csv.DictReader(f)}
+        self.assertEqual((rows["ശ"]["sound_id"], rows["ശ"]["example"]), ("ml-0d36-sha-soft", "ശരി"))
+        self.assertTrue(rows["ശ"]["say_as"])
+
+    def test_carrier_words_come_from_the_lexicon_and_contain_the_unit(self):
+        d = tempfile.mkdtemp()
+        lex = os.path.join(d, "lexicon.csv")
+        with open(lex, "w", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["word_ml", "sources"])
+            for word, src in (("ശരി", "A"), ("ശരിയാണ്", "A + B"), ("ആകാശം", "A"), ("ഷർട്ട്", "A + B + C"), ("കടൽത്തീരത്തുള്ളത്", "A")):
+                w.writerow([word, src])
+        items = {i["text"]: i for i in al.build_inventory(lex, 5)}
+        self.assertIn("ശ", items["ശ"]["carrier_word"])
+        self.assertEqual(su_split(items["ശ"]["carrier_word"])[items["ശ"]["carrier_index"]], "ശ")
+        self.assertEqual(items["ഷ"]["carrier_word"], "ഷർട്ട്")
+        self.assertEqual(items["ഖ"]["carrier_word"], "")                              # no dictionary word contains it
+        self.assertNotIn("കടൽത്തീരത്തുള്ളത്", {i["carrier_word"] for i in items.values()})   # too long to be a good carrier
+
+    def test_labels_cli_lists_the_sha_pair(self):
+        p = subprocess.run([sys.executable, TOOL, "labels"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("ml-0d36-sha-soft", p.stdout)
+        self.assertIn("ml-0d37-sha-hard", p.stdout)
+        self.assertIn("ml-0d23-na-retroflex", p.stdout)
+
+
+def su_split(word):
+    import s2w_units as su
+    return su.AKS.findall(su.normalise(word))
 
 
 class Lookalikes(unittest.TestCase):
