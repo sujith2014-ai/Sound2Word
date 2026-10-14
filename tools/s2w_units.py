@@ -6,7 +6,7 @@ Units are written in Malayalam script, so they are unambiguous:
   chillu     ൻ ർ ൽ ൾ ൺ ൿ
   hold       a consonant with chandrakkala that is the first part of a doubled / nasal+stop cluster (ക്, ന്, ത് ...)
 With split_all every cluster becomes holds + a final syllable (ക്കു = ക് + കു), the smallest inventory (837 units for the
-257k-word lexicon). decompose() returns None for text it cannot spell back exactly."""
+257k-word lexicon). With whole=True no cluster is split at all (the written syllable is the unit). decompose() returns None for text it cannot spell back exactly."""
 import re
 import unicodedata
 
@@ -32,7 +32,9 @@ def normalise(w):
     return w
 
 
-def split_akshara(u, split_all=True):
+def split_akshara(u, split_all=True, whole=False):
+    if whole:
+        return [u]                                       # keep every written conjunct as ONE unit (ങ്ങ, ക്ക, ന്ത ...)
     m = _SPLIT.fullmatch(u)
     if not m:
         return [u]
@@ -55,10 +57,10 @@ def kind(u):
     return "cluster"
 
 
-def decompose(word, split_all=True):
+def decompose(word, split_all=True, whole=False):
     """-> list of unit strings whose concatenation equals normalise(word), or None."""
     n = normalise(word)
     segs = AKS.findall(n)
     if not n or "".join(segs) != n:
         return None
-    return [x for s in segs for x in split_akshara(s, split_all)]
+    return [x for s in segs for x in split_akshara(s, split_all, whole)]

@@ -138,12 +138,12 @@ class Inventory(unittest.TestCase):
         with open(lex, "w", encoding="utf-8", newline="") as f:
             w = csv.writer(f)
             w.writerow(["word_ml", "manglish"])
-            for word, n in (("അക്കം", 5), ("അന്തം", 3), ("കണ്ണ്", 1), ("കാലം", 9)):
+            for word, n in (("ഫ്ലാസ്ക്", 5), ("ഡ്രൈവർ", 3), ("ട്രെയിൻ", 1), ("കാലം", 9)):
                 for _ in range(n):
                     w.writerow([word, ""])
         items = al.build_inventory(lex, 10)
         cl = [i for i in items if i["group"] == "cluster"]
-        self.assertTrue(cl and cl[0]["text"].startswith("ക്ക") and cl[0]["uses"] == 5)
+        self.assertTrue(cl and cl[0]["text"].startswith("ഫ്ല") and cl[0]["uses"] == 5)
         self.assertEqual([i["uses"] for i in cl], sorted((i["uses"] for i in cl), reverse=True))
         self.assertFalse(any(i["text"] in {x["text"] for x in al.build_inventory() if x["group"] != "cluster"} for i in cl))   # no duplicates with the base inventory
         self.assertEqual(len(al.build_inventory(lex, 1)) - len(al.build_inventory()), 1)
@@ -182,7 +182,7 @@ class Conjuncts(unittest.TestCase):
         x = self.by["ങ്ങ"]
         self.assertEqual((x["group"], x["manglish"]), ("conjunct", "ngga"))
         self.assertNotEqual(x["manglish"], self.by["ങ"]["manglish"] * 2)
-        self.assertEqual(x["ipa"], "ŋɡa")
+        self.assertEqual(x["ipa"], "ŋːa")
         self.assertEqual(self.by["ങ്ങാ"]["manglish"], "nggaa")
         self.assertEqual(self.by["ങ്ക"]["manglish"], "ngka")
 
@@ -207,6 +207,62 @@ class Conjuncts(unittest.TestCase):
         self.assertNotEqual(a["label"], b["label"])
 
 
+class LabelsAgainstWords(unittest.TestCase):
+    """The labels are tested against real words: each word is cut into written units, every unit must have a label, and the labels joined
+    must spell the word the way the recorder's own rule spells it (except the position-dependent cases nobody has verified yet)."""
+
+    def setUp(self):
+        self.items = al.build_inventory()
+        self.by = {i["text"]: i for i in self.items}
+        self.words = sorted({i["example"] for i in self.items if i["example"]})
+
+    def test_every_example_word_is_covered_by_whole_unit_labels(self):
+        import s2w_units as su
+        self.assertGreater(len(self.words), 60)
+        for w in self.words:
+            units = su.decompose(w, split_all=False, whole=True)
+            self.assertIsNotNone(units, w)
+            for u in units:
+                self.assertIn(u, self.by, "%s: unit %s has no label" % (w, u))
+            self.assertEqual("".join(units), su.normalise(w))
+
+    def test_joined_labels_spell_the_word_like_the_recorder_rule(self):
+        import re
+        import s2w_recorder as rec
+        import s2w_units as su
+        differ = []
+        for w in self.words:
+            comp = "".join(self.by[u]["manglish"] for u in su.decompose(w, split_all=False, whole=True))
+            if comp != rec.ml_to_manglish(w):
+                differ.append(w)
+        # known and documented: a final chandrakkala is spoken with a short u, long vowel signs are spelled ee/oo/ru in the labels, and a
+        # stop after a nasal is voiced (കണ്ടു kandu) - none of these is verified, see the position-dependent list
+        explained = {w for w in differ if re.search("[ീേൂോൃ]|്$", w)} | {"കണ്ടു"}
+        self.assertEqual(sorted(set(differ) - explained), [])
+
+    def test_ngga_is_spelled_the_same_in_the_recorder_and_the_alphabet(self):
+        import s2w_recorder as rec
+        self.assertEqual(rec.ml_to_manglish("അങ്ങനെ"), "anggane")
+        self.assertEqual(self.by["ങ്ങ"]["manglish"], "ngga")
+
+    def test_modified_forms_exist_and_are_unique(self):
+        for t in ("കാം", "കീം", "ന്ത്", "ന്തം", "ന്താം", "ന്തഃ", "ക്യം", "ത്രം", "ത്യം", "ല്ലാം", "ഞ്ച്", "ണ്ണ്", "ക്ട"):
+            self.assertIn(t, self.by, t)
+        self.assertEqual(len({i["sound_id"] for i in self.items}), len(self.items))
+        self.assertEqual(len({i["text"] for i in self.items}), len(self.items))
+
+    def test_every_label_is_unique(self):
+        seen = {}
+        for i in self.items:
+            seen.setdefault(i["label"], []).append(i["text"])
+        self.assertEqual({k: v for k, v in seen.items() if len(v) > 1}, {})
+        self.assertEqual(self.by["ൿ"]["label"], "k (chillu k)")
+
+    def test_visarga_vowel_matches_the_consonant_visarga_style(self):
+        self.assertEqual(self.by["അഃ"]["manglish"], "ah")
+        self.assertEqual(self.by["കഃ"]["manglish"], "kah")
+
+
 class LabelDocument(unittest.TestCase):
     def test_committed_markdown_is_up_to_date_and_complete(self):
         doc = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "MALAYALAM_ALPHABET_LABELS.md")
@@ -215,7 +271,8 @@ class LabelDocument(unittest.TestCase):
         with open(doc, encoding="utf-8", newline="") as f:
             self.assertEqual(f.read(), text, "regenerate: python3 tools/s2w_alphabet.py markdown --out docs/MALAYALAM_ALPHABET_LABELS.md")
         for it in items:
-            self.assertIn(it["sound_id"], text)
+            if it["group"] != "mod":                       # modified forms are listed in alphabet.csv, not in the page
+                self.assertIn(it["sound_id"], text)
             self.assertTrue(it["voice_label"] and it["say_as"])
 
 
