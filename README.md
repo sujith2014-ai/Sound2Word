@@ -12,3 +12,4 @@ Recording, QA and simulated-condition testing: `docs/RECORDING.md`.
 Noise-matched enrolment experiment (synthetic only): `docs/EXPERIMENT_NOISE_ENROLMENT.md`.
 Pilot data-collection plan (protocol, conditions, matrix; no real data yet): `docs/PILOT_DATA_COLLECTION.md`.
 Pilot readiness: `docs/PILOT_DATA_COLLECTION.md`, `docs/PILOT_SPLIT_DESIGN.md`, `docs/PILOT_RECRUITMENT_AND_CONSENT.md`, `docs/RECORDING_SETUP_GUIDE.md`.
+Project layout and status: `docs/PROJECT_STRUCTURE.md`. Voice search (dictionary words from alphabet unit clips): `docs/VOICE_SEARCH.md`. Defect audit with before / after evidence and remaining blockers: `docs/DEFECT_AUDIT.md`. Mandatory experiment gates: `CLAUDE.md`; read-only gate status: `python3 tools/gate_status.py`.

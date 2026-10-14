@@ -53,7 +53,7 @@ recordings --> recorder (QA, segments) --> evaluation/ (C) once Gates A/B/C pass
 ```
 
 ## Tests
-`make test` (C), `make test-review` (C tools plus all Python suites: viewer, recorder, lexicon, alphabet, wordsearch, pilot/consent/review),
+`make test` (C), `make test-review` (C tools plus all Python suites: viewer, recorder, lexicon, alphabet, wordsearch, wordsearch audit, gate status, pilot/consent/review; 290 tests),
 `node tools/test_*_browser.js` (needs Playwright + Chromium). Current: 56 alphabet, 36 recorder, 46 + 22 wordsearch (incl. audit regressions), 18 gate-status, 25 viewer, 15 lexicon tests;
 browser checks 48 (recorder), 35 (sidebar), 31 (alphabet), 32 (viewer).
 
@@ -62,6 +62,7 @@ browser checks 48 (recorder), 35 (sidebar), 31 (alphabet), 32 (viewer).
 - Pilot and recording: `PILOT_*`, `RECORDING*.md`, `CONSENT_TEMPLATE.md`, `WORD_REVIEW.md`, `DATASET.md`, `templates/`
 - Engine: `FEATURES.md`, `DTW.md`, `ROADMAP.md`, `PROPOSER_BRIEF.md`
 - Malayalam sounds and models: `MALAYALAM_SOUND_INVENTORY.md`, `MALAYALAM_ALPHABET_LABELS.md` (generated; a test fails if stale), `LOCAL_MODELS_AND_TTS.md`, `VOICE_SEARCH.md`
+- Audit: `DEFECT_AUDIT.md` (requirement-to-code audit, 13 fixed defects, before / after, remaining blockers)
 - History: `SESSION_CORRECTIONS_AND_LEARNINGS.md` (every correction, measurements, before/after), this file
 
 ## What is and is not done
@@ -72,6 +73,7 @@ browser checks 48 (recorder), 35 (sidebar), 31 (alphabet), 32 (viewer).
 | Alphabet labels (5,596 entries) | generated; **curated text unverified** (needs a native listener) |
 | Unit audio for the alphabet | **not generated** for the whole-unit inventory (old clips used split units) |
 | Voice search accuracy | **unmeasured on real speech** (synthetic tones only) |
+| Voice-search evaluation integrity (speaker IDs, leakage, out-of-dictionary, freeze / ledger) | 13 defects fixed with regression tests (`DEFECT_AUDIT.md`) |
 | Gate A (8 words verified by two reviewers) | not passed |
 | Gate B (consented recordings) | not started |
 | Gate C (frozen config, locked test split) | not started |

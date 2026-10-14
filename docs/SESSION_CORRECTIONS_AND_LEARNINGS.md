@@ -142,3 +142,4 @@ All numbers are software checks on made-up data or the example words; none is re
 
 ## Part 8. Audit result (2026-10-14)
 See `docs/DEFECT_AUDIT.md`: 13 reproducible evaluation defects fixed with 15 regression tests (all 15 fail on `3c493bf`, pass now), Gate C freeze/ledger and `gate_status.py` added, no existing test regressed (290 Python tests, 48/35/31/32 browser checks). Gates A, B, C remain BLOCKED on reviewers, consent and real recordings; nothing was invented to pass them.
+Commit: `06f6e08`. The audit also found, and the docs now state, that the two existing evaluation tests encoded old behaviour (unmarked made-up clips; case-sensitive speaker IDs) and were updated deliberately, that a synthetic freeze cannot complete Gate C, and that `gate_status.py` run on the real draft workbook reports Gate A NOT PASSED with B and C not evaluated.

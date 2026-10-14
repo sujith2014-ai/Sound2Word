@@ -5,6 +5,8 @@ Scope: every code-verifiable finding in the project's reference documents (`CLAU
 does, not by whether a test or a document says it does. **All audio in this audit is made-up tones: it validates program behaviour and says nothing about
 Malayalam recognition accuracy.** The default matching configuration is unchanged (plain matcher; a test asserts it).
 
+Commit that contains the fixes and this audit: `06f6e08` (branch `main-asw1kr`).
+
 ## 1. Before-state (code before any change in this task)
 | item | value |
 |---|---|
@@ -102,3 +104,12 @@ python3 tools/audit_before_after.py --before-tools /tmp/before/tools
 python3 tools/gate_status.py --master data/private/review/master.xlsx          # Gate A NOT PASSED, B and C NOT EVALUATED
 for j in test_recorder_browser test_recorder_sidebar_browser test_alphabet_browser test_viewer_browser; do node tools/$j.js; done
 ```
+
+## 7. Where every finding is recorded
+| finding set | document |
+|---|---|
+| label audit against real words (units covered 76 -> 86 of 86, 600 -> 5,596 entries, ngga, duplicate label, never split a conjunct) | `SESSION_CORRECTIONS_AND_LEARNINGS.md` Part 6, corrections 31, `CLAUDE.md` |
+| voice-search build, CMVN fix (28/63 -> 61/63), joiner, optional duration / smoothing / squeeze / rescoring (not default) | `VOICE_SEARCH.md`, corrections 32-33 |
+| review findings: seen / unseen speakers, reference metadata, shortlist recall, stop adding framework and finish the gates | `SESSION_CORRECTIONS_AND_LEARNINGS.md` Part 7, corrections 34-35 |
+| this audit: 13 defects, freeze / ledger, gate_status, before / after | this file, `VOICE_SEARCH.md` (Gate C and summary keys), `SESSION_CORRECTIONS_AND_LEARNINGS.md` Part 8, correction 36 |
+| project layout, tool table, test counts, done / not done | `PROJECT_STRUCTURE.md` |
