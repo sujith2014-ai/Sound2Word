@@ -174,6 +174,18 @@ class Inventory(unittest.TestCase):
         self.assertNotIn("Traceback", bad.stderr)
 
 
+class LabelDocument(unittest.TestCase):
+    def test_committed_markdown_is_up_to_date_and_complete(self):
+        doc = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "MALAYALAM_ALPHABET_LABELS.md")
+        items = al.build_inventory()
+        text = al.to_markdown(items)
+        with open(doc, encoding="utf-8", newline="") as f:
+            self.assertEqual(f.read(), text, "regenerate: python3 tools/s2w_alphabet.py markdown --out docs/MALAYALAM_ALPHABET_LABELS.md")
+        for it in items:
+            self.assertIn(it["sound_id"], text)
+            self.assertTrue(it["voice_label"] and it["say_as"])
+
+
 class VoiceLabels(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

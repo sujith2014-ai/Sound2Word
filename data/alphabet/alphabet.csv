@@ -1,0 +1,601 @@
+id,text,codepoints,group,manglish,label,sound_id,ipa,say_as,example,example_meaning,carrier_word,carrier_index,description,same_manglish_as,neighbour_sets,rare,uses
+0,അ,U+0D05,vowel,a,a,ml-0d05-a,a,a,അമ്മ,mother (amma),,,a,,,,0
+1,ആ,U+0D06,vowel,aa,aa,ml-0d06-aa,aː,long aa,ആന,elephant (aana),,,long aa,,,,0
+2,ഇ,U+0D07,vowel,i,i,ml-0d07-i,i,short i,ഇല,leaf (ila),,,short i,,,,0
+3,ഈ,U+0D08,vowel,ee,ee,ml-0d08-ee,iː,long ii,ഈച്ച,fly (eecha),,,long ii,,,,0
+4,ഉ,U+0D09,vowel,u,u,ml-0d09-u,u,short u,ഉപ്പ്,salt (uppu),,,short u,,,,0
+5,ഊ,U+0D0A,vowel,oo,oo,ml-0d0a-oo,uː,long uu,ഊഞ്ഞാൽ,swing (oonjaal),,,long uu,,,,0
+6,ഋ,U+0D0B,vowel,ru,ru,ml-0d0b-ru,ɾɨ,vocalic r,ഋതു,season (ruthu),,,vocalic r,രു റു,,,0
+7,ഌ,U+0D0C,vowel,lru,lru,ml-0d0c-lru,lɨ,vocalic l (archaic),,,,,vocalic l (archaic),ലൃ ളൃ,,yes,0
+8,എ,U+0D0E,vowel,e,e (short e),ml-0d0e-e-short,e,"short e, as in 'bed'",എല്ലാം,all (ellaam),,,short e,ഏ,,,0
+9,ഏ,U+0D0F,vowel,e,e (long e),ml-0d0f-e-long,eː,"long ē, held, without the glide of English 'say'",ഏഴ്,seven (ezhu),,,long e (ē),എ,,,0
+10,ഐ,U+0D10,vowel,ai,ai,ml-0d10-ai,ai̯,ai,ഐക്യം,unity (aikyam),,,ai,,,,0
+11,ഒ,U+0D12,vowel,o,o (short o),ml-0d12-o-short,o,short o,ഒന്ന്,one (onnu),,,short o,ഓ,,,0
+12,ഓ,U+0D13,vowel,o,o (long o),ml-0d13-o-long,oː,"long ō, held",ഓണം,Onam,,,long o (ō),ഒ,,,0
+13,ഔ,U+0D14,vowel,au,au,ml-0d14-au,au̯,au,ഔഷധം,medicine (aushadham),,,au,,,,0
+14,ൠ,U+0D60,vowel,rruu,rruu,ml-0d60-rruu,ɾɨː,long vocalic r (archaic),,,,,long vocalic r (archaic),,,yes,0
+15,ൡ,U+0D61,vowel,lruu,lruu,ml-0d61-lruu,lɨː,long vocalic l (archaic),,,,,long vocalic l (archaic),,,yes,0
+16,അം,U+0D05 U+0D02,vowel+sign,am,am,ml-0d05-0d02-am,am,vowel with anusvara,,,,,vowel with anusvara,,,,0
+17,അഃ,U+0D05 U+0D03,vowel+sign,aha,aha,ml-0d05-0d03-aha,aha,vowel with visarga,,,,,vowel with visarga,,,,0
+18,ക്,U+0D15 U+0D4D,cv,k,k,ml-0d15-0d4d-k,k,velar stop + no vowel,,,,,velar stop + consonant alone (chandrakkala),ൿ,,,0
+19,ക,U+0D15,cv,ka,ka,ml-0d15-ka,ka,velar stop + inherent a,കടൽ,sea (kadal),,,velar stop + inherent a,,,,0
+20,കാ,U+0D15 U+0D3E,cv,kaa,kaa,ml-0d15-0d3e-kaa,kaː,velar stop + long aa,,,,,velar stop + long aa,,,,0
+21,കി,U+0D15 U+0D3F,cv,ki,ki,ml-0d15-0d3f-ki,ki,velar stop + short i,,,,,velar stop + short i,,,,0
+22,കീ,U+0D15 U+0D40,cv,kee,kee (long ii),ml-0d15-0d40-kee-long-i,kiː,velar stop + long ī,കീഴ്,below (keezh),,,velar stop + long ii,കേ,,,0
+23,കു,U+0D15 U+0D41,cv,ku,ku,ml-0d15-0d41-ku,ku,velar stop + short u,,,,,velar stop + short u,,,,0
+24,കൂ,U+0D15 U+0D42,cv,koo,koo (long uu),ml-0d15-0d42-koo-long-u,kuː,velar stop + long ū,പൂ,flower (poo),,,velar stop + long uu,കോ,,,0
+25,കൃ,U+0D15 U+0D43,cv,kru,kru,ml-0d15-0d43-kru,kɾɨ,velar stop + vocalic r,,,,,velar stop + vocalic r,,,,0
+26,കെ,U+0D15 U+0D46,cv,ke,ke,ml-0d15-0d46-ke,ke,velar stop + short e,,,,,velar stop + short e,,,,0
+27,കേ,U+0D15 U+0D47,cv,kee,kee (long ee),ml-0d15-0d47-kee-long-e,keː,velar stop + long ē,കേൾ,listen (kel),,,velar stop + long ee (ē),കീ,,,0
+28,കൈ,U+0D15 U+0D48,cv,kai,kai,ml-0d15-0d48-kai,kai̯,velar stop + ai,,,,,velar stop + ai,,,,0
+29,കൊ,U+0D15 U+0D4A,cv,ko,ko,ml-0d15-0d4a-ko,ko,velar stop + short o,,,,,velar stop + short o,,,,0
+30,കോ,U+0D15 U+0D4B,cv,koo,koo (long oo),ml-0d15-0d4b-koo-long-o,koː,velar stop + long ō,പോ,go (po),,,velar stop + long oo (ō),കൂ,,,0
+31,കൗ,U+0D15 U+0D57,cv,kau,kau,ml-0d15-0d57-kau,kau̯,velar stop + au,,,,,velar stop + au,,,,0
+32,കം,U+0D15 U+0D02,cv,kam,kam,ml-0d15-0d02-kam,kam,velar stop + anusvara (m),,,,,velar stop + anusvara,,,,0
+33,കഃ,U+0D15 U+0D03,cv,kah,kah,ml-0d15-0d03-kah,kaha,velar stop + visarga (h),,,,,velar stop + visarga,,,,0
+34,ഖ്,U+0D16 U+0D4D,cv,kh,kh,ml-0d16-0d4d-kh,kʰ,aspirated velar stop + no vowel,,,,,aspirated velar stop + consonant alone (chandrakkala),,,,0
+35,ഖ,U+0D16,cv,kha,kha,ml-0d16-kha,kʰa,aspirated velar stop + inherent a,മുഖം,face (mukham),,,aspirated velar stop + inherent a,,,,0
+36,ഖാ,U+0D16 U+0D3E,cv,khaa,khaa,ml-0d16-0d3e-khaa,kʰaː,aspirated velar stop + long aa,,,,,aspirated velar stop + long aa,,,,0
+37,ഖി,U+0D16 U+0D3F,cv,khi,khi,ml-0d16-0d3f-khi,kʰi,aspirated velar stop + short i,,,,,aspirated velar stop + short i,,,,0
+38,ഖീ,U+0D16 U+0D40,cv,khee,khee (long ii),ml-0d16-0d40-khee-long-i,kʰiː,aspirated velar stop + long ī,,,,,aspirated velar stop + long ii,ഖേ,,,0
+39,ഖു,U+0D16 U+0D41,cv,khu,khu,ml-0d16-0d41-khu,kʰu,aspirated velar stop + short u,,,,,aspirated velar stop + short u,,,,0
+40,ഖൂ,U+0D16 U+0D42,cv,khoo,khoo (long uu),ml-0d16-0d42-khoo-long-u,kʰuː,aspirated velar stop + long ū,,,,,aspirated velar stop + long uu,ഖോ,,,0
+41,ഖൃ,U+0D16 U+0D43,cv,khru,khru,ml-0d16-0d43-khru,kʰɾɨ,aspirated velar stop + vocalic r,,,,,aspirated velar stop + vocalic r,,,,0
+42,ഖെ,U+0D16 U+0D46,cv,khe,khe,ml-0d16-0d46-khe,kʰe,aspirated velar stop + short e,,,,,aspirated velar stop + short e,,,,0
+43,ഖേ,U+0D16 U+0D47,cv,khee,khee (long ee),ml-0d16-0d47-khee-long-e,kʰeː,aspirated velar stop + long ē,,,,,aspirated velar stop + long ee (ē),ഖീ,,,0
+44,ഖൈ,U+0D16 U+0D48,cv,khai,khai,ml-0d16-0d48-khai,kʰai̯,aspirated velar stop + ai,,,,,aspirated velar stop + ai,,,,0
+45,ഖൊ,U+0D16 U+0D4A,cv,kho,kho,ml-0d16-0d4a-kho,kʰo,aspirated velar stop + short o,,,,,aspirated velar stop + short o,,,,0
+46,ഖോ,U+0D16 U+0D4B,cv,khoo,khoo (long oo),ml-0d16-0d4b-khoo-long-o,kʰoː,aspirated velar stop + long ō,,,,,aspirated velar stop + long oo (ō),ഖൂ,,,0
+47,ഖൗ,U+0D16 U+0D57,cv,khau,khau,ml-0d16-0d57-khau,kʰau̯,aspirated velar stop + au,,,,,aspirated velar stop + au,,,,0
+48,ഖം,U+0D16 U+0D02,cv,kham,kham,ml-0d16-0d02-kham,kʰam,aspirated velar stop + anusvara (m),,,,,aspirated velar stop + anusvara,,,,0
+49,ഖഃ,U+0D16 U+0D03,cv,khah,khah,ml-0d16-0d03-khah,kʰaha,aspirated velar stop + visarga (h),,,,,aspirated velar stop + visarga,,,,0
+50,ഗ്,U+0D17 U+0D4D,cv,g,g,ml-0d17-0d4d-g,ɡ,voiced velar stop + no vowel,,,,,voiced velar stop + consonant alone (chandrakkala),,,,0
+51,ഗ,U+0D17,cv,ga,ga,ml-0d17-ga,ɡa,voiced velar stop + inherent a,ഗാനം,song (gaanam),,,voiced velar stop + inherent a,,,,0
+52,ഗാ,U+0D17 U+0D3E,cv,gaa,gaa,ml-0d17-0d3e-gaa,ɡaː,voiced velar stop + long aa,,,,,voiced velar stop + long aa,,,,0
+53,ഗി,U+0D17 U+0D3F,cv,gi,gi,ml-0d17-0d3f-gi,ɡi,voiced velar stop + short i,,,,,voiced velar stop + short i,,,,0
+54,ഗീ,U+0D17 U+0D40,cv,gee,gee (long ii),ml-0d17-0d40-gee-long-i,ɡiː,voiced velar stop + long ī,,,,,voiced velar stop + long ii,ഗേ,,,0
+55,ഗു,U+0D17 U+0D41,cv,gu,gu,ml-0d17-0d41-gu,ɡu,voiced velar stop + short u,,,,,voiced velar stop + short u,,,,0
+56,ഗൂ,U+0D17 U+0D42,cv,goo,goo (long uu),ml-0d17-0d42-goo-long-u,ɡuː,voiced velar stop + long ū,,,,,voiced velar stop + long uu,ഗോ,,,0
+57,ഗൃ,U+0D17 U+0D43,cv,gru,gru,ml-0d17-0d43-gru,ɡɾɨ,voiced velar stop + vocalic r,,,,,voiced velar stop + vocalic r,,,,0
+58,ഗെ,U+0D17 U+0D46,cv,ge,ge,ml-0d17-0d46-ge,ɡe,voiced velar stop + short e,,,,,voiced velar stop + short e,,,,0
+59,ഗേ,U+0D17 U+0D47,cv,gee,gee (long ee),ml-0d17-0d47-gee-long-e,ɡeː,voiced velar stop + long ē,,,,,voiced velar stop + long ee (ē),ഗീ,,,0
+60,ഗൈ,U+0D17 U+0D48,cv,gai,gai,ml-0d17-0d48-gai,ɡai̯,voiced velar stop + ai,,,,,voiced velar stop + ai,,,,0
+61,ഗൊ,U+0D17 U+0D4A,cv,go,go,ml-0d17-0d4a-go,ɡo,voiced velar stop + short o,,,,,voiced velar stop + short o,,,,0
+62,ഗോ,U+0D17 U+0D4B,cv,goo,goo (long oo),ml-0d17-0d4b-goo-long-o,ɡoː,voiced velar stop + long ō,,,,,voiced velar stop + long oo (ō),ഗൂ,,,0
+63,ഗൗ,U+0D17 U+0D57,cv,gau,gau,ml-0d17-0d57-gau,ɡau̯,voiced velar stop + au,,,,,voiced velar stop + au,,,,0
+64,ഗം,U+0D17 U+0D02,cv,gam,gam,ml-0d17-0d02-gam,ɡam,voiced velar stop + anusvara (m),,,,,voiced velar stop + anusvara,,,,0
+65,ഗഃ,U+0D17 U+0D03,cv,gah,gah,ml-0d17-0d03-gah,ɡaha,voiced velar stop + visarga (h),,,,,voiced velar stop + visarga,,,,0
+66,ഘ്,U+0D18 U+0D4D,cv,gh,gh,ml-0d18-0d4d-gh,ɡʱ,breathy velar stop + no vowel,,,,,breathy velar stop + consonant alone (chandrakkala),,,,0
+67,ഘ,U+0D18,cv,gha,gha,ml-0d18-gha,ɡʱa,breathy velar stop + inherent a,മേഘം,cloud (megham),,,breathy velar stop + inherent a,,,,0
+68,ഘാ,U+0D18 U+0D3E,cv,ghaa,ghaa,ml-0d18-0d3e-ghaa,ɡʱaː,breathy velar stop + long aa,,,,,breathy velar stop + long aa,,,,0
+69,ഘി,U+0D18 U+0D3F,cv,ghi,ghi,ml-0d18-0d3f-ghi,ɡʱi,breathy velar stop + short i,,,,,breathy velar stop + short i,,,,0
+70,ഘീ,U+0D18 U+0D40,cv,ghee,ghee (long ii),ml-0d18-0d40-ghee-long-i,ɡʱiː,breathy velar stop + long ī,,,,,breathy velar stop + long ii,ഘേ,,,0
+71,ഘു,U+0D18 U+0D41,cv,ghu,ghu,ml-0d18-0d41-ghu,ɡʱu,breathy velar stop + short u,,,,,breathy velar stop + short u,,,,0
+72,ഘൂ,U+0D18 U+0D42,cv,ghoo,ghoo (long uu),ml-0d18-0d42-ghoo-long-u,ɡʱuː,breathy velar stop + long ū,,,,,breathy velar stop + long uu,ഘോ,,,0
+73,ഘൃ,U+0D18 U+0D43,cv,ghru,ghru,ml-0d18-0d43-ghru,ɡʱɾɨ,breathy velar stop + vocalic r,,,,,breathy velar stop + vocalic r,,,,0
+74,ഘെ,U+0D18 U+0D46,cv,ghe,ghe,ml-0d18-0d46-ghe,ɡʱe,breathy velar stop + short e,,,,,breathy velar stop + short e,,,,0
+75,ഘേ,U+0D18 U+0D47,cv,ghee,ghee (long ee),ml-0d18-0d47-ghee-long-e,ɡʱeː,breathy velar stop + long ē,,,,,breathy velar stop + long ee (ē),ഘീ,,,0
+76,ഘൈ,U+0D18 U+0D48,cv,ghai,ghai,ml-0d18-0d48-ghai,ɡʱai̯,breathy velar stop + ai,,,,,breathy velar stop + ai,,,,0
+77,ഘൊ,U+0D18 U+0D4A,cv,gho,gho,ml-0d18-0d4a-gho,ɡʱo,breathy velar stop + short o,,,,,breathy velar stop + short o,,,,0
+78,ഘോ,U+0D18 U+0D4B,cv,ghoo,ghoo (long oo),ml-0d18-0d4b-ghoo-long-o,ɡʱoː,breathy velar stop + long ō,,,,,breathy velar stop + long oo (ō),ഘൂ,,,0
+79,ഘൗ,U+0D18 U+0D57,cv,ghau,ghau,ml-0d18-0d57-ghau,ɡʱau̯,breathy velar stop + au,,,,,breathy velar stop + au,,,,0
+80,ഘം,U+0D18 U+0D02,cv,gham,gham,ml-0d18-0d02-gham,ɡʱam,breathy velar stop + anusvara (m),,,,,breathy velar stop + anusvara,,,,0
+81,ഘഃ,U+0D18 U+0D03,cv,ghah,ghah,ml-0d18-0d03-ghah,ɡʱaha,breathy velar stop + visarga (h),,,,,breathy velar stop + visarga,,,,0
+82,ങ്,U+0D19 U+0D4D,cv,ng,ng,ml-0d19-0d4d-ng,ŋ,velar nasal + no vowel,,,,,velar nasal + consonant alone (chandrakkala),,nasals: ന ണ ങ ഞ,,0
+83,ങ,U+0D19,cv,nga,nga,ml-0d19-nga,ŋa,velar nasal + inherent a,ശങ്ക,doubt (shanka),,,velar nasal + inherent a,,nasals: ന ണ ങ ഞ,,0
+84,ങാ,U+0D19 U+0D3E,cv,ngaa,ngaa,ml-0d19-0d3e-ngaa,ŋaː,velar nasal + long aa,,,,,velar nasal + long aa,,nasals: ന ണ ങ ഞ,,0
+85,ങി,U+0D19 U+0D3F,cv,ngi,ngi,ml-0d19-0d3f-ngi,ŋi,velar nasal + short i,,,,,velar nasal + short i,,nasals: ന ണ ങ ഞ,,0
+86,ങീ,U+0D19 U+0D40,cv,ngee,ngee (long ii),ml-0d19-0d40-ngee-long-i,ŋiː,velar nasal + long ī,,,,,velar nasal + long ii,ങേ,nasals: ന ണ ങ ഞ,,0
+87,ങു,U+0D19 U+0D41,cv,ngu,ngu,ml-0d19-0d41-ngu,ŋu,velar nasal + short u,,,,,velar nasal + short u,,nasals: ന ണ ങ ഞ,,0
+88,ങൂ,U+0D19 U+0D42,cv,ngoo,ngoo (long uu),ml-0d19-0d42-ngoo-long-u,ŋuː,velar nasal + long ū,,,,,velar nasal + long uu,ങോ,nasals: ന ണ ങ ഞ,,0
+89,ങൃ,U+0D19 U+0D43,cv,ngru,ngru,ml-0d19-0d43-ngru,ŋɾɨ,velar nasal + vocalic r,,,,,velar nasal + vocalic r,,nasals: ന ണ ങ ഞ,,0
+90,ങെ,U+0D19 U+0D46,cv,nge,nge,ml-0d19-0d46-nge,ŋe,velar nasal + short e,,,,,velar nasal + short e,,nasals: ന ണ ങ ഞ,,0
+91,ങേ,U+0D19 U+0D47,cv,ngee,ngee (long ee),ml-0d19-0d47-ngee-long-e,ŋeː,velar nasal + long ē,,,,,velar nasal + long ee (ē),ങീ,nasals: ന ണ ങ ഞ,,0
+92,ങൈ,U+0D19 U+0D48,cv,ngai,ngai,ml-0d19-0d48-ngai,ŋai̯,velar nasal + ai,,,,,velar nasal + ai,,nasals: ന ണ ങ ഞ,,0
+93,ങൊ,U+0D19 U+0D4A,cv,ngo,ngo,ml-0d19-0d4a-ngo,ŋo,velar nasal + short o,,,,,velar nasal + short o,,nasals: ന ണ ങ ഞ,,0
+94,ങോ,U+0D19 U+0D4B,cv,ngoo,ngoo (long oo),ml-0d19-0d4b-ngoo-long-o,ŋoː,velar nasal + long ō,,,,,velar nasal + long oo (ō),ങൂ,nasals: ന ണ ങ ഞ,,0
+95,ങൗ,U+0D19 U+0D57,cv,ngau,ngau,ml-0d19-0d57-ngau,ŋau̯,velar nasal + au,,,,,velar nasal + au,,nasals: ന ണ ങ ഞ,,0
+96,ങം,U+0D19 U+0D02,cv,ngam,ngam,ml-0d19-0d02-ngam,ŋam,velar nasal + anusvara (m),,,,,velar nasal + anusvara,,nasals: ന ണ ങ ഞ,,0
+97,ങഃ,U+0D19 U+0D03,cv,ngah,ngah,ml-0d19-0d03-ngah,ŋaha,velar nasal + visarga (h),,,,,velar nasal + visarga,,nasals: ന ണ ങ ഞ,,0
+98,ച്,U+0D1A U+0D4D,cv,ch,ch,ml-0d1a-0d4d-ch,tʃ,palatal affricate + no vowel,,,,,palatal affricate + consonant alone (chandrakkala),,,,0
+99,ച,U+0D1A,cv,cha,cha,ml-0d1a-cha,tʃa,palatal affricate + inherent a,ചന്ദ്രൻ,moon (chandran),,,palatal affricate + inherent a,,,,0
+100,ചാ,U+0D1A U+0D3E,cv,chaa,chaa,ml-0d1a-0d3e-chaa,tʃaː,palatal affricate + long aa,,,,,palatal affricate + long aa,,,,0
+101,ചി,U+0D1A U+0D3F,cv,chi,chi,ml-0d1a-0d3f-chi,tʃi,palatal affricate + short i,,,,,palatal affricate + short i,,,,0
+102,ചീ,U+0D1A U+0D40,cv,chee,chee (long ii),ml-0d1a-0d40-chee-long-i,tʃiː,palatal affricate + long ī,,,,,palatal affricate + long ii,ചേ,,,0
+103,ചു,U+0D1A U+0D41,cv,chu,chu,ml-0d1a-0d41-chu,tʃu,palatal affricate + short u,,,,,palatal affricate + short u,,,,0
+104,ചൂ,U+0D1A U+0D42,cv,choo,choo (long uu),ml-0d1a-0d42-choo-long-u,tʃuː,palatal affricate + long ū,,,,,palatal affricate + long uu,ചോ,,,0
+105,ചൃ,U+0D1A U+0D43,cv,chru,chru,ml-0d1a-0d43-chru,tʃɾɨ,palatal affricate + vocalic r,,,,,palatal affricate + vocalic r,,,,0
+106,ചെ,U+0D1A U+0D46,cv,che,che,ml-0d1a-0d46-che,tʃe,palatal affricate + short e,,,,,palatal affricate + short e,,,,0
+107,ചേ,U+0D1A U+0D47,cv,chee,chee (long ee),ml-0d1a-0d47-chee-long-e,tʃeː,palatal affricate + long ē,,,,,palatal affricate + long ee (ē),ചീ,,,0
+108,ചൈ,U+0D1A U+0D48,cv,chai,chai,ml-0d1a-0d48-chai,tʃai̯,palatal affricate + ai,,,,,palatal affricate + ai,,,,0
+109,ചൊ,U+0D1A U+0D4A,cv,cho,cho,ml-0d1a-0d4a-cho,tʃo,palatal affricate + short o,,,,,palatal affricate + short o,,,,0
+110,ചോ,U+0D1A U+0D4B,cv,choo,choo (long oo),ml-0d1a-0d4b-choo-long-o,tʃoː,palatal affricate + long ō,,,,,palatal affricate + long oo (ō),ചൂ,,,0
+111,ചൗ,U+0D1A U+0D57,cv,chau,chau,ml-0d1a-0d57-chau,tʃau̯,palatal affricate + au,,,,,palatal affricate + au,,,,0
+112,ചം,U+0D1A U+0D02,cv,cham,cham,ml-0d1a-0d02-cham,tʃam,palatal affricate + anusvara (m),,,,,palatal affricate + anusvara,,,,0
+113,ചഃ,U+0D1A U+0D03,cv,chah,chah,ml-0d1a-0d03-chah,tʃaha,palatal affricate + visarga (h),,,,,palatal affricate + visarga,,,,0
+114,ഛ്,U+0D1B U+0D4D,cv,chh,chh,ml-0d1b-0d4d-chh,tʃʰ,aspirated palatal affricate + no vowel,,,,,aspirated palatal affricate + consonant alone (chandrakkala),,,,0
+115,ഛ,U+0D1B,cv,chha,chha,ml-0d1b-chha,tʃʰa,aspirated palatal affricate + inherent a,ഛായ,shade (chhaaya),,,aspirated palatal affricate + inherent a,,,,0
+116,ഛാ,U+0D1B U+0D3E,cv,chhaa,chhaa,ml-0d1b-0d3e-chhaa,tʃʰaː,aspirated palatal affricate + long aa,,,,,aspirated palatal affricate + long aa,,,,0
+117,ഛി,U+0D1B U+0D3F,cv,chhi,chhi,ml-0d1b-0d3f-chhi,tʃʰi,aspirated palatal affricate + short i,,,,,aspirated palatal affricate + short i,,,,0
+118,ഛീ,U+0D1B U+0D40,cv,chhee,chhee (long ii),ml-0d1b-0d40-chhee-long-i,tʃʰiː,aspirated palatal affricate + long ī,,,,,aspirated palatal affricate + long ii,ഛേ,,,0
+119,ഛു,U+0D1B U+0D41,cv,chhu,chhu,ml-0d1b-0d41-chhu,tʃʰu,aspirated palatal affricate + short u,,,,,aspirated palatal affricate + short u,,,,0
+120,ഛൂ,U+0D1B U+0D42,cv,chhoo,chhoo (long uu),ml-0d1b-0d42-chhoo-long-u,tʃʰuː,aspirated palatal affricate + long ū,,,,,aspirated palatal affricate + long uu,ഛോ,,,0
+121,ഛൃ,U+0D1B U+0D43,cv,chhru,chhru,ml-0d1b-0d43-chhru,tʃʰɾɨ,aspirated palatal affricate + vocalic r,,,,,aspirated palatal affricate + vocalic r,,,,0
+122,ഛെ,U+0D1B U+0D46,cv,chhe,chhe,ml-0d1b-0d46-chhe,tʃʰe,aspirated palatal affricate + short e,,,,,aspirated palatal affricate + short e,,,,0
+123,ഛേ,U+0D1B U+0D47,cv,chhee,chhee (long ee),ml-0d1b-0d47-chhee-long-e,tʃʰeː,aspirated palatal affricate + long ē,,,,,aspirated palatal affricate + long ee (ē),ഛീ,,,0
+124,ഛൈ,U+0D1B U+0D48,cv,chhai,chhai,ml-0d1b-0d48-chhai,tʃʰai̯,aspirated palatal affricate + ai,,,,,aspirated palatal affricate + ai,,,,0
+125,ഛൊ,U+0D1B U+0D4A,cv,chho,chho,ml-0d1b-0d4a-chho,tʃʰo,aspirated palatal affricate + short o,,,,,aspirated palatal affricate + short o,,,,0
+126,ഛോ,U+0D1B U+0D4B,cv,chhoo,chhoo (long oo),ml-0d1b-0d4b-chhoo-long-o,tʃʰoː,aspirated palatal affricate + long ō,,,,,aspirated palatal affricate + long oo (ō),ഛൂ,,,0
+127,ഛൗ,U+0D1B U+0D57,cv,chhau,chhau,ml-0d1b-0d57-chhau,tʃʰau̯,aspirated palatal affricate + au,,,,,aspirated palatal affricate + au,,,,0
+128,ഛം,U+0D1B U+0D02,cv,chham,chham,ml-0d1b-0d02-chham,tʃʰam,aspirated palatal affricate + anusvara (m),,,,,aspirated palatal affricate + anusvara,,,,0
+129,ഛഃ,U+0D1B U+0D03,cv,chhah,chhah,ml-0d1b-0d03-chhah,tʃʰaha,aspirated palatal affricate + visarga (h),,,,,aspirated palatal affricate + visarga,,,,0
+130,ജ്,U+0D1C U+0D4D,cv,j,j,ml-0d1c-0d4d-j,dʒ,voiced palatal affricate + no vowel,,,,,voiced palatal affricate + consonant alone (chandrakkala),,,,0
+131,ജ,U+0D1C,cv,ja,ja,ml-0d1c-ja,dʒa,voiced palatal affricate + inherent a,ജലം,water (jalam),,,voiced palatal affricate + inherent a,,,,0
+132,ജാ,U+0D1C U+0D3E,cv,jaa,jaa,ml-0d1c-0d3e-jaa,dʒaː,voiced palatal affricate + long aa,,,,,voiced palatal affricate + long aa,,,,0
+133,ജി,U+0D1C U+0D3F,cv,ji,ji,ml-0d1c-0d3f-ji,dʒi,voiced palatal affricate + short i,,,,,voiced palatal affricate + short i,,,,0
+134,ജീ,U+0D1C U+0D40,cv,jee,jee (long ii),ml-0d1c-0d40-jee-long-i,dʒiː,voiced palatal affricate + long ī,,,,,voiced palatal affricate + long ii,ജേ,,,0
+135,ജു,U+0D1C U+0D41,cv,ju,ju,ml-0d1c-0d41-ju,dʒu,voiced palatal affricate + short u,,,,,voiced palatal affricate + short u,,,,0
+136,ജൂ,U+0D1C U+0D42,cv,joo,joo (long uu),ml-0d1c-0d42-joo-long-u,dʒuː,voiced palatal affricate + long ū,,,,,voiced palatal affricate + long uu,ജോ,,,0
+137,ജൃ,U+0D1C U+0D43,cv,jru,jru,ml-0d1c-0d43-jru,dʒɾɨ,voiced palatal affricate + vocalic r,,,,,voiced palatal affricate + vocalic r,,,,0
+138,ജെ,U+0D1C U+0D46,cv,je,je,ml-0d1c-0d46-je,dʒe,voiced palatal affricate + short e,,,,,voiced palatal affricate + short e,,,,0
+139,ജേ,U+0D1C U+0D47,cv,jee,jee (long ee),ml-0d1c-0d47-jee-long-e,dʒeː,voiced palatal affricate + long ē,,,,,voiced palatal affricate + long ee (ē),ജീ,,,0
+140,ജൈ,U+0D1C U+0D48,cv,jai,jai,ml-0d1c-0d48-jai,dʒai̯,voiced palatal affricate + ai,,,,,voiced palatal affricate + ai,,,,0
+141,ജൊ,U+0D1C U+0D4A,cv,jo,jo,ml-0d1c-0d4a-jo,dʒo,voiced palatal affricate + short o,,,,,voiced palatal affricate + short o,,,,0
+142,ജോ,U+0D1C U+0D4B,cv,joo,joo (long oo),ml-0d1c-0d4b-joo-long-o,dʒoː,voiced palatal affricate + long ō,,,,,voiced palatal affricate + long oo (ō),ജൂ,,,0
+143,ജൗ,U+0D1C U+0D57,cv,jau,jau,ml-0d1c-0d57-jau,dʒau̯,voiced palatal affricate + au,,,,,voiced palatal affricate + au,,,,0
+144,ജം,U+0D1C U+0D02,cv,jam,jam,ml-0d1c-0d02-jam,dʒam,voiced palatal affricate + anusvara (m),,,,,voiced palatal affricate + anusvara,,,,0
+145,ജഃ,U+0D1C U+0D03,cv,jah,jah,ml-0d1c-0d03-jah,dʒaha,voiced palatal affricate + visarga (h),,,,,voiced palatal affricate + visarga,,,,0
+146,ഝ്,U+0D1D U+0D4D,cv,jh,jh,ml-0d1d-0d4d-jh,dʒʱ,breathy palatal affricate + no vowel,,,,,breathy palatal affricate + consonant alone (chandrakkala),,,,0
+147,ഝ,U+0D1D,cv,jha,jha,ml-0d1d-jha,dʒʱa,breathy palatal affricate + inherent a,ഝരി,stream (jhari),,,breathy palatal affricate + inherent a,,,,0
+148,ഝാ,U+0D1D U+0D3E,cv,jhaa,jhaa,ml-0d1d-0d3e-jhaa,dʒʱaː,breathy palatal affricate + long aa,,,,,breathy palatal affricate + long aa,,,,0
+149,ഝി,U+0D1D U+0D3F,cv,jhi,jhi,ml-0d1d-0d3f-jhi,dʒʱi,breathy palatal affricate + short i,,,,,breathy palatal affricate + short i,,,,0
+150,ഝീ,U+0D1D U+0D40,cv,jhee,jhee (long ii),ml-0d1d-0d40-jhee-long-i,dʒʱiː,breathy palatal affricate + long ī,,,,,breathy palatal affricate + long ii,ഝേ,,,0
+151,ഝു,U+0D1D U+0D41,cv,jhu,jhu,ml-0d1d-0d41-jhu,dʒʱu,breathy palatal affricate + short u,,,,,breathy palatal affricate + short u,,,,0
+152,ഝൂ,U+0D1D U+0D42,cv,jhoo,jhoo (long uu),ml-0d1d-0d42-jhoo-long-u,dʒʱuː,breathy palatal affricate + long ū,,,,,breathy palatal affricate + long uu,ഝോ,,,0
+153,ഝൃ,U+0D1D U+0D43,cv,jhru,jhru,ml-0d1d-0d43-jhru,dʒʱɾɨ,breathy palatal affricate + vocalic r,,,,,breathy palatal affricate + vocalic r,,,,0
+154,ഝെ,U+0D1D U+0D46,cv,jhe,jhe,ml-0d1d-0d46-jhe,dʒʱe,breathy palatal affricate + short e,,,,,breathy palatal affricate + short e,,,,0
+155,ഝേ,U+0D1D U+0D47,cv,jhee,jhee (long ee),ml-0d1d-0d47-jhee-long-e,dʒʱeː,breathy palatal affricate + long ē,,,,,breathy palatal affricate + long ee (ē),ഝീ,,,0
+156,ഝൈ,U+0D1D U+0D48,cv,jhai,jhai,ml-0d1d-0d48-jhai,dʒʱai̯,breathy palatal affricate + ai,,,,,breathy palatal affricate + ai,,,,0
+157,ഝൊ,U+0D1D U+0D4A,cv,jho,jho,ml-0d1d-0d4a-jho,dʒʱo,breathy palatal affricate + short o,,,,,breathy palatal affricate + short o,,,,0
+158,ഝോ,U+0D1D U+0D4B,cv,jhoo,jhoo (long oo),ml-0d1d-0d4b-jhoo-long-o,dʒʱoː,breathy palatal affricate + long ō,,,,,breathy palatal affricate + long oo (ō),ഝൂ,,,0
+159,ഝൗ,U+0D1D U+0D57,cv,jhau,jhau,ml-0d1d-0d57-jhau,dʒʱau̯,breathy palatal affricate + au,,,,,breathy palatal affricate + au,,,,0
+160,ഝം,U+0D1D U+0D02,cv,jham,jham,ml-0d1d-0d02-jham,dʒʱam,breathy palatal affricate + anusvara (m),,,,,breathy palatal affricate + anusvara,,,,0
+161,ഝഃ,U+0D1D U+0D03,cv,jhah,jhah,ml-0d1d-0d03-jhah,dʒʱaha,breathy palatal affricate + visarga (h),,,,,breathy palatal affricate + visarga,,,,0
+162,ഞ്,U+0D1E U+0D4D,cv,nj,nj,ml-0d1e-0d4d-nj,ɲ,palatal nasal + no vowel,,,,,palatal nasal + consonant alone (chandrakkala),,nasals: ന ണ ങ ഞ,,0
+163,ഞ,U+0D1E,cv,nja,nja,ml-0d1e-nja,ɲa,palatal nasal + inherent a,ഞാൻ,I (njaan),,,palatal nasal + inherent a,,nasals: ന ണ ങ ഞ,,0
+164,ഞാ,U+0D1E U+0D3E,cv,njaa,njaa,ml-0d1e-0d3e-njaa,ɲaː,palatal nasal + long aa,,,,,palatal nasal + long aa,,nasals: ന ണ ങ ഞ,,0
+165,ഞി,U+0D1E U+0D3F,cv,nji,nji,ml-0d1e-0d3f-nji,ɲi,palatal nasal + short i,,,,,palatal nasal + short i,,nasals: ന ണ ങ ഞ,,0
+166,ഞീ,U+0D1E U+0D40,cv,njee,njee (long ii),ml-0d1e-0d40-njee-long-i,ɲiː,palatal nasal + long ī,,,,,palatal nasal + long ii,ഞേ,nasals: ന ണ ങ ഞ,,0
+167,ഞു,U+0D1E U+0D41,cv,nju,nju,ml-0d1e-0d41-nju,ɲu,palatal nasal + short u,,,,,palatal nasal + short u,,nasals: ന ണ ങ ഞ,,0
+168,ഞൂ,U+0D1E U+0D42,cv,njoo,njoo (long uu),ml-0d1e-0d42-njoo-long-u,ɲuː,palatal nasal + long ū,,,,,palatal nasal + long uu,ഞോ,nasals: ന ണ ങ ഞ,,0
+169,ഞൃ,U+0D1E U+0D43,cv,njru,njru,ml-0d1e-0d43-njru,ɲɾɨ,palatal nasal + vocalic r,,,,,palatal nasal + vocalic r,,nasals: ന ണ ങ ഞ,,0
+170,ഞെ,U+0D1E U+0D46,cv,nje,nje,ml-0d1e-0d46-nje,ɲe,palatal nasal + short e,,,,,palatal nasal + short e,,nasals: ന ണ ങ ഞ,,0
+171,ഞേ,U+0D1E U+0D47,cv,njee,njee (long ee),ml-0d1e-0d47-njee-long-e,ɲeː,palatal nasal + long ē,,,,,palatal nasal + long ee (ē),ഞീ,nasals: ന ണ ങ ഞ,,0
+172,ഞൈ,U+0D1E U+0D48,cv,njai,njai,ml-0d1e-0d48-njai,ɲai̯,palatal nasal + ai,,,,,palatal nasal + ai,,nasals: ന ണ ങ ഞ,,0
+173,ഞൊ,U+0D1E U+0D4A,cv,njo,njo,ml-0d1e-0d4a-njo,ɲo,palatal nasal + short o,,,,,palatal nasal + short o,,nasals: ന ണ ങ ഞ,,0
+174,ഞോ,U+0D1E U+0D4B,cv,njoo,njoo (long oo),ml-0d1e-0d4b-njoo-long-o,ɲoː,palatal nasal + long ō,,,,,palatal nasal + long oo (ō),ഞൂ,nasals: ന ണ ങ ഞ,,0
+175,ഞൗ,U+0D1E U+0D57,cv,njau,njau,ml-0d1e-0d57-njau,ɲau̯,palatal nasal + au,,,,,palatal nasal + au,,nasals: ന ണ ങ ഞ,,0
+176,ഞം,U+0D1E U+0D02,cv,njam,njam,ml-0d1e-0d02-njam,ɲam,palatal nasal + anusvara (m),,,,,palatal nasal + anusvara,,nasals: ന ണ ങ ഞ,,0
+177,ഞഃ,U+0D1E U+0D03,cv,njah,njah,ml-0d1e-0d03-njah,ɲaha,palatal nasal + visarga (h),,,,,palatal nasal + visarga,,nasals: ന ണ ങ ഞ,,0
+178,ട്,U+0D1F U+0D4D,cv,t,t,ml-0d1f-0d4d-t,ʈ,t with the tongue tip curled back (retroflex ṭ) + no vowel,,,,,retroflex stop + consonant alone (chandrakkala),,t: ത ട ഥ ഠ,,0
+179,ട,U+0D1F,cv,ta,ta,ml-0d1f-ta,ʈa,t with the tongue tip curled back (retroflex ṭ) + inherent a,പടി,step (padi),,,retroflex stop + inherent a,,t: ത ട ഥ ഠ,,0
+180,ടാ,U+0D1F U+0D3E,cv,taa,taa,ml-0d1f-0d3e-taa,ʈaː,t with the tongue tip curled back (retroflex ṭ) + long aa,,,,,retroflex stop + long aa,,t: ത ട ഥ ഠ,,0
+181,ടി,U+0D1F U+0D3F,cv,ti,ti,ml-0d1f-0d3f-ti,ʈi,t with the tongue tip curled back (retroflex ṭ) + short i,,,,,retroflex stop + short i,,t: ത ട ഥ ഠ,,0
+182,ടീ,U+0D1F U+0D40,cv,tee,"tee (retroflex ta, long ii)",ml-0d1f-0d40-tee-long-i,ʈiː,t with the tongue tip curled back (retroflex ṭ) + long ī,,,,,retroflex stop + long ii,ടേ,t: ത ട ഥ ഠ,,0
+183,ടു,U+0D1F U+0D41,cv,tu,tu,ml-0d1f-0d41-tu,ʈu,t with the tongue tip curled back (retroflex ṭ) + short u,,,,,retroflex stop + short u,,t: ത ട ഥ ഠ,,0
+184,ടൂ,U+0D1F U+0D42,cv,too,"too (retroflex ta, long uu)",ml-0d1f-0d42-too-long-u,ʈuː,t with the tongue tip curled back (retroflex ṭ) + long ū,,,,,retroflex stop + long uu,ടോ,t: ത ട ഥ ഠ,,0
+185,ടൃ,U+0D1F U+0D43,cv,tru,tru,ml-0d1f-0d43-tru,ʈɾɨ,t with the tongue tip curled back (retroflex ṭ) + vocalic r,,,,,retroflex stop + vocalic r,,t: ത ട ഥ ഠ,,0
+186,ടെ,U+0D1F U+0D46,cv,te,te,ml-0d1f-0d46-te,ʈe,t with the tongue tip curled back (retroflex ṭ) + short e,,,,,retroflex stop + short e,,t: ത ട ഥ ഠ,,0
+187,ടേ,U+0D1F U+0D47,cv,tee,"tee (retroflex ta, long ee)",ml-0d1f-0d47-tee-long-e,ʈeː,t with the tongue tip curled back (retroflex ṭ) + long ē,,,,,retroflex stop + long ee (ē),ടീ,t: ത ട ഥ ഠ,,0
+188,ടൈ,U+0D1F U+0D48,cv,tai,tai,ml-0d1f-0d48-tai,ʈai̯,t with the tongue tip curled back (retroflex ṭ) + ai,,,,,retroflex stop + ai,,t: ത ട ഥ ഠ,,0
+189,ടൊ,U+0D1F U+0D4A,cv,to,to,ml-0d1f-0d4a-to,ʈo,t with the tongue tip curled back (retroflex ṭ) + short o,,,,,retroflex stop + short o,,t: ത ട ഥ ഠ,,0
+190,ടോ,U+0D1F U+0D4B,cv,too,"too (retroflex ta, long oo)",ml-0d1f-0d4b-too-long-o,ʈoː,t with the tongue tip curled back (retroflex ṭ) + long ō,,,,,retroflex stop + long oo (ō),ടൂ,t: ത ട ഥ ഠ,,0
+191,ടൗ,U+0D1F U+0D57,cv,tau,tau,ml-0d1f-0d57-tau,ʈau̯,t with the tongue tip curled back (retroflex ṭ) + au,,,,,retroflex stop + au,,t: ത ട ഥ ഠ,,0
+192,ടം,U+0D1F U+0D02,cv,tam,tam,ml-0d1f-0d02-tam,ʈam,t with the tongue tip curled back (retroflex ṭ) + anusvara (m),,,,,retroflex stop + anusvara,,t: ത ട ഥ ഠ,,0
+193,ടഃ,U+0D1F U+0D03,cv,tah,tah,ml-0d1f-0d03-tah,ʈaha,t with the tongue tip curled back (retroflex ṭ) + visarga (h),,,,,retroflex stop + visarga,,t: ത ട ഥ ഠ,,0
+194,ഠ്,U+0D20 U+0D4D,cv,th,th (retroflex tha),ml-0d20-0d4d-th-retroflex-aspirated,ʈʰ,"retroflex t with a puff of air (aspirated, rare) + no vowel",,,,,aspirated retroflex stop + consonant alone (chandrakkala),ത് ഥ്,t: ത ട ഥ ഠ,,0
+195,ഠ,U+0D20,cv,tha,tha (retroflex tha),ml-0d20-tha-retroflex-aspirated,ʈʰa,"retroflex t with a puff of air (aspirated, rare) + inherent a",പഠനം,study (paTanam),,,aspirated retroflex stop + inherent a,ത ഥ,t: ത ട ഥ ഠ,,0
+196,ഠാ,U+0D20 U+0D3E,cv,thaa,thaa (retroflex tha),ml-0d20-0d3e-thaa-retroflex-aspirated,ʈʰaː,"retroflex t with a puff of air (aspirated, rare) + long aa",,,,,aspirated retroflex stop + long aa,താ ഥാ,t: ത ട ഥ ഠ,,0
+197,ഠി,U+0D20 U+0D3F,cv,thi,thi (retroflex tha),ml-0d20-0d3f-thi-retroflex-aspirated,ʈʰi,"retroflex t with a puff of air (aspirated, rare) + short i",,,,,aspirated retroflex stop + short i,തി ഥി,t: ത ട ഥ ഠ,,0
+198,ഠീ,U+0D20 U+0D40,cv,thee,"thee (retroflex tha, long ii)",ml-0d20-0d40-thee-retroflex-aspirated-long-i,ʈʰiː,"retroflex t with a puff of air (aspirated, rare) + long ī",,,,,aspirated retroflex stop + long ii,ഠേ തീ തേ ഥീ ഥേ,t: ത ട ഥ ഠ,,0
+199,ഠു,U+0D20 U+0D41,cv,thu,thu (retroflex tha),ml-0d20-0d41-thu-retroflex-aspirated,ʈʰu,"retroflex t with a puff of air (aspirated, rare) + short u",,,,,aspirated retroflex stop + short u,തു ഥു,t: ത ട ഥ ഠ,,0
+200,ഠൂ,U+0D20 U+0D42,cv,thoo,"thoo (retroflex tha, long uu)",ml-0d20-0d42-thoo-retroflex-aspirated-long-u,ʈʰuː,"retroflex t with a puff of air (aspirated, rare) + long ū",,,,,aspirated retroflex stop + long uu,ഠോ തൂ തോ ഥൂ ഥോ,t: ത ട ഥ ഠ,,0
+201,ഠൃ,U+0D20 U+0D43,cv,thru,thru (retroflex tha),ml-0d20-0d43-thru-retroflex-aspirated,ʈʰɾɨ,"retroflex t with a puff of air (aspirated, rare) + vocalic r",,,,,aspirated retroflex stop + vocalic r,തൃ ഥൃ,t: ത ട ഥ ഠ,,0
+202,ഠെ,U+0D20 U+0D46,cv,the,the (retroflex tha),ml-0d20-0d46-the-retroflex-aspirated,ʈʰe,"retroflex t with a puff of air (aspirated, rare) + short e",,,,,aspirated retroflex stop + short e,തെ ഥെ,t: ത ട ഥ ഠ,,0
+203,ഠേ,U+0D20 U+0D47,cv,thee,"thee (retroflex tha, long ee)",ml-0d20-0d47-thee-retroflex-aspirated-long-e,ʈʰeː,"retroflex t with a puff of air (aspirated, rare) + long ē",,,,,aspirated retroflex stop + long ee (ē),ഠീ തീ തേ ഥീ ഥേ,t: ത ട ഥ ഠ,,0
+204,ഠൈ,U+0D20 U+0D48,cv,thai,thai (retroflex tha),ml-0d20-0d48-thai-retroflex-aspirated,ʈʰai̯,"retroflex t with a puff of air (aspirated, rare) + ai",,,,,aspirated retroflex stop + ai,തൈ ഥൈ,t: ത ട ഥ ഠ,,0
+205,ഠൊ,U+0D20 U+0D4A,cv,tho,tho (retroflex tha),ml-0d20-0d4a-tho-retroflex-aspirated,ʈʰo,"retroflex t with a puff of air (aspirated, rare) + short o",,,,,aspirated retroflex stop + short o,തൊ ഥൊ,t: ത ട ഥ ഠ,,0
+206,ഠോ,U+0D20 U+0D4B,cv,thoo,"thoo (retroflex tha, long oo)",ml-0d20-0d4b-thoo-retroflex-aspirated-long-o,ʈʰoː,"retroflex t with a puff of air (aspirated, rare) + long ō",,,,,aspirated retroflex stop + long oo (ō),ഠൂ തൂ തോ ഥൂ ഥോ,t: ത ട ഥ ഠ,,0
+207,ഠൗ,U+0D20 U+0D57,cv,thau,thau (retroflex tha),ml-0d20-0d57-thau-retroflex-aspirated,ʈʰau̯,"retroflex t with a puff of air (aspirated, rare) + au",,,,,aspirated retroflex stop + au,തൗ ഥൗ,t: ത ട ഥ ഠ,,0
+208,ഠം,U+0D20 U+0D02,cv,tham,tham (retroflex tha),ml-0d20-0d02-tham-retroflex-aspirated,ʈʰam,"retroflex t with a puff of air (aspirated, rare) + anusvara (m)",,,,,aspirated retroflex stop + anusvara,തം ഥം,t: ത ട ഥ ഠ,,0
+209,ഠഃ,U+0D20 U+0D03,cv,thah,thah (retroflex tha),ml-0d20-0d03-thah-retroflex-aspirated,ʈʰaha,"retroflex t with a puff of air (aspirated, rare) + visarga (h)",,,,,aspirated retroflex stop + visarga,തഃ ഥഃ,t: ത ട ഥ ഠ,,0
+210,ഡ്,U+0D21 U+0D4D,cv,d,d (retroflex da),ml-0d21-0d4d-d-retroflex,ɖ,d with the tongue tip curled back (retroflex ḍ) + no vowel,,,,,voiced retroflex stop + consonant alone (chandrakkala),ദ്,d: ദ ഡ ധ ഢ,,0
+211,ഡ,U+0D21,cv,da,da (retroflex da),ml-0d21-da-retroflex,ɖa,d with the tongue tip curled back (retroflex ḍ) + inherent a,ഡോക്ടർ,doctor,,,voiced retroflex stop + inherent a,ദ,d: ദ ഡ ധ ഢ,,0
+212,ഡാ,U+0D21 U+0D3E,cv,daa,daa (retroflex da),ml-0d21-0d3e-daa-retroflex,ɖaː,d with the tongue tip curled back (retroflex ḍ) + long aa,,,,,voiced retroflex stop + long aa,ദാ,d: ദ ഡ ധ ഢ,,0
+213,ഡി,U+0D21 U+0D3F,cv,di,di (retroflex da),ml-0d21-0d3f-di-retroflex,ɖi,d with the tongue tip curled back (retroflex ḍ) + short i,,,,,voiced retroflex stop + short i,ദി,d: ദ ഡ ധ ഢ,,0
+214,ഡീ,U+0D21 U+0D40,cv,dee,"dee (retroflex da, long ii)",ml-0d21-0d40-dee-retroflex-long-i,ɖiː,d with the tongue tip curled back (retroflex ḍ) + long ī,,,,,voiced retroflex stop + long ii,ഡേ ദീ ദേ,d: ദ ഡ ധ ഢ,,0
+215,ഡു,U+0D21 U+0D41,cv,du,du (retroflex da),ml-0d21-0d41-du-retroflex,ɖu,d with the tongue tip curled back (retroflex ḍ) + short u,,,,,voiced retroflex stop + short u,ദു,d: ദ ഡ ധ ഢ,,0
+216,ഡൂ,U+0D21 U+0D42,cv,doo,"doo (retroflex da, long uu)",ml-0d21-0d42-doo-retroflex-long-u,ɖuː,d with the tongue tip curled back (retroflex ḍ) + long ū,,,,,voiced retroflex stop + long uu,ഡോ ദൂ ദോ,d: ദ ഡ ധ ഢ,,0
+217,ഡൃ,U+0D21 U+0D43,cv,dru,dru (retroflex da),ml-0d21-0d43-dru-retroflex,ɖɾɨ,d with the tongue tip curled back (retroflex ḍ) + vocalic r,,,,,voiced retroflex stop + vocalic r,ദൃ,d: ദ ഡ ധ ഢ,,0
+218,ഡെ,U+0D21 U+0D46,cv,de,de (retroflex da),ml-0d21-0d46-de-retroflex,ɖe,d with the tongue tip curled back (retroflex ḍ) + short e,,,,,voiced retroflex stop + short e,ദെ,d: ദ ഡ ധ ഢ,,0
+219,ഡേ,U+0D21 U+0D47,cv,dee,"dee (retroflex da, long ee)",ml-0d21-0d47-dee-retroflex-long-e,ɖeː,d with the tongue tip curled back (retroflex ḍ) + long ē,,,,,voiced retroflex stop + long ee (ē),ഡീ ദീ ദേ,d: ദ ഡ ധ ഢ,,0
+220,ഡൈ,U+0D21 U+0D48,cv,dai,dai (retroflex da),ml-0d21-0d48-dai-retroflex,ɖai̯,d with the tongue tip curled back (retroflex ḍ) + ai,,,,,voiced retroflex stop + ai,ദൈ,d: ദ ഡ ധ ഢ,,0
+221,ഡൊ,U+0D21 U+0D4A,cv,do,do (retroflex da),ml-0d21-0d4a-do-retroflex,ɖo,d with the tongue tip curled back (retroflex ḍ) + short o,,,,,voiced retroflex stop + short o,ദൊ,d: ദ ഡ ധ ഢ,,0
+222,ഡോ,U+0D21 U+0D4B,cv,doo,"doo (retroflex da, long oo)",ml-0d21-0d4b-doo-retroflex-long-o,ɖoː,d with the tongue tip curled back (retroflex ḍ) + long ō,,,,,voiced retroflex stop + long oo (ō),ഡൂ ദൂ ദോ,d: ദ ഡ ധ ഢ,,0
+223,ഡൗ,U+0D21 U+0D57,cv,dau,dau (retroflex da),ml-0d21-0d57-dau-retroflex,ɖau̯,d with the tongue tip curled back (retroflex ḍ) + au,,,,,voiced retroflex stop + au,ദൗ,d: ദ ഡ ധ ഢ,,0
+224,ഡം,U+0D21 U+0D02,cv,dam,dam (retroflex da),ml-0d21-0d02-dam-retroflex,ɖam,d with the tongue tip curled back (retroflex ḍ) + anusvara (m),,,,,voiced retroflex stop + anusvara,ദം,d: ദ ഡ ധ ഢ,,0
+225,ഡഃ,U+0D21 U+0D03,cv,dah,dah (retroflex da),ml-0d21-0d03-dah-retroflex,ɖaha,d with the tongue tip curled back (retroflex ḍ) + visarga (h),,,,,voiced retroflex stop + visarga,ദഃ,d: ദ ഡ ധ ഢ,,0
+226,ഢ്,U+0D22 U+0D4D,cv,dh,dh (retroflex dha),ml-0d22-0d4d-dh-retroflex,ɖʱ,"dha: breathy retroflex d (aspirated, rare) + no vowel",,,,,breathy retroflex stop + consonant alone (chandrakkala),ധ്,d: ദ ഡ ധ ഢ,,0
+227,ഢ,U+0D22,cv,dha,dha (retroflex dha),ml-0d22-dha-retroflex,ɖʱa,"dha: breathy retroflex d (aspirated, rare) + inherent a",ഗൂഢം,secret (gooDham),,,breathy retroflex stop + inherent a,ധ,d: ദ ഡ ധ ഢ,,0
+228,ഢാ,U+0D22 U+0D3E,cv,dhaa,dhaa (retroflex dha),ml-0d22-0d3e-dhaa-retroflex,ɖʱaː,"dha: breathy retroflex d (aspirated, rare) + long aa",,,,,breathy retroflex stop + long aa,ധാ,d: ദ ഡ ധ ഢ,,0
+229,ഢി,U+0D22 U+0D3F,cv,dhi,dhi (retroflex dha),ml-0d22-0d3f-dhi-retroflex,ɖʱi,"dha: breathy retroflex d (aspirated, rare) + short i",,,,,breathy retroflex stop + short i,ധി,d: ദ ഡ ധ ഢ,,0
+230,ഢീ,U+0D22 U+0D40,cv,dhee,"dhee (retroflex dha, long ii)",ml-0d22-0d40-dhee-retroflex-long-i,ɖʱiː,"dha: breathy retroflex d (aspirated, rare) + long ī",,,,,breathy retroflex stop + long ii,ഢേ ധീ ധേ,d: ദ ഡ ധ ഢ,,0
+231,ഢു,U+0D22 U+0D41,cv,dhu,dhu (retroflex dha),ml-0d22-0d41-dhu-retroflex,ɖʱu,"dha: breathy retroflex d (aspirated, rare) + short u",,,,,breathy retroflex stop + short u,ധു,d: ദ ഡ ധ ഢ,,0
+232,ഢൂ,U+0D22 U+0D42,cv,dhoo,"dhoo (retroflex dha, long uu)",ml-0d22-0d42-dhoo-retroflex-long-u,ɖʱuː,"dha: breathy retroflex d (aspirated, rare) + long ū",,,,,breathy retroflex stop + long uu,ഢോ ധൂ ധോ,d: ദ ഡ ധ ഢ,,0
+233,ഢൃ,U+0D22 U+0D43,cv,dhru,dhru (retroflex dha),ml-0d22-0d43-dhru-retroflex,ɖʱɾɨ,"dha: breathy retroflex d (aspirated, rare) + vocalic r",,,,,breathy retroflex stop + vocalic r,ധൃ,d: ദ ഡ ധ ഢ,,0
+234,ഢെ,U+0D22 U+0D46,cv,dhe,dhe (retroflex dha),ml-0d22-0d46-dhe-retroflex,ɖʱe,"dha: breathy retroflex d (aspirated, rare) + short e",,,,,breathy retroflex stop + short e,ധെ,d: ദ ഡ ധ ഢ,,0
+235,ഢേ,U+0D22 U+0D47,cv,dhee,"dhee (retroflex dha, long ee)",ml-0d22-0d47-dhee-retroflex-long-e,ɖʱeː,"dha: breathy retroflex d (aspirated, rare) + long ē",,,,,breathy retroflex stop + long ee (ē),ഢീ ധീ ധേ,d: ദ ഡ ധ ഢ,,0
+236,ഢൈ,U+0D22 U+0D48,cv,dhai,dhai (retroflex dha),ml-0d22-0d48-dhai-retroflex,ɖʱai̯,"dha: breathy retroflex d (aspirated, rare) + ai",,,,,breathy retroflex stop + ai,ധൈ,d: ദ ഡ ധ ഢ,,0
+237,ഢൊ,U+0D22 U+0D4A,cv,dho,dho (retroflex dha),ml-0d22-0d4a-dho-retroflex,ɖʱo,"dha: breathy retroflex d (aspirated, rare) + short o",,,,,breathy retroflex stop + short o,ധൊ,d: ദ ഡ ധ ഢ,,0
+238,ഢോ,U+0D22 U+0D4B,cv,dhoo,"dhoo (retroflex dha, long oo)",ml-0d22-0d4b-dhoo-retroflex-long-o,ɖʱoː,"dha: breathy retroflex d (aspirated, rare) + long ō",,,,,breathy retroflex stop + long oo (ō),ഢൂ ധൂ ധോ,d: ദ ഡ ധ ഢ,,0
+239,ഢൗ,U+0D22 U+0D57,cv,dhau,dhau (retroflex dha),ml-0d22-0d57-dhau-retroflex,ɖʱau̯,"dha: breathy retroflex d (aspirated, rare) + au",,,,,breathy retroflex stop + au,ധൗ,d: ദ ഡ ധ ഢ,,0
+240,ഢം,U+0D22 U+0D02,cv,dham,dham (retroflex dha),ml-0d22-0d02-dham-retroflex,ɖʱam,"dha: breathy retroflex d (aspirated, rare) + anusvara (m)",,,,,breathy retroflex stop + anusvara,ധം,d: ദ ഡ ധ ഢ,,0
+241,ഢഃ,U+0D22 U+0D03,cv,dhah,dhah (retroflex dha),ml-0d22-0d03-dhah-retroflex,ɖʱaha,"dha: breathy retroflex d (aspirated, rare) + visarga (h)",,,,,breathy retroflex stop + visarga,ധഃ,d: ദ ഡ ധ ഢ,,0
+242,ണ്,U+0D23 U+0D4D,cv,n,n (retroflex na),ml-0d23-0d4d-n-retroflex,ɳ,n with the tongue tip curled back (retroflex ṇ) + no vowel,,,,,retroflex nasal + consonant alone (chandrakkala),ന് ൺ ൻ,nasals: ന ണ ങ ഞ,,0
+243,ണ,U+0D23,cv,na,na (retroflex na),ml-0d23-na-retroflex,ɳa,n with the tongue tip curled back (retroflex ṇ) + inherent a,ആണ്,is (aanu),,,retroflex nasal + inherent a,ന,nasals: ന ണ ങ ഞ,,0
+244,ണാ,U+0D23 U+0D3E,cv,naa,naa (retroflex na),ml-0d23-0d3e-naa-retroflex,ɳaː,n with the tongue tip curled back (retroflex ṇ) + long aa,,,,,retroflex nasal + long aa,നാ,nasals: ന ണ ങ ഞ,,0
+245,ണി,U+0D23 U+0D3F,cv,ni,ni (retroflex na),ml-0d23-0d3f-ni-retroflex,ɳi,n with the tongue tip curled back (retroflex ṇ) + short i,,,,,retroflex nasal + short i,നി,nasals: ന ണ ങ ഞ,,0
+246,ണീ,U+0D23 U+0D40,cv,nee,"nee (retroflex na, long ii)",ml-0d23-0d40-nee-retroflex-long-i,ɳiː,n with the tongue tip curled back (retroflex ṇ) + long ī,,,,,retroflex nasal + long ii,ണേ നീ നേ,nasals: ന ണ ങ ഞ,,0
+247,ണു,U+0D23 U+0D41,cv,nu,nu (retroflex na),ml-0d23-0d41-nu-retroflex,ɳu,n with the tongue tip curled back (retroflex ṇ) + short u,,,,,retroflex nasal + short u,നു,nasals: ന ണ ങ ഞ,,0
+248,ണൂ,U+0D23 U+0D42,cv,noo,"noo (retroflex na, long uu)",ml-0d23-0d42-noo-retroflex-long-u,ɳuː,n with the tongue tip curled back (retroflex ṇ) + long ū,,,,,retroflex nasal + long uu,ണോ നൂ നോ,nasals: ന ണ ങ ഞ,,0
+249,ണൃ,U+0D23 U+0D43,cv,nru,nru (retroflex na),ml-0d23-0d43-nru-retroflex,ɳɾɨ,n with the tongue tip curled back (retroflex ṇ) + vocalic r,,,,,retroflex nasal + vocalic r,നൃ,nasals: ന ണ ങ ഞ,,0
+250,ണെ,U+0D23 U+0D46,cv,ne,ne (retroflex na),ml-0d23-0d46-ne-retroflex,ɳe,n with the tongue tip curled back (retroflex ṇ) + short e,,,,,retroflex nasal + short e,നെ,nasals: ന ണ ങ ഞ,,0
+251,ണേ,U+0D23 U+0D47,cv,nee,"nee (retroflex na, long ee)",ml-0d23-0d47-nee-retroflex-long-e,ɳeː,n with the tongue tip curled back (retroflex ṇ) + long ē,,,,,retroflex nasal + long ee (ē),ണീ നീ നേ,nasals: ന ണ ങ ഞ,,0
+252,ണൈ,U+0D23 U+0D48,cv,nai,nai (retroflex na),ml-0d23-0d48-nai-retroflex,ɳai̯,n with the tongue tip curled back (retroflex ṇ) + ai,,,,,retroflex nasal + ai,നൈ,nasals: ന ണ ങ ഞ,,0
+253,ണൊ,U+0D23 U+0D4A,cv,no,no (retroflex na),ml-0d23-0d4a-no-retroflex,ɳo,n with the tongue tip curled back (retroflex ṇ) + short o,,,,,retroflex nasal + short o,നൊ,nasals: ന ണ ങ ഞ,,0
+254,ണോ,U+0D23 U+0D4B,cv,noo,"noo (retroflex na, long oo)",ml-0d23-0d4b-noo-retroflex-long-o,ɳoː,n with the tongue tip curled back (retroflex ṇ) + long ō,,,,,retroflex nasal + long oo (ō),ണൂ നൂ നോ,nasals: ന ണ ങ ഞ,,0
+255,ണൗ,U+0D23 U+0D57,cv,nau,nau (retroflex na),ml-0d23-0d57-nau-retroflex,ɳau̯,n with the tongue tip curled back (retroflex ṇ) + au,,,,,retroflex nasal + au,നൗ,nasals: ന ണ ങ ഞ,,0
+256,ണം,U+0D23 U+0D02,cv,nam,nam (retroflex na),ml-0d23-0d02-nam-retroflex,ɳam,n with the tongue tip curled back (retroflex ṇ) + anusvara (m),,,,,retroflex nasal + anusvara,നം,nasals: ന ണ ങ ഞ,,0
+257,ണഃ,U+0D23 U+0D03,cv,nah,nah (retroflex na),ml-0d23-0d03-nah-retroflex,ɳaha,n with the tongue tip curled back (retroflex ṇ) + visarga (h),,,,,retroflex nasal + visarga,നഃ,nasals: ന ണ ങ ഞ,,0
+258,ത്,U+0D24 U+0D4D,cv,th,th (dental tha),ml-0d24-0d4d-th-dental,t̪,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + no vowel",,,,,dental stop + consonant alone (chandrakkala),ഠ് ഥ്,t: ത ട ഥ ഠ,,0
+259,ത,U+0D24,cv,tha,tha (dental tha),ml-0d24-tha-dental,t̪a,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + inherent a",താരം,star (thaaram),,,dental stop + inherent a,ഠ ഥ,t: ത ട ഥ ഠ,,0
+260,താ,U+0D24 U+0D3E,cv,thaa,thaa (dental tha),ml-0d24-0d3e-thaa-dental,t̪aː,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + long aa",,,,,dental stop + long aa,ഠാ ഥാ,t: ത ട ഥ ഠ,,0
+261,തി,U+0D24 U+0D3F,cv,thi,thi (dental tha),ml-0d24-0d3f-thi-dental,t̪i,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + short i",,,,,dental stop + short i,ഠി ഥി,t: ത ട ഥ ഠ,,0
+262,തീ,U+0D24 U+0D40,cv,thee,"thee (dental tha, long ii)",ml-0d24-0d40-thee-dental-long-i,t̪iː,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + long ī",,,,,dental stop + long ii,ഠീ ഠേ തേ ഥീ ഥേ,t: ത ട ഥ ഠ,,0
+263,തു,U+0D24 U+0D41,cv,thu,thu (dental tha),ml-0d24-0d41-thu-dental,t̪u,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + short u",,,,,dental stop + short u,ഠു ഥു,t: ത ട ഥ ഠ,,0
+264,തൂ,U+0D24 U+0D42,cv,thoo,"thoo (dental tha, long uu)",ml-0d24-0d42-thoo-dental-long-u,t̪uː,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + long ū",,,,,dental stop + long uu,ഠൂ ഠോ തോ ഥൂ ഥോ,t: ത ട ഥ ഠ,,0
+265,തൃ,U+0D24 U+0D43,cv,thru,thru (dental tha),ml-0d24-0d43-thru-dental,t̪ɾɨ,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + vocalic r",,,,,dental stop + vocalic r,ഠൃ ഥൃ,t: ത ട ഥ ഠ,,0
+266,തെ,U+0D24 U+0D46,cv,the,the (dental tha),ml-0d24-0d46-the-dental,t̪e,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + short e",,,,,dental stop + short e,ഠെ ഥെ,t: ത ട ഥ ഠ,,0
+267,തേ,U+0D24 U+0D47,cv,thee,"thee (dental tha, long ee)",ml-0d24-0d47-thee-dental-long-e,t̪eː,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + long ē",,,,,dental stop + long ee (ē),ഠീ ഠേ തീ ഥീ ഥേ,t: ത ട ഥ ഠ,,0
+268,തൈ,U+0D24 U+0D48,cv,thai,thai (dental tha),ml-0d24-0d48-thai-dental,t̪ai̯,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + ai",,,,,dental stop + ai,ഠൈ ഥൈ,t: ത ട ഥ ഠ,,0
+269,തൊ,U+0D24 U+0D4A,cv,tho,tho (dental tha),ml-0d24-0d4a-tho-dental,t̪o,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + short o",,,,,dental stop + short o,ഠൊ ഥൊ,t: ത ട ഥ ഠ,,0
+270,തോ,U+0D24 U+0D4B,cv,thoo,"thoo (dental tha, long oo)",ml-0d24-0d4b-thoo-dental-long-o,t̪oː,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + long ō",,,,,dental stop + long oo (ō),ഠൂ ഠോ തൂ ഥൂ ഥോ,t: ത ട ഥ ഠ,,0
+271,തൗ,U+0D24 U+0D57,cv,thau,thau (dental tha),ml-0d24-0d57-thau-dental,t̪au̯,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + au",,,,,dental stop + au,ഠൗ ഥൗ,t: ത ട ഥ ഠ,,0
+272,തം,U+0D24 U+0D02,cv,tham,tham (dental tha),ml-0d24-0d02-tham-dental,t̪am,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + anusvara (m)",,,,,dental stop + anusvara,ഠം ഥം,t: ത ട ഥ ഠ,,0
+273,തഃ,U+0D24 U+0D03,cv,thah,thah (dental tha),ml-0d24-0d03-thah-dental,t̪aha,"t with the tongue tip on the upper teeth, no puff of air (not English 'th') + visarga (h)",,,,,dental stop + visarga,ഠഃ ഥഃ,t: ത ട ഥ ഠ,,0
+274,ഥ്,U+0D25 U+0D4D,cv,th,th (aspirated tha),ml-0d25-0d4d-th-aspirated,t̪ʰ,"dental t with a puff of air (aspirated, not English 'th') + no vowel",,,,,aspirated dental stop + consonant alone (chandrakkala),ഠ് ത്,t: ത ട ഥ ഠ,,0
+275,ഥ,U+0D25,cv,tha,tha (aspirated tha),ml-0d25-tha-aspirated,t̪ʰa,"dental t with a puff of air (aspirated, not English 'th') + inherent a",കഥ,story (katha),,,aspirated dental stop + inherent a,ഠ ത,t: ത ട ഥ ഠ,,0
+276,ഥാ,U+0D25 U+0D3E,cv,thaa,thaa (aspirated tha),ml-0d25-0d3e-thaa-aspirated,t̪ʰaː,"dental t with a puff of air (aspirated, not English 'th') + long aa",,,,,aspirated dental stop + long aa,ഠാ താ,t: ത ട ഥ ഠ,,0
+277,ഥി,U+0D25 U+0D3F,cv,thi,thi (aspirated tha),ml-0d25-0d3f-thi-aspirated,t̪ʰi,"dental t with a puff of air (aspirated, not English 'th') + short i",,,,,aspirated dental stop + short i,ഠി തി,t: ത ട ഥ ഠ,,0
+278,ഥീ,U+0D25 U+0D40,cv,thee,"thee (aspirated tha, long ii)",ml-0d25-0d40-thee-aspirated-long-i,t̪ʰiː,"dental t with a puff of air (aspirated, not English 'th') + long ī",,,,,aspirated dental stop + long ii,ഠീ ഠേ തീ തേ ഥേ,t: ത ട ഥ ഠ,,0
+279,ഥു,U+0D25 U+0D41,cv,thu,thu (aspirated tha),ml-0d25-0d41-thu-aspirated,t̪ʰu,"dental t with a puff of air (aspirated, not English 'th') + short u",,,,,aspirated dental stop + short u,ഠു തു,t: ത ട ഥ ഠ,,0
+280,ഥൂ,U+0D25 U+0D42,cv,thoo,"thoo (aspirated tha, long uu)",ml-0d25-0d42-thoo-aspirated-long-u,t̪ʰuː,"dental t with a puff of air (aspirated, not English 'th') + long ū",,,,,aspirated dental stop + long uu,ഠൂ ഠോ തൂ തോ ഥോ,t: ത ട ഥ ഠ,,0
+281,ഥൃ,U+0D25 U+0D43,cv,thru,thru (aspirated tha),ml-0d25-0d43-thru-aspirated,t̪ʰɾɨ,"dental t with a puff of air (aspirated, not English 'th') + vocalic r",,,,,aspirated dental stop + vocalic r,ഠൃ തൃ,t: ത ട ഥ ഠ,,0
+282,ഥെ,U+0D25 U+0D46,cv,the,the (aspirated tha),ml-0d25-0d46-the-aspirated,t̪ʰe,"dental t with a puff of air (aspirated, not English 'th') + short e",,,,,aspirated dental stop + short e,ഠെ തെ,t: ത ട ഥ ഠ,,0
+283,ഥേ,U+0D25 U+0D47,cv,thee,"thee (aspirated tha, long ee)",ml-0d25-0d47-thee-aspirated-long-e,t̪ʰeː,"dental t with a puff of air (aspirated, not English 'th') + long ē",,,,,aspirated dental stop + long ee (ē),ഠീ ഠേ തീ തേ ഥീ,t: ത ട ഥ ഠ,,0
+284,ഥൈ,U+0D25 U+0D48,cv,thai,thai (aspirated tha),ml-0d25-0d48-thai-aspirated,t̪ʰai̯,"dental t with a puff of air (aspirated, not English 'th') + ai",,,,,aspirated dental stop + ai,ഠൈ തൈ,t: ത ട ഥ ഠ,,0
+285,ഥൊ,U+0D25 U+0D4A,cv,tho,tho (aspirated tha),ml-0d25-0d4a-tho-aspirated,t̪ʰo,"dental t with a puff of air (aspirated, not English 'th') + short o",,,,,aspirated dental stop + short o,ഠൊ തൊ,t: ത ട ഥ ഠ,,0
+286,ഥോ,U+0D25 U+0D4B,cv,thoo,"thoo (aspirated tha, long oo)",ml-0d25-0d4b-thoo-aspirated-long-o,t̪ʰoː,"dental t with a puff of air (aspirated, not English 'th') + long ō",,,,,aspirated dental stop + long oo (ō),ഠൂ ഠോ തൂ തോ ഥൂ,t: ത ട ഥ ഠ,,0
+287,ഥൗ,U+0D25 U+0D57,cv,thau,thau (aspirated tha),ml-0d25-0d57-thau-aspirated,t̪ʰau̯,"dental t with a puff of air (aspirated, not English 'th') + au",,,,,aspirated dental stop + au,ഠൗ തൗ,t: ത ട ഥ ഠ,,0
+288,ഥം,U+0D25 U+0D02,cv,tham,tham (aspirated tha),ml-0d25-0d02-tham-aspirated,t̪ʰam,"dental t with a puff of air (aspirated, not English 'th') + anusvara (m)",,,,,aspirated dental stop + anusvara,ഠം തം,t: ത ട ഥ ഠ,,0
+289,ഥഃ,U+0D25 U+0D03,cv,thah,thah (aspirated tha),ml-0d25-0d03-thah-aspirated,t̪ʰaha,"dental t with a puff of air (aspirated, not English 'th') + visarga (h)",,,,,aspirated dental stop + visarga,ഠഃ തഃ,t: ത ട ഥ ഠ,,0
+290,ദ്,U+0D26 U+0D4D,cv,d,d (dental da),ml-0d26-0d4d-d-dental,d̪,d with the tongue tip on the upper teeth (dental) + no vowel,,,,,voiced dental stop + consonant alone (chandrakkala),ഡ്,d: ദ ഡ ധ ഢ,,0
+291,ദ,U+0D26,cv,da,da (dental da),ml-0d26-da-dental,d̪a,d with the tongue tip on the upper teeth (dental) + inherent a,ദാനം,gift (daanam),,,voiced dental stop + inherent a,ഡ,d: ദ ഡ ധ ഢ,,0
+292,ദാ,U+0D26 U+0D3E,cv,daa,daa (dental da),ml-0d26-0d3e-daa-dental,d̪aː,d with the tongue tip on the upper teeth (dental) + long aa,,,,,voiced dental stop + long aa,ഡാ,d: ദ ഡ ധ ഢ,,0
+293,ദി,U+0D26 U+0D3F,cv,di,di (dental da),ml-0d26-0d3f-di-dental,d̪i,d with the tongue tip on the upper teeth (dental) + short i,,,,,voiced dental stop + short i,ഡി,d: ദ ഡ ധ ഢ,,0
+294,ദീ,U+0D26 U+0D40,cv,dee,"dee (dental da, long ii)",ml-0d26-0d40-dee-dental-long-i,d̪iː,d with the tongue tip on the upper teeth (dental) + long ī,,,,,voiced dental stop + long ii,ഡീ ഡേ ദേ,d: ദ ഡ ധ ഢ,,0
+295,ദു,U+0D26 U+0D41,cv,du,du (dental da),ml-0d26-0d41-du-dental,d̪u,d with the tongue tip on the upper teeth (dental) + short u,,,,,voiced dental stop + short u,ഡു,d: ദ ഡ ധ ഢ,,0
+296,ദൂ,U+0D26 U+0D42,cv,doo,"doo (dental da, long uu)",ml-0d26-0d42-doo-dental-long-u,d̪uː,d with the tongue tip on the upper teeth (dental) + long ū,,,,,voiced dental stop + long uu,ഡൂ ഡോ ദോ,d: ദ ഡ ധ ഢ,,0
+297,ദൃ,U+0D26 U+0D43,cv,dru,dru (dental da),ml-0d26-0d43-dru-dental,d̪ɾɨ,d with the tongue tip on the upper teeth (dental) + vocalic r,,,,,voiced dental stop + vocalic r,ഡൃ,d: ദ ഡ ധ ഢ,,0
+298,ദെ,U+0D26 U+0D46,cv,de,de (dental da),ml-0d26-0d46-de-dental,d̪e,d with the tongue tip on the upper teeth (dental) + short e,,,,,voiced dental stop + short e,ഡെ,d: ദ ഡ ധ ഢ,,0
+299,ദേ,U+0D26 U+0D47,cv,dee,"dee (dental da, long ee)",ml-0d26-0d47-dee-dental-long-e,d̪eː,d with the tongue tip on the upper teeth (dental) + long ē,,,,,voiced dental stop + long ee (ē),ഡീ ഡേ ദീ,d: ദ ഡ ധ ഢ,,0
+300,ദൈ,U+0D26 U+0D48,cv,dai,dai (dental da),ml-0d26-0d48-dai-dental,d̪ai̯,d with the tongue tip on the upper teeth (dental) + ai,,,,,voiced dental stop + ai,ഡൈ,d: ദ ഡ ധ ഢ,,0
+301,ദൊ,U+0D26 U+0D4A,cv,do,do (dental da),ml-0d26-0d4a-do-dental,d̪o,d with the tongue tip on the upper teeth (dental) + short o,,,,,voiced dental stop + short o,ഡൊ,d: ദ ഡ ധ ഢ,,0
+302,ദോ,U+0D26 U+0D4B,cv,doo,"doo (dental da, long oo)",ml-0d26-0d4b-doo-dental-long-o,d̪oː,d with the tongue tip on the upper teeth (dental) + long ō,,,,,voiced dental stop + long oo (ō),ഡൂ ഡോ ദൂ,d: ദ ഡ ധ ഢ,,0
+303,ദൗ,U+0D26 U+0D57,cv,dau,dau (dental da),ml-0d26-0d57-dau-dental,d̪au̯,d with the tongue tip on the upper teeth (dental) + au,,,,,voiced dental stop + au,ഡൗ,d: ദ ഡ ധ ഢ,,0
+304,ദം,U+0D26 U+0D02,cv,dam,dam (dental da),ml-0d26-0d02-dam-dental,d̪am,d with the tongue tip on the upper teeth (dental) + anusvara (m),,,,,voiced dental stop + anusvara,ഡം,d: ദ ഡ ധ ഢ,,0
+305,ദഃ,U+0D26 U+0D03,cv,dah,dah (dental da),ml-0d26-0d03-dah-dental,d̪aha,d with the tongue tip on the upper teeth (dental) + visarga (h),,,,,voiced dental stop + visarga,ഡഃ,d: ദ ഡ ധ ഢ,,0
+306,ധ്,U+0D27 U+0D4D,cv,dh,dh (dental dha),ml-0d27-0d4d-dh-dental,d̪ʱ,dha: breathy dental d (aspirated) + no vowel,,,,,breathy dental stop + consonant alone (chandrakkala),ഢ്,d: ദ ഡ ധ ഢ,,0
+307,ധ,U+0D27,cv,dha,dha (dental dha),ml-0d27-dha-dental,d̪ʱa,dha: breathy dental d (aspirated) + inherent a,ധനം,wealth (dhanam),,,breathy dental stop + inherent a,ഢ,d: ദ ഡ ധ ഢ,,0
+308,ധാ,U+0D27 U+0D3E,cv,dhaa,dhaa (dental dha),ml-0d27-0d3e-dhaa-dental,d̪ʱaː,dha: breathy dental d (aspirated) + long aa,,,,,breathy dental stop + long aa,ഢാ,d: ദ ഡ ധ ഢ,,0
+309,ധി,U+0D27 U+0D3F,cv,dhi,dhi (dental dha),ml-0d27-0d3f-dhi-dental,d̪ʱi,dha: breathy dental d (aspirated) + short i,,,,,breathy dental stop + short i,ഢി,d: ദ ഡ ധ ഢ,,0
+310,ധീ,U+0D27 U+0D40,cv,dhee,"dhee (dental dha, long ii)",ml-0d27-0d40-dhee-dental-long-i,d̪ʱiː,dha: breathy dental d (aspirated) + long ī,,,,,breathy dental stop + long ii,ഢീ ഢേ ധേ,d: ദ ഡ ധ ഢ,,0
+311,ധു,U+0D27 U+0D41,cv,dhu,dhu (dental dha),ml-0d27-0d41-dhu-dental,d̪ʱu,dha: breathy dental d (aspirated) + short u,,,,,breathy dental stop + short u,ഢു,d: ദ ഡ ധ ഢ,,0
+312,ധൂ,U+0D27 U+0D42,cv,dhoo,"dhoo (dental dha, long uu)",ml-0d27-0d42-dhoo-dental-long-u,d̪ʱuː,dha: breathy dental d (aspirated) + long ū,,,,,breathy dental stop + long uu,ഢൂ ഢോ ധോ,d: ദ ഡ ധ ഢ,,0
+313,ധൃ,U+0D27 U+0D43,cv,dhru,dhru (dental dha),ml-0d27-0d43-dhru-dental,d̪ʱɾɨ,dha: breathy dental d (aspirated) + vocalic r,,,,,breathy dental stop + vocalic r,ഢൃ,d: ദ ഡ ധ ഢ,,0
+314,ധെ,U+0D27 U+0D46,cv,dhe,dhe (dental dha),ml-0d27-0d46-dhe-dental,d̪ʱe,dha: breathy dental d (aspirated) + short e,,,,,breathy dental stop + short e,ഢെ,d: ദ ഡ ധ ഢ,,0
+315,ധേ,U+0D27 U+0D47,cv,dhee,"dhee (dental dha, long ee)",ml-0d27-0d47-dhee-dental-long-e,d̪ʱeː,dha: breathy dental d (aspirated) + long ē,,,,,breathy dental stop + long ee (ē),ഢീ ഢേ ധീ,d: ദ ഡ ധ ഢ,,0
+316,ധൈ,U+0D27 U+0D48,cv,dhai,dhai (dental dha),ml-0d27-0d48-dhai-dental,d̪ʱai̯,dha: breathy dental d (aspirated) + ai,,,,,breathy dental stop + ai,ഢൈ,d: ദ ഡ ധ ഢ,,0
+317,ധൊ,U+0D27 U+0D4A,cv,dho,dho (dental dha),ml-0d27-0d4a-dho-dental,d̪ʱo,dha: breathy dental d (aspirated) + short o,,,,,breathy dental stop + short o,ഢൊ,d: ദ ഡ ധ ഢ,,0
+318,ധോ,U+0D27 U+0D4B,cv,dhoo,"dhoo (dental dha, long oo)",ml-0d27-0d4b-dhoo-dental-long-o,d̪ʱoː,dha: breathy dental d (aspirated) + long ō,,,,,breathy dental stop + long oo (ō),ഢൂ ഢോ ധൂ,d: ദ ഡ ധ ഢ,,0
+319,ധൗ,U+0D27 U+0D57,cv,dhau,dhau (dental dha),ml-0d27-0d57-dhau-dental,d̪ʱau̯,dha: breathy dental d (aspirated) + au,,,,,breathy dental stop + au,ഢൗ,d: ദ ഡ ധ ഢ,,0
+320,ധം,U+0D27 U+0D02,cv,dham,dham (dental dha),ml-0d27-0d02-dham-dental,d̪ʱam,dha: breathy dental d (aspirated) + anusvara (m),,,,,breathy dental stop + anusvara,ഢം,d: ദ ഡ ധ ഢ,,0
+321,ധഃ,U+0D27 U+0D03,cv,dhah,dhah (dental dha),ml-0d27-0d03-dhah-dental,d̪ʱaha,dha: breathy dental d (aspirated) + visarga (h),,,,,breathy dental stop + visarga,ഢഃ,d: ദ ഡ ധ ഢ,,0
+322,ന്,U+0D28 U+0D4D,cv,n,n (dental na),ml-0d28-0d4d-n-dental,n̪,n with the tongue tip on the upper teeth (dental) + no vowel,,,,,dental nasal + consonant alone (chandrakkala),ണ് ൺ ൻ,nasals: ന ണ ങ ഞ,,0
+323,ന,U+0D28,cv,na,na (dental na),ml-0d28-na-dental,n̪a,n with the tongue tip on the upper teeth (dental) + inherent a,നാവ്,tongue (naavu),,,dental nasal + inherent a,ണ,nasals: ന ണ ങ ഞ,,0
+324,നാ,U+0D28 U+0D3E,cv,naa,naa (dental na),ml-0d28-0d3e-naa-dental,n̪aː,n with the tongue tip on the upper teeth (dental) + long aa,,,,,dental nasal + long aa,ണാ,nasals: ന ണ ങ ഞ,,0
+325,നി,U+0D28 U+0D3F,cv,ni,ni (dental na),ml-0d28-0d3f-ni-dental,n̪i,n with the tongue tip on the upper teeth (dental) + short i,,,,,dental nasal + short i,ണി,nasals: ന ണ ങ ഞ,,0
+326,നീ,U+0D28 U+0D40,cv,nee,"nee (dental na, long ii)",ml-0d28-0d40-nee-dental-long-i,n̪iː,n with the tongue tip on the upper teeth (dental) + long ī,,,,,dental nasal + long ii,ണീ ണേ നേ,nasals: ന ണ ങ ഞ,,0
+327,നു,U+0D28 U+0D41,cv,nu,nu (dental na),ml-0d28-0d41-nu-dental,n̪u,n with the tongue tip on the upper teeth (dental) + short u,,,,,dental nasal + short u,ണു,nasals: ന ണ ങ ഞ,,0
+328,നൂ,U+0D28 U+0D42,cv,noo,"noo (dental na, long uu)",ml-0d28-0d42-noo-dental-long-u,n̪uː,n with the tongue tip on the upper teeth (dental) + long ū,,,,,dental nasal + long uu,ണൂ ണോ നോ,nasals: ന ണ ങ ഞ,,0
+329,നൃ,U+0D28 U+0D43,cv,nru,nru (dental na),ml-0d28-0d43-nru-dental,n̪ɾɨ,n with the tongue tip on the upper teeth (dental) + vocalic r,,,,,dental nasal + vocalic r,ണൃ,nasals: ന ണ ങ ഞ,,0
+330,നെ,U+0D28 U+0D46,cv,ne,ne (dental na),ml-0d28-0d46-ne-dental,n̪e,n with the tongue tip on the upper teeth (dental) + short e,,,,,dental nasal + short e,ണെ,nasals: ന ണ ങ ഞ,,0
+331,നേ,U+0D28 U+0D47,cv,nee,"nee (dental na, long ee)",ml-0d28-0d47-nee-dental-long-e,n̪eː,n with the tongue tip on the upper teeth (dental) + long ē,,,,,dental nasal + long ee (ē),ണീ ണേ നീ,nasals: ന ണ ങ ഞ,,0
+332,നൈ,U+0D28 U+0D48,cv,nai,nai (dental na),ml-0d28-0d48-nai-dental,n̪ai̯,n with the tongue tip on the upper teeth (dental) + ai,,,,,dental nasal + ai,ണൈ,nasals: ന ണ ങ ഞ,,0
+333,നൊ,U+0D28 U+0D4A,cv,no,no (dental na),ml-0d28-0d4a-no-dental,n̪o,n with the tongue tip on the upper teeth (dental) + short o,,,,,dental nasal + short o,ണൊ,nasals: ന ണ ങ ഞ,,0
+334,നോ,U+0D28 U+0D4B,cv,noo,"noo (dental na, long oo)",ml-0d28-0d4b-noo-dental-long-o,n̪oː,n with the tongue tip on the upper teeth (dental) + long ō,,,,,dental nasal + long oo (ō),ണൂ ണോ നൂ,nasals: ന ണ ങ ഞ,,0
+335,നൗ,U+0D28 U+0D57,cv,nau,nau (dental na),ml-0d28-0d57-nau-dental,n̪au̯,n with the tongue tip on the upper teeth (dental) + au,,,,,dental nasal + au,ണൗ,nasals: ന ണ ങ ഞ,,0
+336,നം,U+0D28 U+0D02,cv,nam,nam (dental na),ml-0d28-0d02-nam-dental,n̪am,n with the tongue tip on the upper teeth (dental) + anusvara (m),,,,,dental nasal + anusvara,ണം,nasals: ന ണ ങ ഞ,,0
+337,നഃ,U+0D28 U+0D03,cv,nah,nah (dental na),ml-0d28-0d03-nah-dental,n̪aha,n with the tongue tip on the upper teeth (dental) + visarga (h),,,,,dental nasal + visarga,ണഃ,nasals: ന ണ ങ ഞ,,0
+338,പ്,U+0D2A U+0D4D,cv,p,p,ml-0d2a-0d4d-p,p,labial stop + no vowel,,,,,labial stop + consonant alone (chandrakkala),,,,0
+339,പ,U+0D2A,cv,pa,pa,ml-0d2a-pa,pa,labial stop + inherent a,പഴം,"banana, fruit (pazham)",,,labial stop + inherent a,,,,0
+340,പാ,U+0D2A U+0D3E,cv,paa,paa,ml-0d2a-0d3e-paa,paː,labial stop + long aa,,,,,labial stop + long aa,,,,0
+341,പി,U+0D2A U+0D3F,cv,pi,pi,ml-0d2a-0d3f-pi,pi,labial stop + short i,,,,,labial stop + short i,,,,0
+342,പീ,U+0D2A U+0D40,cv,pee,pee (long ii),ml-0d2a-0d40-pee-long-i,piː,labial stop + long ī,,,,,labial stop + long ii,പേ,,,0
+343,പു,U+0D2A U+0D41,cv,pu,pu,ml-0d2a-0d41-pu,pu,labial stop + short u,,,,,labial stop + short u,,,,0
+344,പൂ,U+0D2A U+0D42,cv,poo,poo (long uu),ml-0d2a-0d42-poo-long-u,puː,labial stop + long ū,,,,,labial stop + long uu,പോ,,,0
+345,പൃ,U+0D2A U+0D43,cv,pru,pru,ml-0d2a-0d43-pru,pɾɨ,labial stop + vocalic r,,,,,labial stop + vocalic r,,,,0
+346,പെ,U+0D2A U+0D46,cv,pe,pe,ml-0d2a-0d46-pe,pe,labial stop + short e,,,,,labial stop + short e,,,,0
+347,പേ,U+0D2A U+0D47,cv,pee,pee (long ee),ml-0d2a-0d47-pee-long-e,peː,labial stop + long ē,,,,,labial stop + long ee (ē),പീ,,,0
+348,പൈ,U+0D2A U+0D48,cv,pai,pai,ml-0d2a-0d48-pai,pai̯,labial stop + ai,,,,,labial stop + ai,,,,0
+349,പൊ,U+0D2A U+0D4A,cv,po,po,ml-0d2a-0d4a-po,po,labial stop + short o,,,,,labial stop + short o,,,,0
+350,പോ,U+0D2A U+0D4B,cv,poo,poo (long oo),ml-0d2a-0d4b-poo-long-o,poː,labial stop + long ō,,,,,labial stop + long oo (ō),പൂ,,,0
+351,പൗ,U+0D2A U+0D57,cv,pau,pau,ml-0d2a-0d57-pau,pau̯,labial stop + au,,,,,labial stop + au,,,,0
+352,പം,U+0D2A U+0D02,cv,pam,pam,ml-0d2a-0d02-pam,pam,labial stop + anusvara (m),,,,,labial stop + anusvara,,,,0
+353,പഃ,U+0D2A U+0D03,cv,pah,pah,ml-0d2a-0d03-pah,paha,labial stop + visarga (h),,,,,labial stop + visarga,,,,0
+354,ഫ്,U+0D2B U+0D4D,cv,ph,ph,ml-0d2b-0d4d-ph,pʰ,aspirated labial stop + no vowel,,,,,aspirated labial stop + consonant alone (chandrakkala),,,,0
+355,ഫ,U+0D2B,cv,pha,pha,ml-0d2b-pha,pʰa,aspirated labial stop + inherent a,ഫലം,"fruit, result (phalam)",,,aspirated labial stop + inherent a,,,,0
+356,ഫാ,U+0D2B U+0D3E,cv,phaa,phaa,ml-0d2b-0d3e-phaa,pʰaː,aspirated labial stop + long aa,,,,,aspirated labial stop + long aa,,,,0
+357,ഫി,U+0D2B U+0D3F,cv,phi,phi,ml-0d2b-0d3f-phi,pʰi,aspirated labial stop + short i,,,,,aspirated labial stop + short i,,,,0
+358,ഫീ,U+0D2B U+0D40,cv,phee,phee (long ii),ml-0d2b-0d40-phee-long-i,pʰiː,aspirated labial stop + long ī,,,,,aspirated labial stop + long ii,ഫേ,,,0
+359,ഫു,U+0D2B U+0D41,cv,phu,phu,ml-0d2b-0d41-phu,pʰu,aspirated labial stop + short u,,,,,aspirated labial stop + short u,,,,0
+360,ഫൂ,U+0D2B U+0D42,cv,phoo,phoo (long uu),ml-0d2b-0d42-phoo-long-u,pʰuː,aspirated labial stop + long ū,,,,,aspirated labial stop + long uu,ഫോ,,,0
+361,ഫൃ,U+0D2B U+0D43,cv,phru,phru,ml-0d2b-0d43-phru,pʰɾɨ,aspirated labial stop + vocalic r,,,,,aspirated labial stop + vocalic r,,,,0
+362,ഫെ,U+0D2B U+0D46,cv,phe,phe,ml-0d2b-0d46-phe,pʰe,aspirated labial stop + short e,,,,,aspirated labial stop + short e,,,,0
+363,ഫേ,U+0D2B U+0D47,cv,phee,phee (long ee),ml-0d2b-0d47-phee-long-e,pʰeː,aspirated labial stop + long ē,,,,,aspirated labial stop + long ee (ē),ഫീ,,,0
+364,ഫൈ,U+0D2B U+0D48,cv,phai,phai,ml-0d2b-0d48-phai,pʰai̯,aspirated labial stop + ai,,,,,aspirated labial stop + ai,,,,0
+365,ഫൊ,U+0D2B U+0D4A,cv,pho,pho,ml-0d2b-0d4a-pho,pʰo,aspirated labial stop + short o,,,,,aspirated labial stop + short o,,,,0
+366,ഫോ,U+0D2B U+0D4B,cv,phoo,phoo (long oo),ml-0d2b-0d4b-phoo-long-o,pʰoː,aspirated labial stop + long ō,,,,,aspirated labial stop + long oo (ō),ഫൂ,,,0
+367,ഫൗ,U+0D2B U+0D57,cv,phau,phau,ml-0d2b-0d57-phau,pʰau̯,aspirated labial stop + au,,,,,aspirated labial stop + au,,,,0
+368,ഫം,U+0D2B U+0D02,cv,pham,pham,ml-0d2b-0d02-pham,pʰam,aspirated labial stop + anusvara (m),,,,,aspirated labial stop + anusvara,,,,0
+369,ഫഃ,U+0D2B U+0D03,cv,phah,phah,ml-0d2b-0d03-phah,pʰaha,aspirated labial stop + visarga (h),,,,,aspirated labial stop + visarga,,,,0
+370,ബ്,U+0D2C U+0D4D,cv,b,b,ml-0d2c-0d4d-b,b,voiced labial stop + no vowel,,,,,voiced labial stop + consonant alone (chandrakkala),,,,0
+371,ബ,U+0D2C,cv,ba,ba,ml-0d2c-ba,ba,voiced labial stop + inherent a,ബസ്,bus,,,voiced labial stop + inherent a,,,,0
+372,ബാ,U+0D2C U+0D3E,cv,baa,baa,ml-0d2c-0d3e-baa,baː,voiced labial stop + long aa,,,,,voiced labial stop + long aa,,,,0
+373,ബി,U+0D2C U+0D3F,cv,bi,bi,ml-0d2c-0d3f-bi,bi,voiced labial stop + short i,,,,,voiced labial stop + short i,,,,0
+374,ബീ,U+0D2C U+0D40,cv,bee,bee (long ii),ml-0d2c-0d40-bee-long-i,biː,voiced labial stop + long ī,,,,,voiced labial stop + long ii,ബേ,,,0
+375,ബു,U+0D2C U+0D41,cv,bu,bu,ml-0d2c-0d41-bu,bu,voiced labial stop + short u,,,,,voiced labial stop + short u,,,,0
+376,ബൂ,U+0D2C U+0D42,cv,boo,boo (long uu),ml-0d2c-0d42-boo-long-u,buː,voiced labial stop + long ū,,,,,voiced labial stop + long uu,ബോ,,,0
+377,ബൃ,U+0D2C U+0D43,cv,bru,bru,ml-0d2c-0d43-bru,bɾɨ,voiced labial stop + vocalic r,,,,,voiced labial stop + vocalic r,,,,0
+378,ബെ,U+0D2C U+0D46,cv,be,be,ml-0d2c-0d46-be,be,voiced labial stop + short e,,,,,voiced labial stop + short e,,,,0
+379,ബേ,U+0D2C U+0D47,cv,bee,bee (long ee),ml-0d2c-0d47-bee-long-e,beː,voiced labial stop + long ē,,,,,voiced labial stop + long ee (ē),ബീ,,,0
+380,ബൈ,U+0D2C U+0D48,cv,bai,bai,ml-0d2c-0d48-bai,bai̯,voiced labial stop + ai,,,,,voiced labial stop + ai,,,,0
+381,ബൊ,U+0D2C U+0D4A,cv,bo,bo,ml-0d2c-0d4a-bo,bo,voiced labial stop + short o,,,,,voiced labial stop + short o,,,,0
+382,ബോ,U+0D2C U+0D4B,cv,boo,boo (long oo),ml-0d2c-0d4b-boo-long-o,boː,voiced labial stop + long ō,,,,,voiced labial stop + long oo (ō),ബൂ,,,0
+383,ബൗ,U+0D2C U+0D57,cv,bau,bau,ml-0d2c-0d57-bau,bau̯,voiced labial stop + au,,,,,voiced labial stop + au,,,,0
+384,ബം,U+0D2C U+0D02,cv,bam,bam,ml-0d2c-0d02-bam,bam,voiced labial stop + anusvara (m),,,,,voiced labial stop + anusvara,,,,0
+385,ബഃ,U+0D2C U+0D03,cv,bah,bah,ml-0d2c-0d03-bah,baha,voiced labial stop + visarga (h),,,,,voiced labial stop + visarga,,,,0
+386,ഭ്,U+0D2D U+0D4D,cv,bh,bh,ml-0d2d-0d4d-bh,bʱ,breathy labial stop + no vowel,,,,,breathy labial stop + consonant alone (chandrakkala),,,,0
+387,ഭ,U+0D2D,cv,bha,bha,ml-0d2d-bha,bʱa,breathy labial stop + inherent a,ഭയം,fear (bhayam),,,breathy labial stop + inherent a,,,,0
+388,ഭാ,U+0D2D U+0D3E,cv,bhaa,bhaa,ml-0d2d-0d3e-bhaa,bʱaː,breathy labial stop + long aa,,,,,breathy labial stop + long aa,,,,0
+389,ഭി,U+0D2D U+0D3F,cv,bhi,bhi,ml-0d2d-0d3f-bhi,bʱi,breathy labial stop + short i,,,,,breathy labial stop + short i,,,,0
+390,ഭീ,U+0D2D U+0D40,cv,bhee,bhee (long ii),ml-0d2d-0d40-bhee-long-i,bʱiː,breathy labial stop + long ī,,,,,breathy labial stop + long ii,ഭേ,,,0
+391,ഭു,U+0D2D U+0D41,cv,bhu,bhu,ml-0d2d-0d41-bhu,bʱu,breathy labial stop + short u,,,,,breathy labial stop + short u,,,,0
+392,ഭൂ,U+0D2D U+0D42,cv,bhoo,bhoo (long uu),ml-0d2d-0d42-bhoo-long-u,bʱuː,breathy labial stop + long ū,,,,,breathy labial stop + long uu,ഭോ,,,0
+393,ഭൃ,U+0D2D U+0D43,cv,bhru,bhru,ml-0d2d-0d43-bhru,bʱɾɨ,breathy labial stop + vocalic r,,,,,breathy labial stop + vocalic r,,,,0
+394,ഭെ,U+0D2D U+0D46,cv,bhe,bhe,ml-0d2d-0d46-bhe,bʱe,breathy labial stop + short e,,,,,breathy labial stop + short e,,,,0
+395,ഭേ,U+0D2D U+0D47,cv,bhee,bhee (long ee),ml-0d2d-0d47-bhee-long-e,bʱeː,breathy labial stop + long ē,,,,,breathy labial stop + long ee (ē),ഭീ,,,0
+396,ഭൈ,U+0D2D U+0D48,cv,bhai,bhai,ml-0d2d-0d48-bhai,bʱai̯,breathy labial stop + ai,,,,,breathy labial stop + ai,,,,0
+397,ഭൊ,U+0D2D U+0D4A,cv,bho,bho,ml-0d2d-0d4a-bho,bʱo,breathy labial stop + short o,,,,,breathy labial stop + short o,,,,0
+398,ഭോ,U+0D2D U+0D4B,cv,bhoo,bhoo (long oo),ml-0d2d-0d4b-bhoo-long-o,bʱoː,breathy labial stop + long ō,,,,,breathy labial stop + long oo (ō),ഭൂ,,,0
+399,ഭൗ,U+0D2D U+0D57,cv,bhau,bhau,ml-0d2d-0d57-bhau,bʱau̯,breathy labial stop + au,,,,,breathy labial stop + au,,,,0
+400,ഭം,U+0D2D U+0D02,cv,bham,bham,ml-0d2d-0d02-bham,bʱam,breathy labial stop + anusvara (m),,,,,breathy labial stop + anusvara,,,,0
+401,ഭഃ,U+0D2D U+0D03,cv,bhah,bhah,ml-0d2d-0d03-bhah,bʱaha,breathy labial stop + visarga (h),,,,,breathy labial stop + visarga,,,,0
+402,മ്,U+0D2E U+0D4D,cv,m,m,ml-0d2e-0d4d-m,m,labial nasal + no vowel,,,,,labial nasal + consonant alone (chandrakkala),,,,0
+403,മ,U+0D2E,cv,ma,ma,ml-0d2e-ma,ma,labial nasal + inherent a,മരം,tree (maram),,,labial nasal + inherent a,,,,0
+404,മാ,U+0D2E U+0D3E,cv,maa,maa,ml-0d2e-0d3e-maa,maː,labial nasal + long aa,,,,,labial nasal + long aa,,,,0
+405,മി,U+0D2E U+0D3F,cv,mi,mi,ml-0d2e-0d3f-mi,mi,labial nasal + short i,,,,,labial nasal + short i,,,,0
+406,മീ,U+0D2E U+0D40,cv,mee,mee (long ii),ml-0d2e-0d40-mee-long-i,miː,labial nasal + long ī,,,,,labial nasal + long ii,മേ,,,0
+407,മു,U+0D2E U+0D41,cv,mu,mu,ml-0d2e-0d41-mu,mu,labial nasal + short u,,,,,labial nasal + short u,,,,0
+408,മൂ,U+0D2E U+0D42,cv,moo,moo (long uu),ml-0d2e-0d42-moo-long-u,muː,labial nasal + long ū,,,,,labial nasal + long uu,മോ,,,0
+409,മൃ,U+0D2E U+0D43,cv,mru,mru,ml-0d2e-0d43-mru,mɾɨ,labial nasal + vocalic r,,,,,labial nasal + vocalic r,,,,0
+410,മെ,U+0D2E U+0D46,cv,me,me,ml-0d2e-0d46-me,me,labial nasal + short e,,,,,labial nasal + short e,,,,0
+411,മേ,U+0D2E U+0D47,cv,mee,mee (long ee),ml-0d2e-0d47-mee-long-e,meː,labial nasal + long ē,,,,,labial nasal + long ee (ē),മീ,,,0
+412,മൈ,U+0D2E U+0D48,cv,mai,mai,ml-0d2e-0d48-mai,mai̯,labial nasal + ai,,,,,labial nasal + ai,,,,0
+413,മൊ,U+0D2E U+0D4A,cv,mo,mo,ml-0d2e-0d4a-mo,mo,labial nasal + short o,,,,,labial nasal + short o,,,,0
+414,മോ,U+0D2E U+0D4B,cv,moo,moo (long oo),ml-0d2e-0d4b-moo-long-o,moː,labial nasal + long ō,,,,,labial nasal + long oo (ō),മൂ,,,0
+415,മൗ,U+0D2E U+0D57,cv,mau,mau,ml-0d2e-0d57-mau,mau̯,labial nasal + au,,,,,labial nasal + au,,,,0
+416,മം,U+0D2E U+0D02,cv,mam,mam,ml-0d2e-0d02-mam,mam,labial nasal + anusvara (m),,,,,labial nasal + anusvara,,,,0
+417,മഃ,U+0D2E U+0D03,cv,mah,mah,ml-0d2e-0d03-mah,maha,labial nasal + visarga (h),,,,,labial nasal + visarga,,,,0
+418,യ്,U+0D2F U+0D4D,cv,y,y,ml-0d2f-0d4d-y,j,palatal glide + no vowel,,,,,palatal glide + consonant alone (chandrakkala),,,,0
+419,യ,U+0D2F,cv,ya,ya,ml-0d2f-ya,ja,palatal glide + inherent a,യാത്ര,journey (yaathra),,,palatal glide + inherent a,,,,0
+420,യാ,U+0D2F U+0D3E,cv,yaa,yaa,ml-0d2f-0d3e-yaa,jaː,palatal glide + long aa,,,,,palatal glide + long aa,,,,0
+421,യി,U+0D2F U+0D3F,cv,yi,yi,ml-0d2f-0d3f-yi,ji,palatal glide + short i,,,,,palatal glide + short i,,,,0
+422,യീ,U+0D2F U+0D40,cv,yee,yee (long ii),ml-0d2f-0d40-yee-long-i,jiː,palatal glide + long ī,,,,,palatal glide + long ii,യേ,,,0
+423,യു,U+0D2F U+0D41,cv,yu,yu,ml-0d2f-0d41-yu,ju,palatal glide + short u,,,,,palatal glide + short u,,,,0
+424,യൂ,U+0D2F U+0D42,cv,yoo,yoo (long uu),ml-0d2f-0d42-yoo-long-u,juː,palatal glide + long ū,,,,,palatal glide + long uu,യോ,,,0
+425,യൃ,U+0D2F U+0D43,cv,yru,yru,ml-0d2f-0d43-yru,jɾɨ,palatal glide + vocalic r,,,,,palatal glide + vocalic r,,,,0
+426,യെ,U+0D2F U+0D46,cv,ye,ye,ml-0d2f-0d46-ye,je,palatal glide + short e,,,,,palatal glide + short e,,,,0
+427,യേ,U+0D2F U+0D47,cv,yee,yee (long ee),ml-0d2f-0d47-yee-long-e,jeː,palatal glide + long ē,,,,,palatal glide + long ee (ē),യീ,,,0
+428,യൈ,U+0D2F U+0D48,cv,yai,yai,ml-0d2f-0d48-yai,jai̯,palatal glide + ai,,,,,palatal glide + ai,,,,0
+429,യൊ,U+0D2F U+0D4A,cv,yo,yo,ml-0d2f-0d4a-yo,jo,palatal glide + short o,,,,,palatal glide + short o,,,,0
+430,യോ,U+0D2F U+0D4B,cv,yoo,yoo (long oo),ml-0d2f-0d4b-yoo-long-o,joː,palatal glide + long ō,,,,,palatal glide + long oo (ō),യൂ,,,0
+431,യൗ,U+0D2F U+0D57,cv,yau,yau,ml-0d2f-0d57-yau,jau̯,palatal glide + au,,,,,palatal glide + au,,,,0
+432,യം,U+0D2F U+0D02,cv,yam,yam,ml-0d2f-0d02-yam,jam,palatal glide + anusvara (m),,,,,palatal glide + anusvara,,,,0
+433,യഃ,U+0D2F U+0D03,cv,yah,yah,ml-0d2f-0d03-yah,jaha,palatal glide + visarga (h),,,,,palatal glide + visarga,,,,0
+434,ര്,U+0D30 U+0D4D,cv,r,r (tap ra),ml-0d30-0d4d-r-tap,ɾ,r as a single quick tap of the tongue tip + no vowel,,,,,tap + consonant alone (chandrakkala),റ് ർ,rhotics: ര റ,,0
+435,ര,U+0D30,cv,ra,ra (tap ra),ml-0d30-ra-tap,ɾa,r as a single quick tap of the tongue tip + inherent a,രസം,taste (rasam),,,tap + inherent a,റ,rhotics: ര റ,,0
+436,രാ,U+0D30 U+0D3E,cv,raa,raa (tap ra),ml-0d30-0d3e-raa-tap,ɾaː,r as a single quick tap of the tongue tip + long aa,,,,,tap + long aa,റാ,rhotics: ര റ,,0
+437,രി,U+0D30 U+0D3F,cv,ri,ri (tap ra),ml-0d30-0d3f-ri-tap,ɾi,r as a single quick tap of the tongue tip + short i,,,,,tap + short i,റി,rhotics: ര റ,,0
+438,രീ,U+0D30 U+0D40,cv,ree,"ree (tap ra, long ii)",ml-0d30-0d40-ree-tap-long-i,ɾiː,r as a single quick tap of the tongue tip + long ī,,,,,tap + long ii,രേ റീ റേ,rhotics: ര റ,,0
+439,രു,U+0D30 U+0D41,cv,ru,ru (tap ra),ml-0d30-0d41-ru-tap,ɾu,r as a single quick tap of the tongue tip + short u,,,,,tap + short u,ഋ റു,rhotics: ര റ,,0
+440,രൂ,U+0D30 U+0D42,cv,roo,"roo (tap ra, long uu)",ml-0d30-0d42-roo-tap-long-u,ɾuː,r as a single quick tap of the tongue tip + long ū,,,,,tap + long uu,രോ റൂ റോ,rhotics: ര റ,,0
+441,രൃ,U+0D30 U+0D43,cv,rru,rru (tap ra),ml-0d30-0d43-rru-tap,ɾɾɨ,r as a single quick tap of the tongue tip + vocalic r,,,,,tap + vocalic r,റൃ,rhotics: ര റ,,0
+442,രെ,U+0D30 U+0D46,cv,re,re (tap ra),ml-0d30-0d46-re-tap,ɾe,r as a single quick tap of the tongue tip + short e,,,,,tap + short e,റെ,rhotics: ര റ,,0
+443,രേ,U+0D30 U+0D47,cv,ree,"ree (tap ra, long ee)",ml-0d30-0d47-ree-tap-long-e,ɾeː,r as a single quick tap of the tongue tip + long ē,,,,,tap + long ee (ē),രീ റീ റേ,rhotics: ര റ,,0
+444,രൈ,U+0D30 U+0D48,cv,rai,rai (tap ra),ml-0d30-0d48-rai-tap,ɾai̯,r as a single quick tap of the tongue tip + ai,,,,,tap + ai,റൈ,rhotics: ര റ,,0
+445,രൊ,U+0D30 U+0D4A,cv,ro,ro (tap ra),ml-0d30-0d4a-ro-tap,ɾo,r as a single quick tap of the tongue tip + short o,,,,,tap + short o,റൊ,rhotics: ര റ,,0
+446,രോ,U+0D30 U+0D4B,cv,roo,"roo (tap ra, long oo)",ml-0d30-0d4b-roo-tap-long-o,ɾoː,r as a single quick tap of the tongue tip + long ō,,,,,tap + long oo (ō),രൂ റൂ റോ,rhotics: ര റ,,0
+447,രൗ,U+0D30 U+0D57,cv,rau,rau (tap ra),ml-0d30-0d57-rau-tap,ɾau̯,r as a single quick tap of the tongue tip + au,,,,,tap + au,റൗ,rhotics: ര റ,,0
+448,രം,U+0D30 U+0D02,cv,ram,ram (tap ra),ml-0d30-0d02-ram-tap,ɾam,r as a single quick tap of the tongue tip + anusvara (m),,,,,tap + anusvara,റം,rhotics: ര റ,,0
+449,രഃ,U+0D30 U+0D03,cv,rah,rah (tap ra),ml-0d30-0d03-rah-tap,ɾaha,r as a single quick tap of the tongue tip + visarga (h),,,,,tap + visarga,റഃ,rhotics: ര റ,,0
+450,ല്,U+0D32 U+0D4D,cv,l,l (plain la),ml-0d32-0d4d-l-plain,l,l with the tongue tip at the ridge behind the teeth + no vowel,,,,,alveolar lateral + consonant alone (chandrakkala),ള് ൽ ൾ,laterals: ല ള ഴ,,0
+451,ല,U+0D32,cv,la,la (plain la),ml-0d32-la-plain,la,l with the tongue tip at the ridge behind the teeth + inherent a,ലോകം,world (lokam),,,alveolar lateral + inherent a,ള,laterals: ല ള ഴ,,0
+452,ലാ,U+0D32 U+0D3E,cv,laa,laa (plain la),ml-0d32-0d3e-laa-plain,laː,l with the tongue tip at the ridge behind the teeth + long aa,,,,,alveolar lateral + long aa,ളാ,laterals: ല ള ഴ,,0
+453,ലി,U+0D32 U+0D3F,cv,li,li (plain la),ml-0d32-0d3f-li-plain,li,l with the tongue tip at the ridge behind the teeth + short i,,,,,alveolar lateral + short i,ളി,laterals: ല ള ഴ,,0
+454,ലീ,U+0D32 U+0D40,cv,lee,"lee (plain la, long ii)",ml-0d32-0d40-lee-plain-long-i,liː,l with the tongue tip at the ridge behind the teeth + long ī,,,,,alveolar lateral + long ii,ലേ ളീ ളേ,laterals: ല ള ഴ,,0
+455,ലു,U+0D32 U+0D41,cv,lu,lu (plain la),ml-0d32-0d41-lu-plain,lu,l with the tongue tip at the ridge behind the teeth + short u,,,,,alveolar lateral + short u,ളു,laterals: ല ള ഴ,,0
+456,ലൂ,U+0D32 U+0D42,cv,loo,"loo (plain la, long uu)",ml-0d32-0d42-loo-plain-long-u,luː,l with the tongue tip at the ridge behind the teeth + long ū,,,,,alveolar lateral + long uu,ലോ ളൂ ളോ,laterals: ല ള ഴ,,0
+457,ലൃ,U+0D32 U+0D43,cv,lru,lru (plain la),ml-0d32-0d43-lru-plain,lɾɨ,l with the tongue tip at the ridge behind the teeth + vocalic r,,,,,alveolar lateral + vocalic r,ഌ ളൃ,laterals: ല ള ഴ,,0
+458,ലെ,U+0D32 U+0D46,cv,le,le (plain la),ml-0d32-0d46-le-plain,le,l with the tongue tip at the ridge behind the teeth + short e,,,,,alveolar lateral + short e,ളെ,laterals: ല ള ഴ,,0
+459,ലേ,U+0D32 U+0D47,cv,lee,"lee (plain la, long ee)",ml-0d32-0d47-lee-plain-long-e,leː,l with the tongue tip at the ridge behind the teeth + long ē,,,,,alveolar lateral + long ee (ē),ലീ ളീ ളേ,laterals: ല ള ഴ,,0
+460,ലൈ,U+0D32 U+0D48,cv,lai,lai (plain la),ml-0d32-0d48-lai-plain,lai̯,l with the tongue tip at the ridge behind the teeth + ai,,,,,alveolar lateral + ai,ളൈ,laterals: ല ള ഴ,,0
+461,ലൊ,U+0D32 U+0D4A,cv,lo,lo (plain la),ml-0d32-0d4a-lo-plain,lo,l with the tongue tip at the ridge behind the teeth + short o,,,,,alveolar lateral + short o,ളൊ,laterals: ല ള ഴ,,0
+462,ലോ,U+0D32 U+0D4B,cv,loo,"loo (plain la, long oo)",ml-0d32-0d4b-loo-plain-long-o,loː,l with the tongue tip at the ridge behind the teeth + long ō,,,,,alveolar lateral + long oo (ō),ലൂ ളൂ ളോ,laterals: ല ള ഴ,,0
+463,ലൗ,U+0D32 U+0D57,cv,lau,lau (plain la),ml-0d32-0d57-lau-plain,lau̯,l with the tongue tip at the ridge behind the teeth + au,,,,,alveolar lateral + au,ളൗ,laterals: ല ള ഴ,,0
+464,ലം,U+0D32 U+0D02,cv,lam,lam (plain la),ml-0d32-0d02-lam-plain,lam,l with the tongue tip at the ridge behind the teeth + anusvara (m),,,,,alveolar lateral + anusvara,ളം,laterals: ല ള ഴ,,0
+465,ലഃ,U+0D32 U+0D03,cv,lah,lah (plain la),ml-0d32-0d03-lah-plain,laha,l with the tongue tip at the ridge behind the teeth + visarga (h),,,,,alveolar lateral + visarga,ളഃ,laterals: ല ള ഴ,,0
+466,വ്,U+0D35 U+0D4D,cv,v,v,ml-0d35-0d4d-v,ʋ,labiodental approximant + no vowel,,,,,labiodental approximant + consonant alone (chandrakkala),,,,0
+467,വ,U+0D35,cv,va,va,ml-0d35-va,ʋa,labiodental approximant + inherent a,വീട്,house (veedu),,,labiodental approximant + inherent a,,,,0
+468,വാ,U+0D35 U+0D3E,cv,vaa,vaa,ml-0d35-0d3e-vaa,ʋaː,labiodental approximant + long aa,,,,,labiodental approximant + long aa,,,,0
+469,വി,U+0D35 U+0D3F,cv,vi,vi,ml-0d35-0d3f-vi,ʋi,labiodental approximant + short i,,,,,labiodental approximant + short i,,,,0
+470,വീ,U+0D35 U+0D40,cv,vee,vee (long ii),ml-0d35-0d40-vee-long-i,ʋiː,labiodental approximant + long ī,,,,,labiodental approximant + long ii,വേ,,,0
+471,വു,U+0D35 U+0D41,cv,vu,vu,ml-0d35-0d41-vu,ʋu,labiodental approximant + short u,,,,,labiodental approximant + short u,,,,0
+472,വൂ,U+0D35 U+0D42,cv,voo,voo (long uu),ml-0d35-0d42-voo-long-u,ʋuː,labiodental approximant + long ū,,,,,labiodental approximant + long uu,വോ,,,0
+473,വൃ,U+0D35 U+0D43,cv,vru,vru,ml-0d35-0d43-vru,ʋɾɨ,labiodental approximant + vocalic r,,,,,labiodental approximant + vocalic r,,,,0
+474,വെ,U+0D35 U+0D46,cv,ve,ve,ml-0d35-0d46-ve,ʋe,labiodental approximant + short e,,,,,labiodental approximant + short e,,,,0
+475,വേ,U+0D35 U+0D47,cv,vee,vee (long ee),ml-0d35-0d47-vee-long-e,ʋeː,labiodental approximant + long ē,,,,,labiodental approximant + long ee (ē),വീ,,,0
+476,വൈ,U+0D35 U+0D48,cv,vai,vai,ml-0d35-0d48-vai,ʋai̯,labiodental approximant + ai,,,,,labiodental approximant + ai,,,,0
+477,വൊ,U+0D35 U+0D4A,cv,vo,vo,ml-0d35-0d4a-vo,ʋo,labiodental approximant + short o,,,,,labiodental approximant + short o,,,,0
+478,വോ,U+0D35 U+0D4B,cv,voo,voo (long oo),ml-0d35-0d4b-voo-long-o,ʋoː,labiodental approximant + long ō,,,,,labiodental approximant + long oo (ō),വൂ,,,0
+479,വൗ,U+0D35 U+0D57,cv,vau,vau,ml-0d35-0d57-vau,ʋau̯,labiodental approximant + au,,,,,labiodental approximant + au,,,,0
+480,വം,U+0D35 U+0D02,cv,vam,vam,ml-0d35-0d02-vam,ʋam,labiodental approximant + anusvara (m),,,,,labiodental approximant + anusvara,,,,0
+481,വഃ,U+0D35 U+0D03,cv,vah,vah,ml-0d35-0d03-vah,ʋaha,labiodental approximant + visarga (h),,,,,labiodental approximant + visarga,,,,0
+482,ശ്,U+0D36 U+0D4D,cv,sh,sh (soft sha),ml-0d36-0d4d-sh-soft,ɕ,soft sh: blade of the tongue flat against the hard palate (palatal ś) + no vowel,,,,,soft sha: palatal sibilant + consonant alone (chandrakkala),ഷ്,sibilants: ശ ഷ സ,,0
+483,ശ,U+0D36,cv,sha,sha (soft sha),ml-0d36-sha-soft,ɕa,soft sh: blade of the tongue flat against the hard palate (palatal ś) + inherent a,ശരി,"yes, correct (shari)",,,soft sha: palatal sibilant + inherent a,ഷ,sibilants: ശ ഷ സ,,0
+484,ശാ,U+0D36 U+0D3E,cv,shaa,shaa (soft sha),ml-0d36-0d3e-shaa-soft,ɕaː,soft sh: blade of the tongue flat against the hard palate (palatal ś) + long aa,,,,,soft sha: palatal sibilant + long aa,ഷാ,sibilants: ശ ഷ സ,,0
+485,ശി,U+0D36 U+0D3F,cv,shi,shi (soft sha),ml-0d36-0d3f-shi-soft,ɕi,soft sh: blade of the tongue flat against the hard palate (palatal ś) + short i,,,,,soft sha: palatal sibilant + short i,ഷി,sibilants: ശ ഷ സ,,0
+486,ശീ,U+0D36 U+0D40,cv,shee,"shee (soft sha, long ii)",ml-0d36-0d40-shee-soft-long-i,ɕiː,soft sh: blade of the tongue flat against the hard palate (palatal ś) + long ī,,,,,soft sha: palatal sibilant + long ii,ശേ ഷീ ഷേ,sibilants: ശ ഷ സ,,0
+487,ശു,U+0D36 U+0D41,cv,shu,shu (soft sha),ml-0d36-0d41-shu-soft,ɕu,soft sh: blade of the tongue flat against the hard palate (palatal ś) + short u,,,,,soft sha: palatal sibilant + short u,ഷു,sibilants: ശ ഷ സ,,0
+488,ശൂ,U+0D36 U+0D42,cv,shoo,"shoo (soft sha, long uu)",ml-0d36-0d42-shoo-soft-long-u,ɕuː,soft sh: blade of the tongue flat against the hard palate (palatal ś) + long ū,,,,,soft sha: palatal sibilant + long uu,ശോ ഷൂ ഷോ,sibilants: ശ ഷ സ,,0
+489,ശൃ,U+0D36 U+0D43,cv,shru,shru (soft sha),ml-0d36-0d43-shru-soft,ɕɾɨ,soft sh: blade of the tongue flat against the hard palate (palatal ś) + vocalic r,,,,,soft sha: palatal sibilant + vocalic r,ഷൃ,sibilants: ശ ഷ സ,,0
+490,ശെ,U+0D36 U+0D46,cv,she,she (soft sha),ml-0d36-0d46-she-soft,ɕe,soft sh: blade of the tongue flat against the hard palate (palatal ś) + short e,,,,,soft sha: palatal sibilant + short e,ഷെ,sibilants: ശ ഷ സ,,0
+491,ശേ,U+0D36 U+0D47,cv,shee,"shee (soft sha, long ee)",ml-0d36-0d47-shee-soft-long-e,ɕeː,soft sh: blade of the tongue flat against the hard palate (palatal ś) + long ē,,,,,soft sha: palatal sibilant + long ee (ē),ശീ ഷീ ഷേ,sibilants: ശ ഷ സ,,0
+492,ശൈ,U+0D36 U+0D48,cv,shai,shai (soft sha),ml-0d36-0d48-shai-soft,ɕai̯,soft sh: blade of the tongue flat against the hard palate (palatal ś) + ai,,,,,soft sha: palatal sibilant + ai,ഷൈ,sibilants: ശ ഷ സ,,0
+493,ശൊ,U+0D36 U+0D4A,cv,sho,sho (soft sha),ml-0d36-0d4a-sho-soft,ɕo,soft sh: blade of the tongue flat against the hard palate (palatal ś) + short o,,,,,soft sha: palatal sibilant + short o,ഷൊ,sibilants: ശ ഷ സ,,0
+494,ശോ,U+0D36 U+0D4B,cv,shoo,"shoo (soft sha, long oo)",ml-0d36-0d4b-shoo-soft-long-o,ɕoː,soft sh: blade of the tongue flat against the hard palate (palatal ś) + long ō,,,,,soft sha: palatal sibilant + long oo (ō),ശൂ ഷൂ ഷോ,sibilants: ശ ഷ സ,,0
+495,ശൗ,U+0D36 U+0D57,cv,shau,shau (soft sha),ml-0d36-0d57-shau-soft,ɕau̯,soft sh: blade of the tongue flat against the hard palate (palatal ś) + au,,,,,soft sha: palatal sibilant + au,ഷൗ,sibilants: ശ ഷ സ,,0
+496,ശം,U+0D36 U+0D02,cv,sham,sham (soft sha),ml-0d36-0d02-sham-soft,ɕam,soft sh: blade of the tongue flat against the hard palate (palatal ś) + anusvara (m),,,,,soft sha: palatal sibilant + anusvara,ഷം,sibilants: ശ ഷ സ,,0
+497,ശഃ,U+0D36 U+0D03,cv,shah,shah (soft sha),ml-0d36-0d03-shah-soft,ɕaha,soft sh: blade of the tongue flat against the hard palate (palatal ś) + visarga (h),,,,,soft sha: palatal sibilant + visarga,ഷഃ,sibilants: ശ ഷ സ,,0
+498,ഷ്,U+0D37 U+0D4D,cv,sh,sh (hard sha),ml-0d37-0d4d-sh-hard,ʂ,hard sh: tongue tip curled back (retroflex ṣ) + no vowel,,,,,sha: retroflex sibilant + consonant alone (chandrakkala),ശ്,sibilants: ശ ഷ സ,,0
+499,ഷ,U+0D37,cv,sha,sha (hard sha),ml-0d37-sha-hard,ʂa,hard sh: tongue tip curled back (retroflex ṣ) + inherent a,കഷ്ടം,hardship (kashtam),,,sha: retroflex sibilant + inherent a,ശ,sibilants: ശ ഷ സ,,0
+500,ഷാ,U+0D37 U+0D3E,cv,shaa,shaa (hard sha),ml-0d37-0d3e-shaa-hard,ʂaː,hard sh: tongue tip curled back (retroflex ṣ) + long aa,,,,,sha: retroflex sibilant + long aa,ശാ,sibilants: ശ ഷ സ,,0
+501,ഷി,U+0D37 U+0D3F,cv,shi,shi (hard sha),ml-0d37-0d3f-shi-hard,ʂi,hard sh: tongue tip curled back (retroflex ṣ) + short i,,,,,sha: retroflex sibilant + short i,ശി,sibilants: ശ ഷ സ,,0
+502,ഷീ,U+0D37 U+0D40,cv,shee,"shee (hard sha, long ii)",ml-0d37-0d40-shee-hard-long-i,ʂiː,hard sh: tongue tip curled back (retroflex ṣ) + long ī,,,,,sha: retroflex sibilant + long ii,ശീ ശേ ഷേ,sibilants: ശ ഷ സ,,0
+503,ഷു,U+0D37 U+0D41,cv,shu,shu (hard sha),ml-0d37-0d41-shu-hard,ʂu,hard sh: tongue tip curled back (retroflex ṣ) + short u,,,,,sha: retroflex sibilant + short u,ശു,sibilants: ശ ഷ സ,,0
+504,ഷൂ,U+0D37 U+0D42,cv,shoo,"shoo (hard sha, long uu)",ml-0d37-0d42-shoo-hard-long-u,ʂuː,hard sh: tongue tip curled back (retroflex ṣ) + long ū,,,,,sha: retroflex sibilant + long uu,ശൂ ശോ ഷോ,sibilants: ശ ഷ സ,,0
+505,ഷൃ,U+0D37 U+0D43,cv,shru,shru (hard sha),ml-0d37-0d43-shru-hard,ʂɾɨ,hard sh: tongue tip curled back (retroflex ṣ) + vocalic r,,,,,sha: retroflex sibilant + vocalic r,ശൃ,sibilants: ശ ഷ സ,,0
+506,ഷെ,U+0D37 U+0D46,cv,she,she (hard sha),ml-0d37-0d46-she-hard,ʂe,hard sh: tongue tip curled back (retroflex ṣ) + short e,,,,,sha: retroflex sibilant + short e,ശെ,sibilants: ശ ഷ സ,,0
+507,ഷേ,U+0D37 U+0D47,cv,shee,"shee (hard sha, long ee)",ml-0d37-0d47-shee-hard-long-e,ʂeː,hard sh: tongue tip curled back (retroflex ṣ) + long ē,,,,,sha: retroflex sibilant + long ee (ē),ശീ ശേ ഷീ,sibilants: ശ ഷ സ,,0
+508,ഷൈ,U+0D37 U+0D48,cv,shai,shai (hard sha),ml-0d37-0d48-shai-hard,ʂai̯,hard sh: tongue tip curled back (retroflex ṣ) + ai,,,,,sha: retroflex sibilant + ai,ശൈ,sibilants: ശ ഷ സ,,0
+509,ഷൊ,U+0D37 U+0D4A,cv,sho,sho (hard sha),ml-0d37-0d4a-sho-hard,ʂo,hard sh: tongue tip curled back (retroflex ṣ) + short o,,,,,sha: retroflex sibilant + short o,ശൊ,sibilants: ശ ഷ സ,,0
+510,ഷോ,U+0D37 U+0D4B,cv,shoo,"shoo (hard sha, long oo)",ml-0d37-0d4b-shoo-hard-long-o,ʂoː,hard sh: tongue tip curled back (retroflex ṣ) + long ō,,,,,sha: retroflex sibilant + long oo (ō),ശൂ ശോ ഷൂ,sibilants: ശ ഷ സ,,0
+511,ഷൗ,U+0D37 U+0D57,cv,shau,shau (hard sha),ml-0d37-0d57-shau-hard,ʂau̯,hard sh: tongue tip curled back (retroflex ṣ) + au,,,,,sha: retroflex sibilant + au,ശൗ,sibilants: ശ ഷ സ,,0
+512,ഷം,U+0D37 U+0D02,cv,sham,sham (hard sha),ml-0d37-0d02-sham-hard,ʂam,hard sh: tongue tip curled back (retroflex ṣ) + anusvara (m),,,,,sha: retroflex sibilant + anusvara,ശം,sibilants: ശ ഷ സ,,0
+513,ഷഃ,U+0D37 U+0D03,cv,shah,shah (hard sha),ml-0d37-0d03-shah-hard,ʂaha,hard sh: tongue tip curled back (retroflex ṣ) + visarga (h),,,,,sha: retroflex sibilant + visarga,ശഃ,sibilants: ശ ഷ സ,,0
+514,സ്,U+0D38 U+0D4D,cv,s,s,ml-0d38-0d4d-s,s,s as in 'sun' + no vowel,,,,,sa: alveolar sibilant + consonant alone (chandrakkala),,sibilants: ശ ഷ സ,,0
+515,സ,U+0D38,cv,sa,sa,ml-0d38-sa,sa,s as in 'sun' + inherent a,സമയം,time (samayam),,,sa: alveolar sibilant + inherent a,,sibilants: ശ ഷ സ,,0
+516,സാ,U+0D38 U+0D3E,cv,saa,saa,ml-0d38-0d3e-saa,saː,s as in 'sun' + long aa,,,,,sa: alveolar sibilant + long aa,,sibilants: ശ ഷ സ,,0
+517,സി,U+0D38 U+0D3F,cv,si,si,ml-0d38-0d3f-si,si,s as in 'sun' + short i,,,,,sa: alveolar sibilant + short i,,sibilants: ശ ഷ സ,,0
+518,സീ,U+0D38 U+0D40,cv,see,see (long ii),ml-0d38-0d40-see-long-i,siː,s as in 'sun' + long ī,,,,,sa: alveolar sibilant + long ii,സേ,sibilants: ശ ഷ സ,,0
+519,സു,U+0D38 U+0D41,cv,su,su,ml-0d38-0d41-su,su,s as in 'sun' + short u,,,,,sa: alveolar sibilant + short u,,sibilants: ശ ഷ സ,,0
+520,സൂ,U+0D38 U+0D42,cv,soo,soo (long uu),ml-0d38-0d42-soo-long-u,suː,s as in 'sun' + long ū,,,,,sa: alveolar sibilant + long uu,സോ,sibilants: ശ ഷ സ,,0
+521,സൃ,U+0D38 U+0D43,cv,sru,sru,ml-0d38-0d43-sru,sɾɨ,s as in 'sun' + vocalic r,,,,,sa: alveolar sibilant + vocalic r,,sibilants: ശ ഷ സ,,0
+522,സെ,U+0D38 U+0D46,cv,se,se,ml-0d38-0d46-se,se,s as in 'sun' + short e,,,,,sa: alveolar sibilant + short e,,sibilants: ശ ഷ സ,,0
+523,സേ,U+0D38 U+0D47,cv,see,see (long ee),ml-0d38-0d47-see-long-e,seː,s as in 'sun' + long ē,,,,,sa: alveolar sibilant + long ee (ē),സീ,sibilants: ശ ഷ സ,,0
+524,സൈ,U+0D38 U+0D48,cv,sai,sai,ml-0d38-0d48-sai,sai̯,s as in 'sun' + ai,,,,,sa: alveolar sibilant + ai,,sibilants: ശ ഷ സ,,0
+525,സൊ,U+0D38 U+0D4A,cv,so,so,ml-0d38-0d4a-so,so,s as in 'sun' + short o,,,,,sa: alveolar sibilant + short o,,sibilants: ശ ഷ സ,,0
+526,സോ,U+0D38 U+0D4B,cv,soo,soo (long oo),ml-0d38-0d4b-soo-long-o,soː,s as in 'sun' + long ō,,,,,sa: alveolar sibilant + long oo (ō),സൂ,sibilants: ശ ഷ സ,,0
+527,സൗ,U+0D38 U+0D57,cv,sau,sau,ml-0d38-0d57-sau,sau̯,s as in 'sun' + au,,,,,sa: alveolar sibilant + au,,sibilants: ശ ഷ സ,,0
+528,സം,U+0D38 U+0D02,cv,sam,sam,ml-0d38-0d02-sam,sam,s as in 'sun' + anusvara (m),,,,,sa: alveolar sibilant + anusvara,,sibilants: ശ ഷ സ,,0
+529,സഃ,U+0D38 U+0D03,cv,sah,sah,ml-0d38-0d03-sah,saha,s as in 'sun' + visarga (h),,,,,sa: alveolar sibilant + visarga,,sibilants: ശ ഷ സ,,0
+530,ഹ്,U+0D39 U+0D4D,cv,h,h,ml-0d39-0d4d-h,ɦ,glottal fricative + no vowel,,,,,glottal fricative + consonant alone (chandrakkala),,,,0
+531,ഹ,U+0D39,cv,ha,ha,ml-0d39-ha,ɦa,glottal fricative + inherent a,ഹൃദയം,heart (hridayam),,,glottal fricative + inherent a,,,,0
+532,ഹാ,U+0D39 U+0D3E,cv,haa,haa,ml-0d39-0d3e-haa,ɦaː,glottal fricative + long aa,,,,,glottal fricative + long aa,,,,0
+533,ഹി,U+0D39 U+0D3F,cv,hi,hi,ml-0d39-0d3f-hi,ɦi,glottal fricative + short i,,,,,glottal fricative + short i,,,,0
+534,ഹീ,U+0D39 U+0D40,cv,hee,hee (long ii),ml-0d39-0d40-hee-long-i,ɦiː,glottal fricative + long ī,,,,,glottal fricative + long ii,ഹേ,,,0
+535,ഹു,U+0D39 U+0D41,cv,hu,hu,ml-0d39-0d41-hu,ɦu,glottal fricative + short u,,,,,glottal fricative + short u,,,,0
+536,ഹൂ,U+0D39 U+0D42,cv,hoo,hoo (long uu),ml-0d39-0d42-hoo-long-u,ɦuː,glottal fricative + long ū,,,,,glottal fricative + long uu,ഹോ,,,0
+537,ഹൃ,U+0D39 U+0D43,cv,hru,hru,ml-0d39-0d43-hru,ɦɾɨ,glottal fricative + vocalic r,,,,,glottal fricative + vocalic r,,,,0
+538,ഹെ,U+0D39 U+0D46,cv,he,he,ml-0d39-0d46-he,ɦe,glottal fricative + short e,,,,,glottal fricative + short e,,,,0
+539,ഹേ,U+0D39 U+0D47,cv,hee,hee (long ee),ml-0d39-0d47-hee-long-e,ɦeː,glottal fricative + long ē,,,,,glottal fricative + long ee (ē),ഹീ,,,0
+540,ഹൈ,U+0D39 U+0D48,cv,hai,hai,ml-0d39-0d48-hai,ɦai̯,glottal fricative + ai,,,,,glottal fricative + ai,,,,0
+541,ഹൊ,U+0D39 U+0D4A,cv,ho,ho,ml-0d39-0d4a-ho,ɦo,glottal fricative + short o,,,,,glottal fricative + short o,,,,0
+542,ഹോ,U+0D39 U+0D4B,cv,hoo,hoo (long oo),ml-0d39-0d4b-hoo-long-o,ɦoː,glottal fricative + long ō,,,,,glottal fricative + long oo (ō),ഹൂ,,,0
+543,ഹൗ,U+0D39 U+0D57,cv,hau,hau,ml-0d39-0d57-hau,ɦau̯,glottal fricative + au,,,,,glottal fricative + au,,,,0
+544,ഹം,U+0D39 U+0D02,cv,ham,ham,ml-0d39-0d02-ham,ɦam,glottal fricative + anusvara (m),,,,,glottal fricative + anusvara,,,,0
+545,ഹഃ,U+0D39 U+0D03,cv,hah,hah,ml-0d39-0d03-hah,ɦaha,glottal fricative + visarga (h),,,,,glottal fricative + visarga,,,,0
+546,ള്,U+0D33 U+0D4D,cv,l,l (retroflex la),ml-0d33-0d4d-l-retroflex,ɭ,l with the tongue tip curled back (retroflex ḷ) + no vowel,,,,,retroflex lateral + consonant alone (chandrakkala),ല് ൽ ൾ,laterals: ല ള ഴ,,0
+547,ള,U+0D33,cv,la,la (retroflex la),ml-0d33-la-retroflex,ɭa,l with the tongue tip curled back (retroflex ḷ) + inherent a,കളി,play (kali),,,retroflex lateral + inherent a,ല,laterals: ല ള ഴ,,0
+548,ളാ,U+0D33 U+0D3E,cv,laa,laa (retroflex la),ml-0d33-0d3e-laa-retroflex,ɭaː,l with the tongue tip curled back (retroflex ḷ) + long aa,,,,,retroflex lateral + long aa,ലാ,laterals: ല ള ഴ,,0
+549,ളി,U+0D33 U+0D3F,cv,li,li (retroflex la),ml-0d33-0d3f-li-retroflex,ɭi,l with the tongue tip curled back (retroflex ḷ) + short i,,,,,retroflex lateral + short i,ലി,laterals: ല ള ഴ,,0
+550,ളീ,U+0D33 U+0D40,cv,lee,"lee (retroflex la, long ii)",ml-0d33-0d40-lee-retroflex-long-i,ɭiː,l with the tongue tip curled back (retroflex ḷ) + long ī,,,,,retroflex lateral + long ii,ലീ ലേ ളേ,laterals: ല ള ഴ,,0
+551,ളു,U+0D33 U+0D41,cv,lu,lu (retroflex la),ml-0d33-0d41-lu-retroflex,ɭu,l with the tongue tip curled back (retroflex ḷ) + short u,,,,,retroflex lateral + short u,ലു,laterals: ല ള ഴ,,0
+552,ളൂ,U+0D33 U+0D42,cv,loo,"loo (retroflex la, long uu)",ml-0d33-0d42-loo-retroflex-long-u,ɭuː,l with the tongue tip curled back (retroflex ḷ) + long ū,,,,,retroflex lateral + long uu,ലൂ ലോ ളോ,laterals: ല ള ഴ,,0
+553,ളൃ,U+0D33 U+0D43,cv,lru,lru (retroflex la),ml-0d33-0d43-lru-retroflex,ɭɾɨ,l with the tongue tip curled back (retroflex ḷ) + vocalic r,,,,,retroflex lateral + vocalic r,ഌ ലൃ,laterals: ല ള ഴ,,0
+554,ളെ,U+0D33 U+0D46,cv,le,le (retroflex la),ml-0d33-0d46-le-retroflex,ɭe,l with the tongue tip curled back (retroflex ḷ) + short e,,,,,retroflex lateral + short e,ലെ,laterals: ല ള ഴ,,0
+555,ളേ,U+0D33 U+0D47,cv,lee,"lee (retroflex la, long ee)",ml-0d33-0d47-lee-retroflex-long-e,ɭeː,l with the tongue tip curled back (retroflex ḷ) + long ē,,,,,retroflex lateral + long ee (ē),ലീ ലേ ളീ,laterals: ല ള ഴ,,0
+556,ളൈ,U+0D33 U+0D48,cv,lai,lai (retroflex la),ml-0d33-0d48-lai-retroflex,ɭai̯,l with the tongue tip curled back (retroflex ḷ) + ai,,,,,retroflex lateral + ai,ലൈ,laterals: ല ള ഴ,,0
+557,ളൊ,U+0D33 U+0D4A,cv,lo,lo (retroflex la),ml-0d33-0d4a-lo-retroflex,ɭo,l with the tongue tip curled back (retroflex ḷ) + short o,,,,,retroflex lateral + short o,ലൊ,laterals: ല ള ഴ,,0
+558,ളോ,U+0D33 U+0D4B,cv,loo,"loo (retroflex la, long oo)",ml-0d33-0d4b-loo-retroflex-long-o,ɭoː,l with the tongue tip curled back (retroflex ḷ) + long ō,,,,,retroflex lateral + long oo (ō),ലൂ ലോ ളൂ,laterals: ല ള ഴ,,0
+559,ളൗ,U+0D33 U+0D57,cv,lau,lau (retroflex la),ml-0d33-0d57-lau-retroflex,ɭau̯,l with the tongue tip curled back (retroflex ḷ) + au,,,,,retroflex lateral + au,ലൗ,laterals: ല ള ഴ,,0
+560,ളം,U+0D33 U+0D02,cv,lam,lam (retroflex la),ml-0d33-0d02-lam-retroflex,ɭam,l with the tongue tip curled back (retroflex ḷ) + anusvara (m),,,,,retroflex lateral + anusvara,ലം,laterals: ല ള ഴ,,0
+561,ളഃ,U+0D33 U+0D03,cv,lah,lah (retroflex la),ml-0d33-0d03-lah-retroflex,ɭaha,l with the tongue tip curled back (retroflex ḷ) + visarga (h),,,,,retroflex lateral + visarga,ലഃ,laterals: ല ള ഴ,,0
+562,ഴ്,U+0D34 U+0D4D,cv,zh,zh,ml-0d34-0d4d-zh,ɻ,"zha: retroflex approximant, tongue curled back, no English equivalent + no vowel",,,,,retroflex approximant (zha) + consonant alone (chandrakkala),,laterals: ല ള ഴ,,0
+563,ഴ,U+0D34,cv,zha,zha,ml-0d34-zha,ɻa,"zha: retroflex approximant, tongue curled back, no English equivalent + inherent a",മഴ,rain (mazha),,,retroflex approximant (zha) + inherent a,,laterals: ല ള ഴ,,0
+564,ഴാ,U+0D34 U+0D3E,cv,zhaa,zhaa,ml-0d34-0d3e-zhaa,ɻaː,"zha: retroflex approximant, tongue curled back, no English equivalent + long aa",,,,,retroflex approximant (zha) + long aa,,laterals: ല ള ഴ,,0
+565,ഴി,U+0D34 U+0D3F,cv,zhi,zhi,ml-0d34-0d3f-zhi,ɻi,"zha: retroflex approximant, tongue curled back, no English equivalent + short i",,,,,retroflex approximant (zha) + short i,,laterals: ല ള ഴ,,0
+566,ഴീ,U+0D34 U+0D40,cv,zhee,zhee (long ii),ml-0d34-0d40-zhee-long-i,ɻiː,"zha: retroflex approximant, tongue curled back, no English equivalent + long ī",,,,,retroflex approximant (zha) + long ii,ഴേ,laterals: ല ള ഴ,,0
+567,ഴു,U+0D34 U+0D41,cv,zhu,zhu,ml-0d34-0d41-zhu,ɻu,"zha: retroflex approximant, tongue curled back, no English equivalent + short u",,,,,retroflex approximant (zha) + short u,,laterals: ല ള ഴ,,0
+568,ഴൂ,U+0D34 U+0D42,cv,zhoo,zhoo (long uu),ml-0d34-0d42-zhoo-long-u,ɻuː,"zha: retroflex approximant, tongue curled back, no English equivalent + long ū",,,,,retroflex approximant (zha) + long uu,ഴോ,laterals: ല ള ഴ,,0
+569,ഴൃ,U+0D34 U+0D43,cv,zhru,zhru,ml-0d34-0d43-zhru,ɻɾɨ,"zha: retroflex approximant, tongue curled back, no English equivalent + vocalic r",,,,,retroflex approximant (zha) + vocalic r,,laterals: ല ള ഴ,,0
+570,ഴെ,U+0D34 U+0D46,cv,zhe,zhe,ml-0d34-0d46-zhe,ɻe,"zha: retroflex approximant, tongue curled back, no English equivalent + short e",,,,,retroflex approximant (zha) + short e,,laterals: ല ള ഴ,,0
+571,ഴേ,U+0D34 U+0D47,cv,zhee,zhee (long ee),ml-0d34-0d47-zhee-long-e,ɻeː,"zha: retroflex approximant, tongue curled back, no English equivalent + long ē",,,,,retroflex approximant (zha) + long ee (ē),ഴീ,laterals: ല ള ഴ,,0
+572,ഴൈ,U+0D34 U+0D48,cv,zhai,zhai,ml-0d34-0d48-zhai,ɻai̯,"zha: retroflex approximant, tongue curled back, no English equivalent + ai",,,,,retroflex approximant (zha) + ai,,laterals: ല ള ഴ,,0
+573,ഴൊ,U+0D34 U+0D4A,cv,zho,zho,ml-0d34-0d4a-zho,ɻo,"zha: retroflex approximant, tongue curled back, no English equivalent + short o",,,,,retroflex approximant (zha) + short o,,laterals: ല ള ഴ,,0
+574,ഴോ,U+0D34 U+0D4B,cv,zhoo,zhoo (long oo),ml-0d34-0d4b-zhoo-long-o,ɻoː,"zha: retroflex approximant, tongue curled back, no English equivalent + long ō",,,,,retroflex approximant (zha) + long oo (ō),ഴൂ,laterals: ല ള ഴ,,0
+575,ഴൗ,U+0D34 U+0D57,cv,zhau,zhau,ml-0d34-0d57-zhau,ɻau̯,"zha: retroflex approximant, tongue curled back, no English equivalent + au",,,,,retroflex approximant (zha) + au,,laterals: ല ള ഴ,,0
+576,ഴം,U+0D34 U+0D02,cv,zham,zham,ml-0d34-0d02-zham,ɻam,"zha: retroflex approximant, tongue curled back, no English equivalent + anusvara (m)",,,,,retroflex approximant (zha) + anusvara,,laterals: ല ള ഴ,,0
+577,ഴഃ,U+0D34 U+0D03,cv,zhah,zhah,ml-0d34-0d03-zhah,ɻaha,"zha: retroflex approximant, tongue curled back, no English equivalent + visarga (h)",,,,,retroflex approximant (zha) + visarga,,laterals: ല ള ഴ,,0
+578,റ്,U+0D31 U+0D4D,cv,r,r (trill ra),ml-0d31-0d4d-r-trill,r,r as a rolled trill + no vowel,,,,,trill (and the geminate in റ്റ) + consonant alone (chandrakkala),ര് ർ,rhotics: ര റ,,0
+579,റ,U+0D31,cv,ra,ra (trill ra),ml-0d31-ra-trill,ra,r as a rolled trill + inherent a,പറ,say / rock (para),,,trill (and the geminate in റ്റ) + inherent a,ര,rhotics: ര റ,,0
+580,റാ,U+0D31 U+0D3E,cv,raa,raa (trill ra),ml-0d31-0d3e-raa-trill,raː,r as a rolled trill + long aa,,,,,trill (and the geminate in റ്റ) + long aa,രാ,rhotics: ര റ,,0
+581,റി,U+0D31 U+0D3F,cv,ri,ri (trill ra),ml-0d31-0d3f-ri-trill,ri,r as a rolled trill + short i,,,,,trill (and the geminate in റ്റ) + short i,രി,rhotics: ര റ,,0
+582,റീ,U+0D31 U+0D40,cv,ree,"ree (trill ra, long ii)",ml-0d31-0d40-ree-trill-long-i,riː,r as a rolled trill + long ī,,,,,trill (and the geminate in റ്റ) + long ii,രീ രേ റേ,rhotics: ര റ,,0
+583,റു,U+0D31 U+0D41,cv,ru,ru (trill ra),ml-0d31-0d41-ru-trill,ru,r as a rolled trill + short u,,,,,trill (and the geminate in റ്റ) + short u,ഋ രു,rhotics: ര റ,,0
+584,റൂ,U+0D31 U+0D42,cv,roo,"roo (trill ra, long uu)",ml-0d31-0d42-roo-trill-long-u,ruː,r as a rolled trill + long ū,,,,,trill (and the geminate in റ്റ) + long uu,രൂ രോ റോ,rhotics: ര റ,,0
+585,റൃ,U+0D31 U+0D43,cv,rru,rru (trill ra),ml-0d31-0d43-rru-trill,rɾɨ,r as a rolled trill + vocalic r,,,,,trill (and the geminate in റ്റ) + vocalic r,രൃ,rhotics: ര റ,,0
+586,റെ,U+0D31 U+0D46,cv,re,re (trill ra),ml-0d31-0d46-re-trill,re,r as a rolled trill + short e,,,,,trill (and the geminate in റ്റ) + short e,രെ,rhotics: ര റ,,0
+587,റേ,U+0D31 U+0D47,cv,ree,"ree (trill ra, long ee)",ml-0d31-0d47-ree-trill-long-e,reː,r as a rolled trill + long ē,,,,,trill (and the geminate in റ്റ) + long ee (ē),രീ രേ റീ,rhotics: ര റ,,0
+588,റൈ,U+0D31 U+0D48,cv,rai,rai (trill ra),ml-0d31-0d48-rai-trill,rai̯,r as a rolled trill + ai,,,,,trill (and the geminate in റ്റ) + ai,രൈ,rhotics: ര റ,,0
+589,റൊ,U+0D31 U+0D4A,cv,ro,ro (trill ra),ml-0d31-0d4a-ro-trill,ro,r as a rolled trill + short o,,,,,trill (and the geminate in റ്റ) + short o,രൊ,rhotics: ര റ,,0
+590,റോ,U+0D31 U+0D4B,cv,roo,"roo (trill ra, long oo)",ml-0d31-0d4b-roo-trill-long-o,roː,r as a rolled trill + long ō,,,,,trill (and the geminate in റ്റ) + long oo (ō),രൂ രോ റൂ,rhotics: ര റ,,0
+591,റൗ,U+0D31 U+0D57,cv,rau,rau (trill ra),ml-0d31-0d57-rau-trill,rau̯,r as a rolled trill + au,,,,,trill (and the geminate in റ്റ) + au,രൗ,rhotics: ര റ,,0
+592,റം,U+0D31 U+0D02,cv,ram,ram (trill ra),ml-0d31-0d02-ram-trill,ram,r as a rolled trill + anusvara (m),,,,,trill (and the geminate in റ്റ) + anusvara,രം,rhotics: ര റ,,0
+593,റഃ,U+0D31 U+0D03,cv,rah,rah (trill ra),ml-0d31-0d03-rah-trill,raha,r as a rolled trill + visarga (h),,,,,trill (and the geminate in റ്റ) + visarga,രഃ,rhotics: ര റ,,0
+594,ൺ,U+0D7A,chillu,n,n (retroflex n),ml-0d7a-n-retroflex,ɳ,"chillu: pure retroflex n, no vowel",കൺ,eye (kan),,,chillu retroflex n,ണ് ന് ൻ,,,0
+595,ൻ,U+0D7B,chillu,n,n (dental n),ml-0d7b-n-dental,n̪,"chillu: pure dental n, no vowel",അവൻ,he (avan),,,chillu dental n,ണ് ന് ൺ,,,0
+596,ർ,U+0D7C,chillu,r,r,ml-0d7c-r,r,"chillu: pure r, no vowel",വർഷം,year (varsham),,,chillu r,ര് റ്,,,0
+597,ൽ,U+0D7D,chillu,l,l (plain l),ml-0d7d-l-plain,l,"chillu: pure l, no vowel",കാൽ,leg (kaal),,,chillu l,ല് ള് ൾ,,,0
+598,ൾ,U+0D7E,chillu,l,l (retroflex l),ml-0d7e-l-retroflex,ɭ,"chillu: pure retroflex l, no vowel",ആൾ,person (aal),,,chillu retroflex l,ല് ള് ൽ,,,0
+599,ൿ,U+0D7F,chillu,k,k,ml-0d7f-k,k,chillu k (rare),,,,,chillu k (rare),ക്,,yes,0
