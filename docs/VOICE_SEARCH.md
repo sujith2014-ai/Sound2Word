@@ -32,28 +32,34 @@ In the recorder: start with `--unit-audio-dir ... --dictionary ...` and open **S
 
 63 queries = 21 made-up words x 3 conditions (2 % noise + 15 % slower, 5 % noise, 2 % noise + 15 % faster). This shows the software fix, not accuracy on speech.
 
-## Changes taken from the literature (2026-10-14) and what they measured
+## Optional changes taken from the literature: NOT the default
 Sources: Kahn, Rabiner & Rosenberg 1984 (demisyllable duration and smoothing rules); De Wachter et al. 2002 and Sun & Zhao 2014 (template matching, rescoring).
+**The default is the plain matcher.** The synthetic results below did not show a top-1 gain and the rule is sensitive to query duration, so none of these is accepted until real, held-out speech shows a reproducible benefit (all of it is switchable and compared by `eval --compare-configs`).
 
-| change | where | note |
+| option | where | how to switch on |
 |---|---|---|
-| duration rule: a unit spoken alone, longer than 0.2 s and not last in the word, is cut to about half (middle removed, onset + offset kept, no resampling) | `s2w_joiner.shorten`, `Composer(duration_rule=True)` | Kahn: about half of the isolated length |
-| join smoothing: template features smoothed over 60 ms around each join; audio crossfade 30 ms, never more than a quarter of the shorter unit | `s2w_joiner.smooth_features`, `join` | Kahn: 60-90 ms best, little loss without |
-| clips **cut out of real words** win over isolated clips and are never shortened (`voice` contains "cut from word") | `s2w_wordsearch.load_bank` (accepts several folders) | both template papers use real segments with context |
-| rescoring: composed DTW only on the label method's top 200 candidates | `search_with(rescore_top)`, result key `rescored`, shown on `/search` | Sun & Zhao: recogniser first, templates rescore |
-| the length filter now uses the **shortened** duration estimate | `Composer.est_duration` | otherwise long isolated words would be dropped before DTW |
-| `eval --compare-configs` runs all four configurations and reports each | `s2w_wordsearch.compare_configs` | CLAUDE.md rule 5: every configuration, including the worse ones |
+| audio cut: a unit spoken alone, longer than 0.2 s, not last, loses its sustained middle (about half kept, no resampling). Loses any spectral transition inside the removed part | `s2w_joiner.shorten` | `--duration cut` |
+| feature squeeze: same units keep all their audio, only their feature frames are time-compressed (duration-aware, nothing cut) | `Composer._squeeze` | `--duration squeeze` |
+| join smoothing of template features (audio crossfade is separate: 30 ms, at most a quarter of the shorter unit) | `s2w_joiner.smooth_features` | `--smooth-ms 60` |
+| clips cut out of real words win over isolated clips and are never shortened | `load_bank` (several folders; `use_in_word=False` for the ablation) | automatic when the meta voice says "cut from word" |
+| rescoring: composed DTW only on the label method's top N | `search_with(rescore_top)`, own column `rescored` | `--rescore-top 200` |
+| length filter uses the shortened estimate | `Composer.est_duration` | follows `--duration` |
 
-**Measured on made-up tones only** (21 words, noise 0.03; top-1 / top-5 of the composed ranking; the tones are stationary, so they cannot show a real duration effect):
+### What `eval --compare-configs` reports (so each effect is separate)
+Six configurations (plain, audio cut, feature squeeze, smoothing, cut + smoothing, squeeze + smoothing), plus one **ablation with isolated clips only** whenever the bank has cut-out clips. Per method: top-1, top-5, MRR, not-found, **mean ms per query**, top-1 **per speaker** (if the query meta has `speaker`), and every query as a row. `shortlist_recall` gives how often the right word is inside the label method's top 10 / 50 / 100 / 200: rescoring can never recover a word outside its shortlist, so read `rescored` against that number.
 
+### Measured on made-up tones only (21 words, noise 0.03, top-1 / top-5 of the composed ranking)
 | configuration | query units 0.11 s (like in-word syllables) | query units 0.22 s (like isolated clips) |
 |---|---|---|
-| plain | 0.95 / 0.95 | 0.95 / 1.00 |
-| duration rule only | 0.86 / 1.00 | 0.86 / 0.95 |
-| smoothing only | 0.95 / 0.95 | 0.95 / 1.00 |
-| duration rule + smoothing (default) | 0.95 / 1.00 | 0.81 / 1.00 |
+| plain (default) | 0.95 / 0.95 | 0.95 / 1.00 |
+| audio cut | 0.86 / 1.00 | 0.86 / 0.95 |
+| feature squeeze | 0.95 / 0.95 | 0.86 / 1.00 |
+| smoothing 60 ms | 0.95 / 0.95 | 0.95 / 1.00 |
+| audio cut + smoothing | 0.95 / 1.00 | 0.81 / 1.00 |
+| feature squeeze + smoothing | 1.00 / 1.00 | 0.86 / 1.00 |
 
-Reading: no gain in top-1 on tones, a small top-5 gain with in-word-length queries, and a loss when the query is as long as the isolated clips (expected: the rule removes that length). **These tones cannot confirm the papers' result; run `eval --compare-configs` on real recordings before keeping or dropping the defaults.** The recorder's own "composed word" playback still joins the clips without the duration rule.
+Reading: differences are one or two queries out of 21, so none of them is distinguishable from noise; the only clear pattern is that shortening hurts when the query is as long as an isolated clip (expected). The synthetic tones are steady sounds, so they cannot show a real duration effect or the loss of transitions. The shortlist recall in this fixture is 1.0 at every N only because the made-up recogniser text is exact and the dictionary has 23 words: it says nothing about a real recogniser. **Needed before any default changes:** verified words, several consenting speakers, a held-out test split never used for tuning (CLAUDE.md gates A/B/C), reported per word and per speaker, with failures.
+The recorder's own "composed word" playback joins clips without the duration rule.
 
 ## Limits
 * Unit clips spoken alone have the wrong length (about 0.3 s, against 0.08 s inside words), so cut units out of words where you can.

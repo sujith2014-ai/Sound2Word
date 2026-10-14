@@ -224,10 +224,10 @@ class DurationAndSmoothing(Fixture):
         self.assertTrue(0.0 < g[20, 0] < 1.0 and 0.0 < g[19, 0] < 1.0)
 
     def test_estimated_duration_follows_the_rule(self):
-        on = ws.Composer(self.bank, duration_rule=True).est_duration("കമല")
-        off = ws.Composer(self.bank, duration_rule=False).est_duration("കമല")
+        on = ws.Composer(self.bank, duration="cut").est_duration("കമല")
+        off = ws.Composer(self.bank, duration="none").est_duration("കമല")
         self.assertLess(on, off)
-        t = ws.Composer(self.bank, duration_rule=True).template("കമല")
+        t = ws.Composer(self.bank, duration="cut").template("കമല")
         self.assertLess(abs(on - len(t["audio"]) / float(t["rate"])), 0.05)
 
     def test_clips_cut_from_words_win_and_are_not_shortened(self):
@@ -254,10 +254,63 @@ class DurationAndSmoothing(Fixture):
         words = ws.load_words(self.lex)
         qs = [(w, self.query(w, seed=k)) for k, w in enumerate(self.words[:4])]
         res = ws.compare_configs(qs, self.bank, words, {w: w for w, _p in qs})
-        self.assertEqual(len(res), 4)
+        self.assertEqual(len(res), len(ws.CONFIGS))                           # no in-word clips in this bank: no ablation run
+        self.assertTrue(next(iter(res)).startswith("plain"))                  # the plain matcher is always the first, and the default
         for name, r in res.items():
             self.assertEqual(r["summary"]["composed"]["n"], 4, name)
             self.assertIn("rescored", r["summary"])
+            self.assertIn("shortlist_recall", r["summary"])
+
+    def test_the_default_is_the_plain_matcher(self):
+        c = ws.Composer(self.bank)
+        self.assertEqual((c.duration, c.smooth_ms), ("none", 0.0))
+        plain = c.template("കമല")
+        self.assertAlmostEqual(len(plain["audio"]) / float(plain["rate"]), c.est_duration("കമല"), delta=0.05)
+        with self.assertRaises(ValueError):
+            ws.Composer(self.bank, duration="stretch")
+
+    def test_squeeze_keeps_all_audio_but_shortens_the_feature_frames(self):
+        plain = ws.Composer(self.bank).template("കമല")
+        sq = ws.Composer(self.bank, duration="squeeze").template("കമല")
+        cut = ws.Composer(self.bank, duration="cut").template("കമല")
+        self.assertEqual(len(sq["audio"]), len(plain["audio"]))               # nothing removed from the audio
+        self.assertLess(len(sq["feat"]), len(plain["feat"]) * 0.8)
+        self.assertLess(len(cut["audio"]), len(plain["audio"]) * 0.8)         # the cut variant does remove audio
+
+    def test_shortlist_recall_timing_and_speakers_are_reported(self):
+        words = ws.load_words(self.lex)
+        qs = [(w, self.query(w, seed=k), "S%d" % (k % 2)) for k, w in enumerate(self.words[:6])]
+        heard = {w: w for w, _p, _s in qs}
+        heard[self.words[0]] = "ശമ"                                           # a recogniser error: the right word may fall out of the shortlist
+        summary, rows = ws.evaluate(qs, self.bank, words, heard)
+        rec = summary["shortlist_recall"]
+        self.assertEqual(rec["n"], 6)
+        self.assertTrue(all(0.0 <= rec["top%d" % k] <= 1.0 for k in ws.RECALL_AT))
+        self.assertLessEqual(rec["top10"], rec["top50"])
+        self.assertLessEqual(rec["top100"], rec["top200"])
+        self.assertEqual(set(summary["composed"]["top1_by_speaker"]), {"S0", "S1"})
+        self.assertGreaterEqual(summary["composed"]["mean_ms"], 0.0)
+        self.assertTrue(all("ms_composed" in r for r in rows))
+
+    def test_rescoring_cannot_recover_a_word_outside_its_shortlist(self):
+        words = ws.load_words(self.lex)
+        q = self.query("കമല", seed=2)
+        r = ws.search(q, self.bank, words, heard="ശമ", rescore_top=2)         # the heard text points at other words
+        self.assertNotIn("കമല", [w for w, _d in r["rescored"]])
+        self.assertEqual(r["composed"][0][0], "കമല")                          # the plain composed ranking still finds it
+
+    def test_ablation_without_in_word_clips_is_run_when_the_bank_has_them(self):
+        d2 = os.path.join(self.d, "units_cut2")
+        os.makedirs(d2)
+        write_wav(os.path.join(d2, "k.wav"), tone("ക", dur=0.09))
+        with open(os.path.join(d2, "meta.json"), "w", encoding="utf-8") as f:
+            json.dump({"items": [{"word_ml": "ക", "file": "k.wav", "voice": "MMS-mal (VITS), cut from word 'കല'"}]}, f, ensure_ascii=False)
+        bank = ws.load_bank([self.units, d2])
+        words = ws.load_words(self.lex)
+        res = ws.compare_configs([("കമല", self.query("കമല", seed=1))], bank, words)
+        self.assertEqual(len(res), len(ws.CONFIGS) + 1)
+        self.assertTrue(any(k.startswith("ablation") for k in res))
+        self.assertEqual(ws.load_bank([self.units, d2], use_in_word=False).in_word, set())
 
 
 class RecorderIntegration(Fixture):

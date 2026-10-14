@@ -7,7 +7,8 @@
             by a weighted edit distance in which look-alike letters (ശ ഷ സ, ന ണ, ര റ, ല ള ഴ ...) cost less than unrelated ones.
   fused     reciprocal-rank fusion of the two.
   rescored  composed DTW restricted to the label method's top candidates (recogniser first, templates rescore - Sun & Zhao 2014).
-Units spoken alone are shortened (non-final, long) and joins smoothed - see s2w_joiner.py (Kahn, Rabiner & Rosenberg 1984); clips cut out of words are preferred.
+DEFAULT = the plain matcher. Optional (see eval --compare-configs): duration rule on isolated units (cut or feature squeeze) and join smoothing,
+after Kahn, Rabiner & Rosenberg 1984 - unproven on real speech. Clips cut out of words are preferred over isolated clips when present.
 
     s2w_wordsearch.py search --query word.wav --units UNIT_DIR --lexicon lexicon.csv [--heard "text"] [--top 5]
     s2w_wordsearch.py eval   --queries QUERY_DIR --units UNIT_DIR --lexicon lexicon.csv [--heard-file meta.json]
@@ -120,12 +121,14 @@ class Bank(dict):
     def __init__(self):
         super().__init__()
         self.in_word = set()
+        self.dirs = []
 
 
-def load_bank(unit_dirs):
+def load_bank(unit_dirs, use_in_word=True):
     """One folder or a list. Per unit a clip cut out of a word (meta voice contains 'cut from word') wins over an isolated clip; otherwise the
-    earlier folder wins."""
+    earlier folder wins. use_in_word=False ignores the cut-out clips entirely (an ablation: isolated clips only)."""
     bank = Bank()
+    bank.dirs = [unit_dirs] if isinstance(unit_dirs, str) else list(unit_dirs)
     for unit_dir in ([unit_dirs] if isinstance(unit_dirs, str) else unit_dirs):
         for it in _meta_items(unit_dir):
             if not it.get("file"):
@@ -135,6 +138,8 @@ def load_bank(unit_dirs):
                 continue
             u = norm(it["word_ml"])
             cut = "cut from word" in str(it.get("voice", "")) or bool(it.get("in_word"))
+            if cut and not use_in_word:
+                continue
             if u not in bank or (cut and u not in bank.in_word):
                 bank[u] = p
                 if cut:
@@ -168,13 +173,20 @@ def load_words(lexicon_csv, limit=None):
 
 # ------------------------------------------------------------------ method 1: composed templates
 class Composer:
-    """Builds the template of a word from its unit clips. Units spoken alone (not in bank.in_word) that are long and not the last unit of the
-    word are shortened to about half (Kahn et al. 1984), and the template's features are smoothed over `smooth_ms` around every join."""
+    """Builds the template of a word from its unit clips.
 
-    def __init__(self, bank, duration_rule=True, smooth_ms=None):
+    duration  "none"     templates are the joined clips as they are (the default: the plain matcher)
+              "cut"      a unit spoken alone (not in bank.in_word), longer than 0.2 s and not last, loses its sustained middle (about half is kept;
+                         Kahn et al. 1984). Audio is cut, so spectral transitions inside that part are lost.
+              "squeeze"  the same units keep ALL their audio, but their FEATURE frames are time-compressed to the same length (no audio is removed)
+    smooth_ms  window in ms over which the template's features are smoothed around each join (0 = off, the default)."""
+
+    def __init__(self, bank, duration_rule=False, smooth_ms=0.0, duration=None):
         self.bank = bank
-        self.duration_rule = duration_rule
-        self.smooth_ms = smooth_ms
+        self.duration = duration or ("cut" if duration_rule else "none")
+        if self.duration not in ("none", "cut", "squeeze"):
+            raise ValueError("duration must be none, cut or squeeze")
+        self.smooth_ms = smooth_ms or 0.0
         self.in_word = getattr(bank, "in_word", set())
         self._wav = {}
         self._cache = {}
@@ -191,8 +203,11 @@ class Composer:
         us = su.decompose(word)                                   # whole written units: a conjunct is never split
         return us if us and all(norm(u) in self.bank for u in us) else None
 
+    def _shorten(self, unit, i, n, dur):
+        return self.duration != "none" and unit not in self.in_word and i != n - 1 and dur > jn.DEFAULTS["iso_min_s"]
+
     def est_duration(self, word):
-        """Seconds the joined word will last (clip lengths minus the crossfades), without building it; None if a unit has no clip."""
+        """Seconds the template will last, without building it; None if a unit has no clip."""
         us = self.units_of(word)
         if not us:
             return None
@@ -205,9 +220,6 @@ class Composer:
             total += d
         return total - jn.DEFAULTS["xfade_ms"] / 1000.0 * 0.5 * (len(us) - 1)
 
-    def _shorten(self, unit, i, n, dur):
-        return self.duration_rule and unit not in self.in_word and i != n - 1 and dur > jn.DEFAULTS["iso_min_s"]
-
     def template(self, word):
         if word in self._cache:
             return self._cache[word]
@@ -216,14 +228,37 @@ class Composer:
         if us:
             clips = [self.clip(u) for u in us]
             rate = clips[0][0]
-            iso = [self.duration_rule and u not in self.in_word for u in us]
+            iso = [self.duration == "cut" and u not in self.in_word for u in us]
             audio, edges = jn.join([jn.resample(c[1], c[0], rate) for c in clips], rate, isolated=iso)
             if len(audio) > 400:
                 feat = mfcc(audio, rate)
-                feat = jn.smooth_features(feat, edges, win_ms=self.smooth_ms) if (self.smooth_ms is None or self.smooth_ms > 0) else feat
+                if self.duration == "squeeze":
+                    feat = self._squeeze(feat, edges, us, [len(c[1]) / float(c[0]) for c in clips])
+                if self.smooth_ms > 0:
+                    feat = jn.smooth_features(feat, edges, win_ms=self.smooth_ms)
                 res = {"units": us, "audio": audio, "rate": rate, "edges": edges, "feat": feat}
         self._cache[word] = res
         return res
+
+    def _squeeze(self, feat, edges, units, clip_secs):
+        """Time-compress the feature frames of each isolated, long, non-final unit to about half (linear interpolation of the frames)."""
+        out, n = [], len(units)
+        for i, u in enumerate(units):
+            a, b = int(round(edges[i] * 50)), int(round(edges[i + 1] * 50))
+            if i == n - 1:
+                b = len(feat)
+            seg = feat[a:b]
+            if len(seg) == 0:
+                continue
+            if self._shorten(u, i, n, clip_secs[i]):
+                m = max(int(jn.DEFAULTS["min_keep_s"] * 50), int(round(len(seg) * jn.DEFAULTS["iso_scale"])))
+                if m < len(seg):
+                    idx = np.linspace(0, len(seg) - 1, m)
+                    lo = np.floor(idx).astype(int)
+                    hi = np.minimum(lo + 1, len(seg) - 1)
+                    seg = seg[lo] * (1 - (idx - lo)[:, None]) + seg[hi] * (idx - lo)[:, None]
+            out.append(seg)
+        return np.concatenate(out) if out else feat
 
 
 def rank_composed(query_feat, composer, words, shortlist=150, dur_ratio=(0.4, 2.5), max_templates=20000):
@@ -347,20 +382,35 @@ def _rank_of(r, word):
     return None
 
 
+RECALL_AT = (10, 50, 100, 200)
+
+
 def evaluate(queries, bank, words, heard=None, shortlist=150, rescore_top=200, composer=None):
-    """queries: [(word, wav path)]; heard: {word: recognised text}. -> {method: {top1, top5, mrr, n}}, per-query rows (failures included)."""
+    """queries: [(word, wav path[, speaker])]; heard: {word: recognised text}.
+    -> (summary, rows). summary has top1 / top5 / MRR / not_found per method, `shortlist_recall` (how often the right word is inside the label
+    method's top 10/50/100/200: rescoring can never recover a word outside its shortlist), mean milliseconds per method and, when speakers are
+    given, the same top-1 per speaker. Every query is a row, failures included."""
+    import time
     comp = composer or Composer(bank)
     wlist = [w for w, _u in words]
     rows = []
-    for word, path in queries:
+    for q in queries:
+        word, path = q[0], q[1]
+        speaker = q[2] if len(q) > 2 else None
         rate, x = jn.read_wav(path)
-        composed, _n, _m = rank_composed(mfcc(x, rate), comp, wlist, shortlist)
-        row = {"word": word, "composed": _rank_of(composed, word)}
+        qf = mfcc(x, rate)
+        t0 = time.time()
+        composed, _n, _m = rank_composed(qf, comp, wlist, shortlist)
+        row = {"word": word, "speaker": speaker, "composed": _rank_of(composed, word), "ms_composed": round(1000 * (time.time() - t0), 1)}
         if heard and word in heard:
+            t1 = time.time()
             lab = rank_labels(heard[word], words)
+            row["ms_labels"] = round(1000 * (time.time() - t1), 1)
             row["labels"] = _rank_of(lab, word)
             row["fused"] = _rank_of(fuse(composed, lab), word)
-            resc, _n2, _m2 = rank_composed(mfcc(x, rate), comp, [w for w, _d in lab[:rescore_top]], shortlist)
+            t2 = time.time()
+            resc, _n2, _m2 = rank_composed(qf, comp, [w for w, _d in lab[:rescore_top]], shortlist)
+            row["ms_rescored"] = round(1000 * (time.time() - t2), 1)
             row["rescored"] = _rank_of(resc, word)
         rows.append(row)
     summary = {}
@@ -369,22 +419,37 @@ def evaluate(queries, bank, words, heard=None, shortlist=150, rescore_top=200, c
         if rs:
             n = len(rs)
             summary[m] = {"n": n, "top1": round(sum(1 for r in rs if r[m] == 1) / n, 3), "top5": round(sum(1 for r in rs if r[m] and r[m] <= 5) / n, 3),
-                          "mrr": round(sum(1.0 / r[m] for r in rs if r[m]) / n, 3), "not_found": sum(1 for r in rs if not r[m])}
+                          "mrr": round(sum(1.0 / r[m] for r in rs if r[m]) / n, 3), "not_found": sum(1 for r in rs if not r[m]),
+                          "mean_ms": round(sum(r.get("ms_" + m, 0.0) for r in rs) / n, 1)}
+            spk = sorted({r["speaker"] for r in rs if r["speaker"]})
+            if spk:
+                summary[m]["top1_by_speaker"] = {sp: round(sum(1 for r in rs if r["speaker"] == sp and r[m] == 1) / max(1, sum(1 for r in rs if r["speaker"] == sp)), 3) for sp in spk}
+    lr = [r for r in rows if "labels" in r]
+    if lr:
+        summary["shortlist_recall"] = {"n": len(lr), **{"top%d" % k: round(sum(1 for r in lr if r["labels"] and r["labels"] <= k) / len(lr), 3) for k in RECALL_AT}}
     return summary, rows
 
 
-CONFIGS = {"plain (no duration rule, no smoothing)": dict(duration_rule=False, smooth_ms=0),
-           "duration rule only": dict(duration_rule=True, smooth_ms=0),
-           "smoothing only": dict(duration_rule=False, smooth_ms=None),
-           "duration rule + smoothing (default)": dict(duration_rule=True, smooth_ms=None)}
+CONFIGS = {"plain (default: no duration rule, no smoothing)": dict(duration="none", smooth_ms=0),
+           "audio cut (duration rule) only": dict(duration="cut", smooth_ms=0),
+           "feature squeeze (no audio removed) only": dict(duration="squeeze", smooth_ms=0),
+           "smoothing 60 ms only": dict(duration="none", smooth_ms=60),
+           "audio cut + smoothing 60 ms": dict(duration="cut", smooth_ms=60),
+           "feature squeeze + smoothing 60 ms": dict(duration="squeeze", smooth_ms=60)}
 
 
 def compare_configs(queries, bank, words, heard=None, shortlist=150, rescore_top=200):
-    """Run EVERY planned configuration on the same queries and report all of them, including the ones that do worse (CLAUDE.md rule 5)."""
+    """Run EVERY planned configuration on the same queries and report all of them, including the ones that do worse (CLAUDE.md rule 5).
+    When the bank has clips cut out of words, one more run uses isolated clips only, to isolate the effect of the in-word clips. Rescoring is
+    reported as its own method in every summary (next to the plain composed ranking and the shortlist recall), so its effect is also separate."""
     out = {}
     for name, kw in CONFIGS.items():
         summary, rows = evaluate(queries, bank, words, heard, shortlist, rescore_top, composer=Composer(bank, **kw))
         out[name] = {"summary": summary, "per_word": rows}
+    if getattr(bank, "in_word", None) and bank.dirs:
+        iso = load_bank(bank.dirs, use_in_word=False)
+        summary, rows = evaluate(queries, iso, words, heard, shortlist, rescore_top, composer=Composer(iso))
+        out["ablation: plain, isolated clips only (clips cut from words ignored)"] = {"summary": summary, "per_word": rows}
     return out
 
 
@@ -406,25 +471,25 @@ def main(argv=None):
     e.add_argument("--limit", type=int)
     e.add_argument("--compare-configs", action="store_true", help="run all four duration-rule / smoothing configurations and report each")
     for q in (s, e):
-        q.add_argument("--no-duration-rule", action="store_true", help="do not shorten isolated non-final units")
-        q.add_argument("--smooth-ms", type=float, default=None, help="join smoothing window in ms (default 60; 0 = off)")
+        q.add_argument("--duration", choices=("none", "cut", "squeeze"), default="none", help="duration rule for isolated non-final units (default none)")
+        q.add_argument("--smooth-ms", type=float, default=0.0, help="join smoothing window in ms (default 0 = off)")
         q.add_argument("--rescore-top", type=int, default=200)
     a = ap.parse_args(argv)
     try:
         bank = load_bank(a.units)
         words = load_words(a.lexicon, a.limit)
         if a.cmd == "search":
-            r = search_with(a.query, Composer(bank, not a.no_duration_rule, a.smooth_ms), words, a.heard, a.top, rescore_top=a.rescore_top)
+            r = search_with(a.query, Composer(bank, smooth_ms=a.smooth_ms, duration=a.duration), words, a.heard, a.top, rescore_top=a.rescore_top)
             print(json.dumps(r, ensure_ascii=False, indent=1))
             return 0
         heard = json.load(open(a.heard_file, encoding="utf-8")) if a.heard_file else None
-        qs = [(norm(it["word_ml"]), os.path.join(a.queries, it["file"])) for it in _meta_items(a.queries) if it.get("file")]
+        qs = [(norm(it["word_ml"]), os.path.join(a.queries, it["file"]), it.get("speaker")) for it in _meta_items(a.queries) if it.get("file")]
         if a.compare_configs:
             res = compare_configs(qs, bank, words, heard, rescore_top=a.rescore_top)
             print(json.dumps({"configurations": res, "chance_top1": round(1.0 / max(1, len(words)), 5), "words": len(words), "units_with_clips": len(bank),
                               "units_cut_from_words": len(getattr(bank, "in_word", ()))}, ensure_ascii=False, indent=1))
             return 0
-        summary, rows = evaluate(qs, bank, words, heard, rescore_top=a.rescore_top, composer=Composer(bank, not a.no_duration_rule, a.smooth_ms))
+        summary, rows = evaluate(qs, bank, words, heard, rescore_top=a.rescore_top, composer=Composer(bank, smooth_ms=a.smooth_ms, duration=a.duration))
         print(json.dumps({"summary": summary, "per_word": rows, "chance_top1": round(1.0 / max(1, len(words)), 5), "words": len(words),
                           "units_with_clips": len(bank)}, ensure_ascii=False, indent=1))
         return 0
