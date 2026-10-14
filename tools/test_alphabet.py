@@ -173,6 +173,54 @@ class Inventory(unittest.TestCase):
         self.assertNotIn("Traceback", bad.stderr)
 
 
+class Lookalikes(unittest.TestCase):
+    def test_common_convention_finds_every_group(self):
+        rep = al.lookalike_report("common")
+        flat = {k: "".join(sorted(x)) for k, x in rep["consonant letters"].items()}
+        self.assertEqual(flat, {"da": "".join(sorted("ഡദ")), "dha": "".join(sorted("ഢധ")), "la": "".join(sorted("ലള")), "na": "".join(sorted("ണന")),
+                                "ra": "".join(sorted("രറ")), "sha": "".join(sorted("ശഷ")), "tha": "".join(sorted("ഠതഥ"))})
+        self.assertEqual({k: sorted(x) for k, x in rep["vowel letters"].items()}, {"e": sorted("എഏ"), "o": sorted("ഒഓ")})
+        self.assertEqual({k: sorted(x) for k, x in rep["vowel signs"].items()}, {"ee": sorted("ീേ"), "oo": sorted("ൂോ")})
+        self.assertEqual({k: sorted(x) for k, x in rep["chillu letters"].items()}, {"l": sorted("ൽൾ"), "n": sorted("ൺൻ")})
+        cross = rep["chillu vs consonant+virama"]
+        self.assertEqual(set(cross), {"k", "l", "n", "r"})
+        self.assertIn("ൿ", cross["k"])
+        self.assertIn("ൻ", cross["n"])
+
+    def test_owner_convention_differs_where_the_owner_wrote_ta_for_two_letters(self):
+        own = al.lookalike_report("owner")["consonant letters"]
+        self.assertEqual(sorted(own["ta"]), sorted("ടത"))
+        self.assertEqual(sorted(own["tha"]), sorted("ഠഥ"))
+        self.assertEqual(sorted(own["sha"]), sorted("ശഷ"))
+        self.assertNotIn("ടത", "".join(al.lookalike_report("common")["consonant letters"].get("ta", [])))
+
+    def test_rule_convention_merges_more_vowel_signs(self):
+        rule = al.lookalike_report("rule")
+        self.assertEqual(sorted(rule["vowel signs"]["ke"]), sorted("െേ"))                    # the spelling rule drops ē/ō length
+        self.assertEqual(sorted(rule["vowel signs"]["ko"]), sorted("ൊോ"))
+
+    def test_every_group_is_really_different_letters_and_labelled_apart(self):
+        by = {i["text"]: i for i in al.build_inventory()}
+        for kind, gs in al.lookalike_report("common").items():
+            for k, x in gs.items():
+                self.assertEqual(len(x), len(set(x)))
+                if kind in ("consonant letters", "vowel letters"):
+                    for t in x:
+                        self.assertTrue(by[t]["lookalike"], t)
+                    self.assertEqual(len({by[t]["label"] for t in x}), len(x), (kind, k))      # distinguishing labels are all different
+
+    def test_unknown_convention_and_cli(self):
+        with self.assertRaises(v.ViewerError):
+            al.lookalike_report("nope")
+        p = subprocess.run([sys.executable, TOOL, "lookalikes"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("sha", p.stdout)
+        self.assertIn("ശ ഷ", p.stdout)
+        self.assertIn("sibilants", p.stdout)
+        o = subprocess.run([sys.executable, TOOL, "lookalikes", "--convention", "owner"], capture_output=True, text=True)
+        self.assertIn("ടത", o.stdout.replace(" ", ""))
+
+
 class Measure(unittest.TestCase):
     def feat(self, wav):
         d = tempfile.mkdtemp()

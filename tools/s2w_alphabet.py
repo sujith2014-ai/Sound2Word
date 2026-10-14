@@ -72,6 +72,13 @@ DISAMBIG = {"ശ": "soft sha", "ഷ": "hard sha", "ന": "dental na", "ണ": "re
             "ഥ": "aspirated tha", "ട": "retroflex ta", "ദ": "dental da", "ഡ": "retroflex da", "ധ": "dental dha", "ഢ": "retroflex dha", "ഠ": "retroflex tha",
             "എ": "short e", "ഏ": "long e", "ഒ": "short o", "ഓ": "long o", "ൺ": "retroflex n", "ൻ": "dental n", "ൽ": "plain l", "ൾ": "retroflex l"}
 SIGN_DISAMBIG = {"ീ": "long ii", "േ": "long ee", "ൂ": "long uu", "ോ": "long oo"}
+# the names exactly as the project owner supplied them (docs/MALAYALAM_SOUND_INVENTORY.md, Part A): a second convention to compare
+OWNER_CONS = dict(zip("കഖഗഘങചഛജഝഞടഠഡഢണതഥദധനപഫബഭമയരലവശഷസഹളഴറ",
+                      "ka kha ga gha nga ca cha ja jha nja ta tha da dha na ta tha da dha na pa pha ba bha ma ya ra la va sha sha sa ha la zha ra".split()))
+OWNER_VOWELS = {"അ": "a", "ആ": "aa", "ഇ": "i", "ഈ": "ee", "ഉ": "u", "ഊ": "oo", "ഋ": "ri", "ഌ": "lri", "എ": "e", "ഏ": "e", "ഐ": "ai", "ഒ": "o", "ഓ": "o", "ഔ": "au",
+                "ൠ": "rri", "ൡ": "lrri"}
+OWNER_SIGNS = {"ാ": "aa", "ി": "i", "ീ": "ee", "ു": "u", "ൂ": "oo", "ൃ": "ri", "െ": "e", "േ": "ee", "ൈ": "ai", "ൊ": "o", "ോ": "oo", "ൗ": "au"}
+OWNER_CHILLU = {"ൺ": "n", "ൻ": "n", "ർ": "r", "ൽ": "l", "ൾ": "la", "ൿ": "k"}
 # acoustic neighbours (easy to confuse even when the Manglish differs)
 NEIGHBOURS = [("sibilants: ശ ഷ സ", "ശഷസ"), ("nasals: ന ണ ങ ഞ", "നണങഞ"), ("rhotics: ര റ", "രറ"), ("laterals: ല ള ഴ", "ലളഴ"), ("t: ത ട ഥ ഠ", "തടഥഠ"), ("d: ദ ഡ ധ ഢ", "ദഡധഢ")]
 
@@ -183,6 +190,34 @@ def clusters_from_lexicon(path, top):
                 if su.kind(a) == "cluster":
                     cnt[a] += 1
     return cnt.most_common(top)
+
+
+def lookalike_report(convention="common"):
+    """Groups of DIFFERENT letters that share one Manglish, per kind of letter, under a convention:
+    'common' (the table above), 'owner' (Part A of docs/MALAYALAM_SOUND_INVENTORY.md) or 'rule' (ml_to_manglish, the recorder's spelling rule).
+    -> {kind: {manglish: [letters]}} (only groups of two or more). 'cross' adds the groups that mix a chillu with consonant+virama forms."""
+    import s2w_recorder as rec
+    tabs = {"common": (lambda c: CONS[c][0], lambda c: VOWEL_LETTERS[c][0], lambda sg: SIGNS[sg][0], lambda c: CHILLU[c][0]),
+            "owner": (OWNER_CONS.get, OWNER_VOWELS.get, OWNER_SIGNS.get, OWNER_CHILLU.get),
+            "rule": (rec.ml_to_manglish, rec.ml_to_manglish, lambda sg: rec.ml_to_manglish("ക" + sg), rec.ml_to_manglish)}
+    if convention not in tabs:
+        raise v.ViewerError(2, "convention must be one of: " + ", ".join(tabs))
+    fc, fv, fs, fh = tabs[convention]
+
+    def groups(letters, f):
+        g = {}
+        for t in letters:
+            g.setdefault(f(t), []).append(t)
+        return {k: x for k, x in sorted(g.items()) if len(x) > 1}
+    out = {"consonant letters": groups(CONS, fc), "vowel letters": groups(VOWEL_LETTERS, fv), "vowel signs": groups([x for x in SIGNS if x], fs), "chillu letters": groups(CHILLU, fh)}
+    cross = {}
+    for c in CONS:                                              # consonant + virama written as a bare consonant sound
+        base = fc(c)[:-1] if fc(c).endswith("a") else fc(c)
+        cross.setdefault(base, []).append(c + VIR)
+    for c in CHILLU:
+        cross.setdefault(fh(c), []).append(c)
+    out["chillu vs consonant+virama"] = {k: x for k, x in sorted(cross.items()) if len(x) > 1 and any(t in CHILLU for t in x) and any(t.endswith(VIR) for t in x)}
+    return out
 
 
 # ---------------------------------------------------------------- Unicode block map
@@ -523,12 +558,25 @@ def main():
     a.add_argument("--lexicon")
     a.add_argument("--clusters-top", type=int, default=450)
     sub.add_parser("unicode", help="print the Unicode Malayalam block partition")
+    lk = sub.add_parser("lookalikes", help="list the different letters that share one Manglish")
+    lk.add_argument("--convention", choices=("common", "owner", "rule"), default="common")
     args = ap.parse_args()
     if args.cmd == "unicode":
         u = unicode_block()
         print("Unicode %s: %d assigned code points in U+0D00..U+0D7F" % (u["unicode_version"], u["assigned"]))
         for g in u["groups"]:
             print("  %3d  %s" % (g["count"], g["name"]))
+        return 0
+    if args.cmd == "lookalikes":
+        rep = lookalike_report(args.convention)
+        print("Different letters with the SAME Manglish (convention: %s)" % args.convention)
+        for kind, gs in rep.items():
+            print("\n%s: %d group(s)" % (kind, len(gs)))
+            for k, x in gs.items():
+                print("  %-6s %s" % (k, " ".join(x)))
+        print("\nEvery consonant+vowel form of a group collides too (e.g. ശാ/ഷാ). Letters with DIFFERENT Manglish can still sound alike (ഷ/സ, ത/ട, ന/ങ):")
+        for n, letters in NEIGHBOURS:
+            print("  " + n)
         return 0
     try:
         items = build_inventory(args.lexicon, args.clusters_top)
