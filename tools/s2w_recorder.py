@@ -44,6 +44,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import s2w_viewer as v  # noqa: E402
 import s2w_units as su  # noqa: E402
+import s2w_alphabet as al  # noqa: E402
 
 MAX_BYTES = 12 * 1024 * 1024
 MIN_S, MAX_S = 0.3, 20.0
@@ -205,6 +206,18 @@ def suggest_edges(mat, n, hop=0.010, frame=0.025, min_frames=4, units=None):
         k = max(range(len(pts) - 1), key=lambda t: pts[t + 1] - pts[t])
         cuts = sorted(cuts + [(pts[k] + pts[k + 1]) // 2])
     return [round(first * hop + (frame - hop) / 2, 4)] + [t(c) for c in cuts] + [round(last * hop + (frame + hop) / 2, 4)]
+
+
+def _lexicon_path(dictionary):
+    """The dictionary file when it is a lexicon built by s2w_lexicon.py (it has a word_ml column), else None."""
+    path = getattr(dictionary, "path", None)
+    if not path:
+        return None
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            return path if "word_ml" in f.readline() else None
+    except OSError:
+        return None
 
 
 def load_units(roots):
@@ -479,6 +492,7 @@ class Dictionary:
         if not os.path.isfile(path):
             raise v.ViewerError(2, "dictionary file not found: %s" % path)
         self.name = os.path.basename(path)
+        self.path = path
         try:
             with open(path, encoding="utf-8-sig", newline="") as f:
                 head = f.read(8192)
@@ -623,7 +637,8 @@ def validate_wav(data):
 class Recorder:
     MAX_WORDS = 200
 
-    def __init__(self, record_dir, words, build="build", dictionary=None, aligner_url=None, reference_dir=None, unit_audio_dir=None):
+    def __init__(self, record_dir, words, build="build", dictionary=None, aligner_url=None, reference_dir=None, unit_audio_dir=None, alphabet_audio_dir=None,
+                 alphabet_lexicon=None, alphabet_clusters_top=450):
         self.dir, self.build, self.dictionary, self.aligner_url = record_dir, build, dictionary, aligner_url
         self.refs = load_references(reference_dir)
         self.unit_clips = load_units(unit_audio_dir)
@@ -631,6 +646,9 @@ class Recorder:
         self.words = {w["id"]: w for w in words}
         os.makedirs(self.dir, exist_ok=True)
         self.token = secrets.token_urlsafe(16)
+        os.makedirs(self.dir, exist_ok=True)
+        lex = alphabet_lexicon or _lexicon_path(dictionary)
+        self.alphabet = al.Alphabet(self.dir, alphabet_audio_dir, lex, build, alphabet_clusters_top)
         self.load_saved_words()
         if not self.words and dictionary is None:
             raise v.ViewerError(2, "give at least one --word 'MALAYALAM|manglish' (or run with --dictionary and add words in the sidebar)")
@@ -1059,6 +1077,36 @@ def make_handler(rec):
                     return self.send(200, PAGE.replace("__STYLE__", STYLE).replace("__TOKEN__", rec.token).encode(), "text/html; charset=utf-8")
                 if p == "/favicon.ico":
                     return self.send(204, b"", "image/x-icon")
+                if p == "/alphabet":
+                    return self.send(200, al.PAGE.replace("__STYLE__", STYLE).replace("__TOKEN__", rec.token).encode(), "text/html; charset=utf-8")
+                if p.startswith("/api/alphabet"):
+                    qs = parse_qs(urlparse(self.path).query)
+                    text = (qs.get("text") or [""])[0]
+                    kk = (qs.get("k") or ["0"])[0]
+                    k = int(kk) if kk.isdigit() else -1
+                    if p == "/api/alphabet":
+                        return self.js(rec.alphabet.overview())
+                    if p == "/api/alphabet/unicode":
+                        return self.js(al.unicode_block())
+                    if p == "/api/alphabet/export.csv":
+                        return self.send(200, rec.alphabet.export_csv().encode("utf-8"), "text/csv; charset=utf-8")
+                    if p == "/api/alphabet/peaks":
+                        d = rec.alphabet.detail_fast(text, k)
+                        return self.js(d)
+                    if p == "/api/alphabet/detail":
+                        return self.js(rec.alphabet.detail(text, k))
+                    if p == "/api/alphabet/group":
+                        return self.js(rec.alphabet.group_report(text))
+                    if p == "/api/alphabet/clip":
+                        with open(rec.alphabet.clip(text, k)["path"], "rb") as f:
+                            data = f.read(5 * 1024 * 1024)
+                        r_ = v.parse_range(self.headers.get("Range"), len(data))
+                        if r_ == "invalid":
+                            return self.send(416, b"", "audio/wav", {"Content-Range": "bytes */%d" % len(data), "Accept-Ranges": "bytes"})
+                        if r_:
+                            return self.send(206, data[r_[0]:r_[1] + 1], "audio/wav", {"Content-Range": "bytes %d-%d/%d" % (r_[0], r_[1], len(data)), "Accept-Ranges": "bytes"})
+                        return self.send(200, data, "audio/wav", {"Accept-Ranges": "bytes"})
+                    return self.js({"error": "not found"}, 404)
                 if p == "/compare":
                     return self.send(200, COMPARE.replace("__STYLE__", STYLE).replace("__TOKEN__", rec.token).encode(), "text/html; charset=utf-8")
                 if p == "/api/words":
@@ -1129,6 +1177,22 @@ def make_handler(rec):
                     return self.js({"error": "missing or wrong token (reload the page)"}, 403)
                 u = urlparse(self.path)
                 ctype = (self.headers.get("Content-Type") or "").split(";")[0].strip()
+                if u.path == "/api/alphabet/review":
+                    if ctype != "application/json":
+                        return self.js({"error": "Content-Type must be application/json"}, 415)
+                    try:
+                        n = int(self.headers.get("Content-Length", ""))
+                    except ValueError:
+                        raise v.ViewerError(411, "Content-Length required")
+                    if n > 4096:
+                        raise v.ViewerError(413, "request too large")
+                    try:
+                        d = json.loads(self.rfile.read(n).decode("utf-8"))
+                    except (ValueError, UnicodeDecodeError):
+                        raise v.ViewerError(422, "request is not valid JSON")
+                    if not isinstance(d, dict) or not all(isinstance(d.get(x), str) for x in ("text", "key", "verdict")):
+                        raise v.ViewerError(422, "text, key and verdict are required")
+                    return self.js({"saved": rec.alphabet.set_review(d["text"], d["key"], d["verdict"], d.get("note", ""), d.get("reviewer", ""))})
                 if u.path == "/api/words":
                     if ctype != "application/json":
                         return self.js({"error": "Content-Type must be application/json"}, 415)
@@ -1230,7 +1294,7 @@ button:hover:not(:disabled){border-color:var(--blue)}button:disabled{opacity:.45
 
 PAGE = r"""<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sound2Word Voice Recorder</title><style>__STYLE__</style></head><body>
-<header><h1>Sound2Word &mdash; Voice Recorder</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a></nav>
+<header><h1>Sound2Word &mdash; Voice Recorder</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a> &middot; <a href="/alphabet">Alphabet</a></nav>
 <div class="banner"><b>PERSONAL TEST RECORDINGS</b> &mdash; for trying the screen and playback only. Not experiment data, not a verified vocabulary, and not evidence of recognition accuracy. Audio stays on this computer.</div></header>
 <div class="layout"><aside class="side card" id="side"><h2 style="margin:0 0 6px;font-size:16px">Word search</h2>
  <div class="mut" id="dinfo">Search a dictionary by Malayalam, English or Manglish.</div>
@@ -1479,7 +1543,7 @@ loadWords().then(()=>dload(true)).catch(e=>say('Cannot load words: '+e.message,'
 
 COMPARE = r"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sound2Word Compare Words</title><style>__STYLE__</style></head><body>
-<header><h1>Sound2Word &mdash; Compare two words, sound by sound</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a></nav>
+<header><h1>Sound2Word &mdash; Compare two words, sound by sound</h1><nav><a href="/">Record</a> &middot; <a href="/compare">Compare two words</a> &middot; <a href="/alphabet">Alphabet</a></nav>
 <div class="banner"><b>PERSONAL TEST RECORDINGS</b> &mdash; boundaries are estimates or placed by hand; differences shown are uncalibrated measurements, not recognition accuracy.</div></header>
 <main>
 <div class="card"><div class="row"><label>Word A <select id="a"></select></label><label>Word B <select id="b"></select></label><button id="go" class="ok">Compare</button></div><div id="msg" class="mut">Only takes accepted with sound boundaries can be compared.</div></div>
@@ -1546,12 +1610,17 @@ def main():
     ap.add_argument("--unit-audio-dir", nargs="+", help="one or more folders (searched recursively) of generated sound-unit clips with "
                     "meta_scored.json / meta.json (tools/model_eval/gen_units.py): shown as a 'sounds that build this word' row; with several "
                     "voices the clip the recogniser heard exactly is used for each unit")
+    ap.add_argument("--alphabet-audio-dir", nargs="+", help="folders (searched recursively) of generated clips for the /alphabet page (meta.json written by "
+                    "tools/model_eval/gen_units.py on the inventory.json from tools/s2w_alphabet.py); every voice is kept")
+    ap.add_argument("--alphabet-lexicon", help="lexicon.csv used to rank the real conjunct clusters for /alphabet (default: the --dictionary file when it is a lexicon)")
+    ap.add_argument("--alphabet-clusters-top", type=int, default=450, help="how many frequent conjunct clusters to list (default 450)")
     ap.add_argument("--build", default=os.environ.get("S2W_BUILD", "build"))
     ap.add_argument("--port", type=int, default=8765)
     a = ap.parse_args()
     try:
         dic = Dictionary(a.dictionary, a.dict_ml_col, a.dict_en_col, a.dict_no_header) if a.dictionary else None
-        rec = Recorder(a.record_dir, [parse_word(w) for w in a.word], a.build, dic, a.aligner_url, a.reference_dir, a.unit_audio_dir)
+        rec = Recorder(a.record_dir, [parse_word(w) for w in a.word], a.build, dic, a.aligner_url, a.reference_dir, a.unit_audio_dir, a.alphabet_audio_dir,
+                       a.alphabet_lexicon, a.alphabet_clusters_top)
         srv = make_server(rec, a.port)
     except v.ViewerError as e:
         print("error: %s" % e.message, file=sys.stderr)
