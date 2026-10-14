@@ -21,6 +21,7 @@ import math
 import os
 import sys
 import unicodedata
+import wave
 
 import numpy as np
 
@@ -114,40 +115,63 @@ def _meta_items(d):
     raise FileNotFoundError("no meta.json in %s" % d)
 
 
+def speaker_key(x):
+    """Canonical form of a participant ID: NFC, trimmed, case-folded. 'P1', ' p1 ' and 'p1' are one person; '' means no speaker."""
+    return unicodedata.normalize("NFC", str(x if x is not None else "")).strip().casefold()
+
+
+def file_sha256(path):
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 class Bank(dict):
-    """{unit text: clip path} plus `.in_word`: the units whose clip was CUT OUT OF A REAL WORD (natural length and context, as in the template
-    papers) rather than spoken alone."""
+    """{unit text: clip path} plus the provenance of EVERY reference clip listed in the metadata, whether or not it ends up used:
+    `.in_word` units cut out of real words, `.speakers` canonical IDs of the people who supplied clips, `.synthetic` generated clips (never
+    speakers), `.unattributed` clips with neither a speaker nor a synthetic mark, `.conflicts` clips that are both, `.skipped` listed clips whose
+    file is missing or outside the folder, `.audio_hashes` SHA-256 of every reference file that exists."""
 
     def __init__(self):
         super().__init__()
         self.in_word = set()
         self.dirs = []
-        self.speakers = set()                                     # people whose recordings are in the bank (meta field "speaker"); TTS voices are not people
-        self.synthetic = 0                                        # clips marked synthetic (meta "synthetic": true) - generated voices, never speakers
-        self.unattributed = []                                    # clips with neither a speaker nor a synthetic mark: provenance unknown
-        self.conflicts = []                                       # clips marked both synthetic and with a speaker
+        self.speakers = set()
+        self.synthetic = 0
+        self.unattributed = []
+        self.conflicts = []
+        self.skipped = []
+        self.audio_hashes = set()
 
 
 def load_bank(unit_dirs, use_in_word=True):
     """One folder or a list. Per unit a clip cut out of a word (meta voice contains 'cut from word') wins over an isolated clip; otherwise the
-    earlier folder wins. use_in_word=False ignores the cut-out clips entirely (an ablation: isolated clips only)."""
+    earlier folder wins. use_in_word=False leaves the cut-out clips out of the bank (an ablation: isolated clips only) but still records their
+    provenance, so the speaker and leakage checks are the same in every configuration."""
     bank = Bank()
     bank.dirs = [unit_dirs] if isinstance(unit_dirs, str) else list(unit_dirs)
-    for unit_dir in ([unit_dirs] if isinstance(unit_dirs, str) else unit_dirs):
+    for unit_dir in bank.dirs:
         for it in _meta_items(unit_dir):
             if not it.get("file"):
                 continue
-            p = os.path.join(unit_dir, it["file"])
-            if not (os.path.realpath(p).startswith(os.path.realpath(unit_dir) + os.sep) and os.path.exists(p)):
-                continue
             u = norm(it["word_ml"])
-            if it.get("speaker"):
-                bank.speakers.add(str(it["speaker"]))
+            spk = speaker_key(it.get("speaker"))
+            if spk:
+                bank.speakers.add(spk)                            # registered even if the clip cannot be loaded: the person is a reference speaker
+            p = os.path.join(unit_dir, it["file"])
+            inside = os.path.realpath(p).startswith(os.path.realpath(unit_dir) + os.sep)
+            if not (inside and os.path.exists(p)):
+                bank.skipped.append({"unit": u, "file": str(it["file"]), "reason": "outside the folder" if not inside else "file missing"})
+                continue
+            bank.audio_hashes.add(file_sha256(p))
             if it.get("synthetic"):
                 bank.synthetic += 1
-            if it.get("synthetic") and it.get("speaker"):
+            if it.get("synthetic") and spk:
                 bank.conflicts.append(u)
-            if not it.get("synthetic") and not it.get("speaker"):
+            if not it.get("synthetic") and not spk:
                 bank.unattributed.append(u)
             cut = "cut from word" in str(it.get("voice", "")) or bool(it.get("in_word"))
             if cut and not use_in_word:
@@ -198,6 +222,8 @@ class Composer:
         self.duration = duration or ("cut" if duration_rule else "none")
         if self.duration not in ("none", "cut", "squeeze"):
             raise ValueError("duration must be none, cut or squeeze")
+        if smooth_ms is not None and smooth_ms < 0:
+            raise ValueError("smooth_ms must be 0 (off) or a positive window in ms, not %s" % smooth_ms)
         self.smooth_ms = smooth_ms or 0.0
         self.in_word = getattr(bank, "in_word", set())
         self._wav = {}
@@ -273,10 +299,15 @@ class Composer:
         return np.concatenate(out) if out else feat
 
 
-def rank_composed(query_feat, composer, words, shortlist=150, dur_ratio=(0.4, 2.5), max_templates=20000):
-    """-> ([(word, dist)] best first, n_candidates, n_without_clips). Two stages: a cheap squashed-feature distance on every candidate whose
-    length is plausible, then DTW on the best `shortlist`."""
-    cands, missing = [], 0
+def rank_composed(query_feat, composer, words, shortlist=150, dur_ratio=(0.4, 2.5), max_templates=20000, track=None):
+    """-> (ranking [(word, dist)] best first, n_candidates, n_without_clips, info). Stages: (1) a word with a unit that has no clip is dropped
+    ('no_clips'); (2) a length filter ('length_filter'); (3) at most `max_templates` templates are built, the rest are NOT tried and are counted in
+    info['templates_truncated'] ('template_limit'); (4) a cheap squashed-feature distance keeps the best `shortlist` ('stage1_shortlist');
+    (5) DTW ranks those. info['tracked'] says at which stage the word given as `track` was lost (None = it was ranked)."""
+    if shortlist < 1 or max_templates < 1:
+        raise ValueError("shortlist and max_templates must be at least 1")
+    cands, missing, truncated = [], 0, 0
+    lost = {}
     qs = _squash(query_feat)
     q_dur = len(query_feat) * 0.02
     built = 0
@@ -284,23 +315,32 @@ def rank_composed(query_feat, composer, words, shortlist=150, dur_ratio=(0.4, 2.
         est = composer.est_duration(w)
         if est is None:
             missing += 1
+            lost[w] = "no_clips"
             continue
         if not dur_ratio[0] <= est / max(q_dur, 1e-3) <= dur_ratio[1]:
-            continue                                               # cheap length filter BEFORE the expensive template is built
+            lost[w] = "length_filter"                              # cheap length filter BEFORE the expensive template is built
+            continue
         if built >= max_templates:
-            break
+            truncated += 1
+            lost[w] = "template_limit"
+            continue
         built += 1
         t = composer.template(w)
         if t is None:
             missing += 1
+            lost[w] = "no_clips"
             continue
         r = len(t["feat"]) / float(len(query_feat))
         if not dur_ratio[0] <= r <= dur_ratio[1]:
+            lost[w] = "length_filter"
             continue
         cands.append((float(np.sqrt(((qs - _squash(t["feat"])) ** 2).sum(axis=1)).mean()), w, t))
     cands.sort(key=lambda x: x[0])
+    for _sc, w, _t in cands[shortlist:]:
+        lost[w] = "stage1_shortlist"
     scored = sorted(((dtw(query_feat, t["feat"]), w) for _s, w, t in cands[:shortlist]))
-    return [(w, d) for d, w in scored], len(cands), missing
+    info = {"templates_truncated": truncated, "tracked": lost.get(track) if track is not None else None}
+    return [(w, d) for d, w in scored], len(cands), missing, info
 
 
 # ------------------------------------------------------------------ method 2: label sequence
@@ -367,19 +407,21 @@ def search(query_wav, bank, words, heard=None, top=5, shortlist=150, rescore_top
 
 def search_with(query_wav, comp, words, heard=None, top=5, shortlist=150, rescore_top=200):
     """Like search() but reuses a Composer, so the joined templates are built once and kept (what the recorder does)."""
+    if top < 1 or shortlist < 1 or rescore_top < 1:
+        raise ValueError("top, shortlist and rescore_top must be at least 1")
     rate, x = jn.read_wav(query_wav)
     qf = mfcc(x, rate)
     wlist = [w for w, _u in words]
-    composed, n_cand, missing = rank_composed(qf, comp, wlist, shortlist)
+    composed, n_cand, missing, info = rank_composed(qf, comp, wlist, shortlist)
     out = {"composed": composed[:top], "candidates_with_clips": n_cand, "words_without_all_unit_clips": missing,
-           "labels": [], "fused": [], "rescored": [], "note": ""}
+           "labels": [], "fused": [], "rescored": [], "note": "", "templates_truncated": info["templates_truncated"]}
     if heard:
         lab = rank_labels(heard, words)
         out["labels"] = lab[:top]
         out["fused"] = fuse(composed, lab)[:top]
         # rescoring (Sun & Zhao 2014): composed DTW only on the recogniser's / label method's best candidates, not the whole dictionary
         short = [w for w, _d in lab[:rescore_top]]
-        resc, _n, _m = rank_composed(qf, comp, short, shortlist)
+        resc, _n, _m, _i = rank_composed(qf, comp, short, shortlist)
         out["rescored"] = resc[:top]
         out["rescore_candidates"] = len(short)
     else:
@@ -398,88 +440,273 @@ RECALL_AT = (10, 50, 100, 200)
 
 
 class SpeakerLeak(ValueError):
-    """A query was spoken by someone whose recording is also a reference clip in the bank."""
+    """A query was spoken by someone whose recording is also a reference clip, or its audio IS a reference clip."""
 
 
 def metadata_report(bank):
     """What the speaker classification rests on. A reference clip with no speaker and no synthetic mark could be a person: any query from that person
-    would be wrongly called unseen, so `unattributed` and `conflicts` must be empty for a trustworthy unseen-speaker result."""
+    would be wrongly called unseen. The same holds for a clip that is marked both, and for a listed clip that could not be loaded. `ok` is True only
+    when none of that is present; an unseen-speaker claim is valid only then."""
+    unattr, conf, skipped = getattr(bank, "unattributed", []), getattr(bank, "conflicts", []), getattr(bank, "skipped", [])
     return {"reference_speakers": sorted(getattr(bank, "speakers", set())), "synthetic_clips": getattr(bank, "synthetic", 0),
-            "unattributed_clips": len(getattr(bank, "unattributed", [])), "unattributed_units": sorted(set(getattr(bank, "unattributed", [])))[:20],
-            "conflicting_clips": len(getattr(bank, "conflicts", [])), "ok": not getattr(bank, "unattributed", []) and not getattr(bank, "conflicts", [])}
+            "unattributed_clips": len(unattr), "unattributed_units": sorted(set(unattr))[:20], "conflicting_clips": len(conf),
+            "skipped_clips": len(skipped), "skipped": skipped[:20], "reference_files_hashed": len(getattr(bank, "audio_hashes", ())),
+            "ok": not unattr and not conf and not skipped}
+
+
+def query_audio_in_reference(path, bank):
+    """True when the query file is byte-identical to a reference clip: a leak whatever the metadata says."""
+    try:
+        return file_sha256(path) in getattr(bank, "audio_hashes", ())
+    except OSError:
+        return False
 
 
 def speaker_leaks(queries, bank):
-    """[(word, speaker)] for every query whose speaker also supplied a reference clip (queries without a speaker cannot be checked)."""
+    """[(word, speaker or 'identical audio')] for every query whose speaker also supplied a reference clip (compared after speaker_key), or whose
+    audio file is a copy of a reference clip."""
     ref = getattr(bank, "speakers", set())
-    return [(q[0], q[2]) for q in queries if len(q) > 2 and q[2] and str(q[2]) in ref]
+    out = []
+    for q in queries:
+        spk = speaker_key(q[2]) if len(q) > 2 else ""
+        if spk and spk in ref:
+            out.append((q[0], q[2]))
+        elif query_audio_in_reference(q[1], bank):
+            out.append((q[0], "identical audio"))
+    return out
 
 
-def evaluate(queries, bank, words, heard=None, shortlist=150, rescore_top=200, composer=None, allow_same_speaker=False):
+def _closed(rows):
+    return [r for r in rows if r["in_dictionary"]]
+
+
+def _rate(rs, m, k):
+    return round(sum(1 for r in rs if r.get(m) and r[m] <= k) / len(rs), 3)
+
+
+def evaluate(queries, bank, words, heard=None, shortlist=150, rescore_top=200, composer=None, allow_same_speaker=False, max_templates=20000):
     """queries: [(word, wav path[, speaker])]; heard: {word: recognised text}.
-    -> (summary, rows). summary has top1 / top5 / MRR / not_found per method, `shortlist_recall` (how often the right word is inside the label
-    method's top 10/50/100/200: rescoring can never recover a word outside its shortlist), mean milliseconds per method and, when speakers are
-    given, the same top-1 per speaker. Every query is a row, failures included."""
+    -> (summary, rows). Every query is a row, failures included. Closed-dictionary figures (top-1 / top-5 / MRR per method, by speaker, by condition,
+    shortlist recall) are computed over queries whose word IS in the dictionary only; the others are counted in summary['queries'] and
+    ['not_in_dictionary']. A query whose audio cannot be read is a counted miss (never an abort). Conditions: seen_speaker (the speaker, or the exact
+    audio, is in the reference bank), unseen_speaker (only when the reference metadata is complete, summary['unseen_speaker_claim_valid']),
+    unseen_unverified (the same person-level fact but the reference provenance is incomplete, so no unseen claim is made), speaker_unknown."""
     import time
+    if shortlist < 1 or rescore_top < 1 or max_templates < 1:
+        raise ValueError("shortlist, rescore_top and max_templates must be at least 1")
     leaks = speaker_leaks(queries, bank)
     if leaks and not allow_same_speaker:
-        raise SpeakerLeak("%d query(ies) are spoken by a person who also supplied reference clips (%s): this is not an unseen-speaker test. "
-                          "Remove them, or pass allow_same_speaker / --allow-same-speaker to report them separately as 'seen_speaker'."
-                          % (len(leaks), ", ".join(sorted({sp for _w, sp in leaks}))))
+        raise SpeakerLeak("%d query(ies) are spoken by a person who also supplied reference clips, or are copies of them (%s): this is not an "
+                          "unseen-speaker test. Remove them, or pass allow_same_speaker / --allow-same-speaker to report them separately as 'seen_speaker'."
+                          % (len(leaks), ", ".join(sorted({str(sp) for _w, sp in leaks}))))
+    meta = metadata_report(bank)
     comp = composer or Composer(bank)
+    words = [(norm(w), u) for w, u in words]
     wlist = [w for w, _u in words]
     in_dict = set(wlist)
-    ref_speakers = {str(x) for x in getattr(bank, "speakers", set())}
+    heard_n = {norm(k): v for k, v in heard.items()} if heard is not None else None
+    ref_speakers = getattr(bank, "speakers", set())
+    leak_set = {(w, sp) for w, sp in leaks}
     rows = []
     for q in queries:
-        word, path = q[0], q[1]
+        word, path = norm(q[0]), q[1]
         speaker = q[2] if len(q) > 2 else None
-        rate, x = jn.read_wav(path)
-        qf = mfcc(x, rate)
+        sk = speaker_key(speaker)
+        audio_dup = (q[0], "identical audio") in leak_set
+        if (sk and sk in ref_speakers) or audio_dup:
+            cond = "seen_speaker"
+        elif sk:
+            cond = "unseen_speaker" if meta["ok"] else "unseen_unverified"
+        else:
+            cond = "speaker_unknown"
+        row = {"word": word, "speaker": speaker, "in_dictionary": word in in_dict, "condition": cond, "audio_in_reference": audio_dup}
         t0 = time.time()
-        composed, _n, _m = rank_composed(qf, comp, wlist, shortlist)
-        row = {"word": word, "speaker": speaker, "in_dictionary": word in in_dict,
-               "condition": "seen_speaker" if (speaker and str(speaker) in ref_speakers) else ("unseen_speaker" if speaker else "speaker_unknown"),
-               "composed": _rank_of(composed, word), "ms_composed": round(1000 * (time.time() - t0), 1)}
-        if heard and word in heard:
+        try:
+            rate, x = jn.read_wav(path)
+            qf = mfcc(x, rate)
+        except (OSError, ValueError, EOFError, wave.Error) as e:
+            row.update({"error": "unusable query audio: %s" % e, "composed": None, "lost_at": "unusable_audio", "ms_composed": 0.0})
+            qf = None
+        if qf is not None:
+            composed, _n, _m, info = rank_composed(qf, comp, wlist, shortlist, max_templates=max_templates, track=word)
+            row.update({"composed": _rank_of(composed, word), "ms_composed": round(1000 * (time.time() - t0), 1),
+                        "lost_at": None if _rank_of(composed, word) else (info["tracked"] or ("not_in_dictionary" if word not in in_dict else "dtw_not_ranked")),
+                        "templates_truncated": info["templates_truncated"]})
+        if heard_n is not None and word in heard_n:
             t1 = time.time()
-            lab = rank_labels(heard[word], words)
+            try:
+                lab = rank_labels(heard_n[word], words)
+            except ValueError as e:                                # recogniser text that cannot be cut into units: a counted miss, not an abort
+                lab = None
+                row["heard_error"] = str(e)
             row["ms_labels"] = round(1000 * (time.time() - t1), 1)
-            row["labels"] = _rank_of(lab, word)
-            row["fused"] = _rank_of(fuse(composed, lab), word)
-            t2 = time.time()
-            resc, _n2, _m2 = rank_composed(qf, comp, [w for w, _d in lab[:rescore_top]], shortlist)
-            row["ms_rescored"] = round(1000 * (time.time() - t2), 1)
-            row["rescored"] = _rank_of(resc, word)
+            row["labels"] = _rank_of(lab, word) if lab is not None else None
+            if lab is None:
+                row["fused"] = row["rescored"] = None
+            elif qf is not None:
+                row["fused"] = _rank_of(fuse(composed, lab), word)
+                t2 = time.time()
+                resc, _n2, _m2, _i2 = rank_composed(qf, comp, [w for w, _d in lab[:rescore_top]], shortlist, max_templates=max_templates)
+                row["ms_rescored"] = round(1000 * (time.time() - t2), 1)
+                row["rescored"] = _rank_of(resc, word)
+            else:
+                row["fused"] = row["rescored"] = None
         rows.append(row)
-    summary = {}
+    closed = _closed(rows)
+    summary = {"queries": {"total": len(rows), "in_dictionary": len(closed), "out_of_dictionary": len(rows) - len(closed),
+                           "unusable": sum(1 for r in rows if "error" in r)}}
     for m in ("composed", "labels", "fused", "rescored"):
-        rs = [r for r in rows if m in r]
+        rs = [r for r in closed if m in r]
         if rs:
             n = len(rs)
-            summary[m] = {"n": n, "top1": round(sum(1 for r in rs if r[m] == 1) / n, 3), "top5": round(sum(1 for r in rs if r[m] and r[m] <= 5) / n, 3),
-                          "mrr": round(sum(1.0 / r[m] for r in rs if r[m]) / n, 3), "not_found": sum(1 for r in rs if not r[m]),
-                          "mean_ms": round(sum(r.get("ms_" + m, 0.0) for r in rs) / n, 1)}
-            spk = sorted({r["speaker"] for r in rs if r["speaker"]})
+            summary[m] = {"n": n, "top1": _rate(rs, m, 1), "top5": _rate(rs, m, 5), "mrr": round(sum(1.0 / r[m] for r in rs if r[m]) / n, 3),
+                          "not_found": sum(1 for r in rs if not r[m]), "mean_ms": round(sum(r.get("ms_" + m, 0.0) for r in rs) / n, 1)}
+            spk = sorted({r["speaker"] for r in rs if r["speaker"]}, key=str)
             if spk:
-                summary[m]["top1_by_speaker"] = {sp: round(sum(1 for r in rs if r["speaker"] == sp and r[m] == 1) / max(1, sum(1 for r in rs if r["speaker"] == sp)), 3) for sp in spk}
+                summary[m]["top1_by_speaker"] = {str(sp): round(sum(1 for r in rs if r["speaker"] == sp and r[m] == 1) / max(1, sum(1 for r in rs if r["speaker"] == sp)), 3) for sp in spk}
     cond = {}
-    for c in sorted({r["condition"] for r in rows}):
-        sub = [r for r in rows if r["condition"] == c and r["in_dictionary"]]
+    for c in sorted({r["condition"] for r in closed}):
+        sub = [r for r in closed if r["condition"] == c]
         cond[c] = {"n": len(sub)}
         for m in ("composed", "labels", "fused", "rescored"):
             rs = [r for r in sub if m in r]
             if rs:
-                cond[c][m] = {"top1": round(sum(1 for r in rs if r[m] == 1) / len(rs), 3), "top5": round(sum(1 for r in rs if r[m] and r[m] <= 5) / len(rs), 3)}
+                cond[c][m] = {"top1": _rate(rs, m, 1), "top5": _rate(rs, m, 5)}
+    if "unseen_unverified" in cond:
+        cond["unseen_unverified"]["note"] = "NOT an unseen-speaker result: reference provenance is incomplete (see reference_metadata)"
     summary["by_condition"] = cond
-    summary["reference_metadata"] = metadata_report(bank)
+    summary["unseen_speaker_claim_valid"] = bool(meta["ok"])
+    summary["reference_metadata"] = meta
     out_dict = [r["word"] for r in rows if not r["in_dictionary"]]
     if out_dict:
-        summary["not_in_dictionary"] = {"n": len(out_dict), "words": sorted(set(out_dict)), "note": "cannot be recognised by construction; excluded from by_condition"}
-    lr = [r for r in rows if "labels" in r]
+        summary["not_in_dictionary"] = {"n": len(out_dict), "words": sorted(set(out_dict)), "note": "cannot be recognised by construction; excluded from every closed-dictionary figure above"}
+    stages = {}
+    for r in closed:
+        k = "found" if r.get("lost_at") is None and r.get("composed") else (r.get("lost_at") or "dtw_not_ranked")
+        stages[k] = stages.get(k, 0) + 1
+    summary["composed_stages"] = dict(sorted(stages.items()))
+    summary["composed_stages_note"] = "where the composed method lost the correct word; template_limit means candidates were never tried"
+    if heard_n is not None:
+        summary["missing_heard"] = sum(1 for r in closed if "labels" not in r)
+        summary["heard_unusable"] = sum(1 for r in closed if "heard_error" in r)
+    lr = [r for r in closed if "labels" in r]
     if lr:
-        summary["shortlist_recall"] = {"n": len(lr), **{"top%d" % k: round(sum(1 for r in lr if r["labels"] and r["labels"] <= k) / len(lr), 3) for k in RECALL_AT}}
+        ks = sorted(set(RECALL_AT) | {rescore_top})
+        summary["shortlist_recall"] = {"n": len(lr), **{"top%d" % k: _rate(lr, "labels", k) for k in ks}, "configured_rescore_top": rescore_top}
     return summary, rows
+
+
+# ------------------------------------------------------------------ Gate C: a frozen, verifiable configuration
+class FrozenMismatch(ValueError):
+    """The inputs or settings no longer match what was frozen."""
+
+
+class LedgerRefusal(ValueError):
+    """A second, different configuration was run on the same locked query set."""
+
+
+FREEZE_SCHEMA = "s2w-wordsearch-freeze-v1"
+DEFAULT_SETTINGS = {"duration": "none", "smooth_ms": 0.0, "shortlist": 150, "rescore_top": 200, "max_templates": 20000, "dur_ratio": [0.4, 2.5]}
+
+
+def _sha_json(obj):
+    import hashlib
+    return hashlib.sha256(json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def input_manifests(units, lexicon, queries_dir):
+    """Hashes of everything an evaluation depends on: the dictionary file, every reference clip, every query clip with its word and speaker."""
+    bank = load_bank(units)
+    items = [it for it in _meta_items(queries_dir) if it.get("file")]
+    q = sorted([norm(it["word_ml"]), speaker_key(it.get("speaker")), file_sha256(os.path.join(queries_dir, it["file"]))] for it in items)
+    return bank, items, {"lexicon_sha256": file_sha256(lexicon), "reference_clips_sha256": _sha_json(sorted(bank.audio_hashes)), "reference_clips": len(bank.audio_hashes),
+                         "queries_sha256": _sha_json(q), "queries": len(q), "dictionary_words": len(load_words(lexicon))}
+
+
+def freeze_problems(bank, query_items, queries_dir):
+    """Reasons this setup must NOT be frozen (an invalid or unvalidated setup is never frozen to complete a gate)."""
+    probs = []
+    if not bank:
+        probs.append("the reference bank is empty")
+    meta = metadata_report(bank)
+    if not meta["ok"]:
+        probs.append("reference provenance is incomplete: %d unattributed, %d conflicting, %d skipped clip(s)" % (meta["unattributed_clips"], meta["conflicting_clips"], meta["skipped_clips"]))
+    if not query_items:
+        probs.append("there are no query clips")
+    no_spk = [it.get("file") for it in query_items if not speaker_key(it.get("speaker"))]
+    if no_spk:
+        probs.append("%d query clip(s) have no speaker ID, so the seen/unseen split cannot be checked (e.g. %s)" % (len(no_spk), no_spk[0]))
+    qs = [(norm(it["word_ml"]), os.path.join(queries_dir, it["file"]), it.get("speaker")) for it in query_items]
+    leaks = speaker_leaks(qs, bank)
+    if leaks:
+        probs.append("%d query clip(s) leak from the reference set (same speaker or identical audio): %s" % (len(leaks), ", ".join(sorted({str(sp) for _w, sp in leaks}))))
+    return probs
+
+
+def freeze_config(units, lexicon, queries_dir, settings=None, allow_dirty=False, repo_dir=None):
+    """-> config dict with `config_sha256`. Raises ValueError listing every reason when the setup is not valid to freeze."""
+    st = dict(DEFAULT_SETTINGS)
+    st.update(settings or {})
+    if st["duration"] not in ("none", "cut", "squeeze") or st["smooth_ms"] < 0 or min(st["shortlist"], st["rescore_top"], st["max_templates"]) < 1:
+        raise ValueError("invalid settings: %s" % st)
+    bank, items, man = input_manifests(units, lexicon, queries_dir)
+    probs = freeze_problems(bank, items, queries_dir)
+    commit, dirty = _git_state(repo_dir)
+    if dirty and not allow_dirty:
+        probs.append("the code working tree has uncommitted changes (commit first, or pass --allow-dirty and accept that the freeze names a dirty tree)")
+    if probs:
+        raise ValueError("not frozen: " + "; ".join(probs))
+    cfg = {"schema": FREEZE_SCHEMA, "settings": st, "inputs": man, "code": {"git_commit": commit, "dirty": dirty},
+           "evidence": ("SYNTHETIC: software validation only, NOT Malayalam recognition accuracy" if bank.synthetic and bank.synthetic == len(bank.audio_hashes)
+                        else "reference clips include non-synthetic audio: check consent and verification before quoting results"),
+           "reference_speakers": sorted(bank.speakers), "reference_folders": len(bank.dirs)}
+    cfg["config_sha256"] = _sha_json(cfg)
+    return cfg
+
+
+def _git_state(repo_dir=None):
+    import subprocess
+    d = repo_dir or os.path.dirname(os.path.abspath(__file__))
+    try:
+        c = subprocess.run(["git", "rev-parse", "HEAD"], cwd=d, capture_output=True, text=True, timeout=20).stdout.strip() or "unknown"
+        dirty = bool(subprocess.run(["git", "status", "--porcelain", "--", "tools", "core", "evaluation"], cwd=d, capture_output=True, text=True, timeout=20).stdout.strip())
+        return c, dirty
+    except (OSError, subprocess.SubprocessError):
+        return "unknown", True
+
+
+def verify_frozen(cfg, units, lexicon, queries_dir):
+    """[] when the frozen file is intact and every input still hashes the same; otherwise one message per difference."""
+    probs = []
+    body = {k: v for k, v in cfg.items() if k != "config_sha256"}
+    if cfg.get("schema") != FREEZE_SCHEMA:
+        probs.append("not a %s file" % FREEZE_SCHEMA)
+    if _sha_json(body) != cfg.get("config_sha256"):
+        probs.append("the frozen file was edited after freezing (its own hash does not match)")
+    _bank, _items, man = input_manifests(units, lexicon, queries_dir)
+    for k, v in man.items():
+        if cfg.get("inputs", {}).get(k) != v:
+            probs.append("%s changed since the freeze" % k)
+    return probs
+
+
+def ledger_check(ledger_path, cfg, allow_reuse=False):
+    """Append-only record of evaluations on a frozen query set. The same config may be re-run (reproduction); a DIFFERENT config on the same query
+    set is refused unless allow_reuse, and then it is recorded as a reuse. Returns True when this run is a reuse."""
+    entries = []
+    if os.path.exists(ledger_path):
+        with open(ledger_path, encoding="utf-8") as f:
+            entries = [json.loads(line) for line in f if line.strip()]
+    q = cfg["inputs"]["queries_sha256"]
+    other = [e for e in entries if e["queries_sha256"] == q and e["config_sha256"] != cfg["config_sha256"]]
+    if other and not allow_reuse:
+        raise LedgerRefusal("this query set was already evaluated with a different frozen configuration (%s...); a second configuration on the same locked "
+                            "queries is test reuse. Pass --allow-test-reuse to record it as such." % other[0]["config_sha256"][:12])
+    import time
+    with open(ledger_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps({"config_sha256": cfg["config_sha256"], "queries_sha256": q, "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                            "reuse": bool(other)}, sort_keys=True) + "\n")
+    return bool(other)
 
 
 CONFIGS = {"plain (default: no duration rule, no smoothing)": dict(duration="none", smooth_ms=0),
@@ -522,37 +749,83 @@ def main(argv=None):
     e.add_argument("--heard-file", help="JSON {word: recognised text}")
     e.add_argument("--limit", type=int)
     e.add_argument("--allow-same-speaker", action="store_true", help="evaluate queries spoken by a person who also supplied reference clips; they are reported separately as seen_speaker, never mixed into the unseen-speaker result")
-    e.add_argument("--strict-metadata", action="store_true", help="refuse when a reference clip has no speaker and no synthetic mark, or has both (exit 4)")
-    e.add_argument("--compare-configs", action="store_true", help="run all four duration-rule / smoothing configurations and report each")
-    for q in (s, e):
+    e.add_argument("--strict-metadata", action="store_true", help="refuse when reference provenance is incomplete (exit 4)")
+    e.add_argument("--compare-configs", action="store_true", help="run every duration-rule / smoothing configuration and report each")
+    e.add_argument("--frozen", help="a freeze file: settings come from it, and the evaluation is refused (exit 5) if any input hash changed")
+    e.add_argument("--ledger", help="evaluation ledger for the frozen query set (default: test_ledger.jsonl inside the queries folder)")
+    e.add_argument("--allow-test-reuse", action="store_true", help="with --frozen: record a second, different configuration on the same query set as a reuse (exit 6 otherwise)")
+    f = sub.add_parser("freeze", help="write a verifiable freeze file (settings + hashes of dictionary, reference clips and queries); refuses an invalid setup (exit 7)")
+    f.add_argument("--queries", required=True)
+    f.add_argument("--units", required=True, nargs="+")
+    f.add_argument("--lexicon", required=True)
+    f.add_argument("--out", required=True)
+    f.add_argument("--allow-dirty", action="store_true")
+    for q in (s, e, f):
         q.add_argument("--duration", choices=("none", "cut", "squeeze"), default="none", help="duration rule for isolated non-final units (default none)")
         q.add_argument("--smooth-ms", type=float, default=0.0, help="join smoothing window in ms (default 0 = off)")
         q.add_argument("--rescore-top", type=int, default=200)
+    for q in (e, f):
+        q.add_argument("--shortlist", type=int, default=150, help="composed-DTW shortlist size")
     a = ap.parse_args(argv)
     try:
+        if a.cmd == "freeze":
+            try:
+                cfg = freeze_config(a.units, a.lexicon, a.queries, {"duration": a.duration, "smooth_ms": a.smooth_ms, "shortlist": a.shortlist, "rescore_top": a.rescore_top}, a.allow_dirty)
+            except ValueError as ex:
+                print("refused: %s" % ex, file=sys.stderr)
+                return 7
+            with open(a.out, "w", encoding="utf-8", newline="\n") as fh:
+                json.dump(cfg, fh, ensure_ascii=False, indent=1, sort_keys=True)
+                fh.write("\n")
+            print("froze %s (config_sha256 %s...; %d reference clips, %d queries)" % (a.out, cfg["config_sha256"][:12], cfg["inputs"]["reference_clips"], cfg["inputs"]["queries"]))
+            return 0
         bank = load_bank(a.units)
         words = load_words(a.lexicon, a.limit)
         if a.cmd == "search":
             r = search_with(a.query, Composer(bank, smooth_ms=a.smooth_ms, duration=a.duration), words, a.heard, a.top, rescore_top=a.rescore_top)
             print(json.dumps(r, ensure_ascii=False, indent=1))
             return 0
+        settings = {"duration": a.duration, "smooth_ms": a.smooth_ms, "shortlist": a.shortlist, "rescore_top": a.rescore_top, "max_templates": 20000}
+        cfg = None
+        if a.frozen:
+            if a.compare_configs or a.limit:
+                raise ValueError("--frozen cannot be combined with --compare-configs or --limit: the frozen file fixes the settings and the dictionary")
+            with open(a.frozen, encoding="utf-8") as fh:
+                cfg = json.load(fh)
+            diffs = verify_frozen(cfg, a.units, a.lexicon, a.queries)
+            if diffs:
+                print("refused: the frozen setup does not match: %s" % "; ".join(diffs), file=sys.stderr)
+                return 5
+            settings.update(cfg["settings"])
+            try:
+                reuse = ledger_check(a.ledger or os.path.join(a.queries, "test_ledger.jsonl"), cfg, a.allow_test_reuse)
+            except LedgerRefusal as ex:
+                print("refused: %s" % ex, file=sys.stderr)
+                return 6
         meta = metadata_report(bank)
         if not meta["ok"]:
-            msg = "reference clips with unknown provenance: %d unattributed (no speaker, not marked synthetic), %d conflicting; unseen-speaker status may be wrong" % (meta["unattributed_clips"], meta["conflicting_clips"])
+            msg = "reference provenance is incomplete: %d unattributed (no speaker, not marked synthetic), %d conflicting, %d skipped clip(s); no unseen-speaker claim is made" % (meta["unattributed_clips"], meta["conflicting_clips"], meta["skipped_clips"])
             if a.strict_metadata:
                 print("refused: " + msg, file=sys.stderr)
                 return 4
             print("warning: " + msg, file=sys.stderr)
-        heard = json.load(open(a.heard_file, encoding="utf-8")) if a.heard_file else None
+        heard = None
+        if a.heard_file:
+            with open(a.heard_file, encoding="utf-8") as fh:
+                heard = json.load(fh)
         qs = [(norm(it["word_ml"]), os.path.join(a.queries, it["file"]), it.get("speaker")) for it in _meta_items(a.queries) if it.get("file")]
         if a.compare_configs:
             res = compare_configs(qs, bank, words, heard, rescore_top=a.rescore_top, allow_same_speaker=a.allow_same_speaker)
             print(json.dumps({"configurations": res, "chance_top1": round(1.0 / max(1, len(words)), 5), "words": len(words), "units_with_clips": len(bank),
                               "units_cut_from_words": len(getattr(bank, "in_word", ()))}, ensure_ascii=False, indent=1))
             return 0
-        summary, rows = evaluate(qs, bank, words, heard, rescore_top=a.rescore_top, composer=Composer(bank, smooth_ms=a.smooth_ms, duration=a.duration), allow_same_speaker=a.allow_same_speaker)
-        print(json.dumps({"summary": summary, "per_word": rows, "chance_top1": round(1.0 / max(1, len(words)), 5), "words": len(words),
-                          "units_with_clips": len(bank)}, ensure_ascii=False, indent=1))
+        comp = Composer(bank, smooth_ms=settings["smooth_ms"], duration=settings["duration"])
+        summary, rows = evaluate(qs, bank, words, heard, shortlist=settings["shortlist"], rescore_top=settings["rescore_top"], composer=comp,
+                                 allow_same_speaker=a.allow_same_speaker, max_templates=settings["max_templates"])
+        out = {"summary": summary, "per_word": rows, "chance_top1": round(1.0 / max(1, len(words)), 5), "words": len(words), "units_with_clips": len(bank), "settings": settings}
+        if cfg:
+            out["frozen"] = {"config_sha256": cfg["config_sha256"], "evidence": cfg["evidence"], "test_reuse": reuse}
+        print(json.dumps(out, ensure_ascii=False, indent=1))
         return 0
     except SpeakerLeak as ex:
         print("refused: %s" % ex, file=sys.stderr)

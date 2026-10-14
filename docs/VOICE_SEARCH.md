@@ -59,6 +59,16 @@ The seen / unseen classification is only as good as the metadata on the referenc
 * The check covers every folder passed to `--units`; pass **all** human reference folders together, or a speaker whose clips are in a folder you left out will look unseen.
 * A word missing from the dictionary is reported with its count (`not_in_dictionary`) and never silently dropped from a denominator; `by_condition` figures cover in-dictionary words only, so quote both numbers.
 
+### Gate C: freeze and verify (`freeze`, `eval --frozen`)
+```
+python3 tools/s2w_wordsearch.py freeze --queries Q --units REF_DIR... --lexicon L --out freeze.json [--duration none|cut|squeeze] [--smooth-ms N] [--shortlist N] [--rescore-top N]
+python3 tools/s2w_wordsearch.py eval   --queries Q --units REF_DIR... --lexicon L --frozen freeze.json [--allow-test-reuse]
+```
+`freeze` refuses (exit 7) an invalid setup: empty bank, incomplete reference provenance, a query without a speaker ID, a query that leaks from the reference set (same speaker or identical audio), no queries, or a dirty code tree (`--allow-dirty` to override and have it recorded). The file pins the settings, the SHA-256 of the dictionary, of every reference clip and of every query clip (with its word and speaker), the git commit, and its own hash. `eval --frozen` takes its settings from the file and refuses (exit 5) if the file or any input changed; it cannot be combined with `--compare-configs`. A ledger (`test_ledger.jsonl` in the queries folder) records each evaluation: the identical configuration may be re-run, a *different* configuration on the same query set is refused (exit 6) unless `--allow-test-reuse`, and the result then says `test_reuse`. A freeze whose reference clips are all synthetic is labelled SYNTHETIC and cannot complete Gate C (`tools/gate_status.py`).
+
+### What the summary reports (after the audit, `docs/DEFECT_AUDIT.md`)
+`queries` (total / in_dictionary / out_of_dictionary / unusable); per method closed-dictionary `n`, `top1`, `top5`, `mrr`, `not_found`, `mean_ms`, `top1_by_speaker`; `by_condition` (`seen_speaker`, `unseen_speaker`, `unseen_unverified`, `speaker_unknown`); `unseen_speaker_claim_valid`; `reference_metadata` (speakers, synthetic, unattributed, conflicting, skipped clips, files hashed); `not_in_dictionary`; `composed_stages` (found / no_clips / length_filter / template_limit / stage1_shortlist / unusable_audio); `missing_heard`; `shortlist_recall` at 10 / 50 / 100 / 200 and at the configured `rescore_top`. Speaker IDs are compared after NFC + trim + case-fold; a query whose audio file is a byte copy of a reference clip counts as seen. Exit codes: 3 leak, 4 strict provenance, 5 frozen mismatch, 6 test reuse, 7 not frozen.
+
 ### Measured on made-up tones only (21 words, noise 0.03, top-1 / top-5 of the composed ranking)
 | configuration | query units 0.11 s (like in-word syllables) | query units 0.22 s (like isolated clips) |
 |---|---|---|

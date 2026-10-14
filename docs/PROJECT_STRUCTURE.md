@@ -37,6 +37,7 @@ tools/                    Python and C command-line tools (below)
 | `s2w_joiner.py` | glue unit clips: trim, level match, equal-power crossfade, end fade, measured joins |
 | `s2w_wordsearch.py` | voice -> dictionary word: composed unit templates (DTW), recogniser-text label matching, fusion, `eval` |
 | `s2w_aligner_service.py` | optional forced-alignment HTTP service the recorder can call |
+| `gate_status.py` | read-only status of Gates A, B, C from the real artifacts (stops at the first failing gate); `audit_before_after.py` reproduces the audit's before/after table (`docs/DEFECT_AUDIT.md`) |
 | `consent_gate.py`, `pilot_plan.py`, `review_sheet.py`, `make_ai_draft.py`, `run_enrolment_experiment.py`, `run_robustness.py` | pilot planning, consent gate (Gate B), word-review workbook (Gate A), synthetic experiments |
 | `model_eval/` | experiments with local models on a PC/GPU: TTS generation (`gen_*`: LFM, Parler, MMS), `build_unit_inventory.py`, `unit_consistency.py`, `compose_rank.py`, `mms_rank.py`, `roundtrip.py`, `asr_match.py` ... |
 | `run_recorder_container.sh` | start the recorder in Docker with bind-mounted data |
@@ -53,7 +54,7 @@ recordings --> recorder (QA, segments) --> evaluation/ (C) once Gates A/B/C pass
 
 ## Tests
 `make test` (C), `make test-review` (C tools plus all Python suites: viewer, recorder, lexicon, alphabet, wordsearch, pilot/consent/review),
-`node tools/test_*_browser.js` (needs Playwright + Chromium). Current: 56 alphabet, 36 recorder, 46 wordsearch, 25 viewer, 15 lexicon tests;
+`node tools/test_*_browser.js` (needs Playwright + Chromium). Current: 56 alphabet, 36 recorder, 46 + 22 wordsearch (incl. audit regressions), 18 gate-status, 25 viewer, 15 lexicon tests;
 browser checks 48 (recorder), 35 (sidebar), 31 (alphabet), 32 (viewer).
 
 ## Documents (`docs/`)

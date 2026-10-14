@@ -116,7 +116,7 @@ class Fixture(unittest.TestCase):
         for i, u in enumerate(SYLL):
             fn = "u%d.wav" % i
             write_wav(os.path.join(cls.units, fn), tone(u))
-            items.append({"word_ml": u, "file": fn})
+            items.append({"word_ml": u, "file": fn, "synthetic": True, "voice": "made-up tones"})
         with open(os.path.join(cls.units, "meta.json"), "w", encoding="utf-8") as mf:
             json.dump({"items": items}, mf, ensure_ascii=False)
         cls.words = ["കലം", "കമല", "നരവ", "തപക", "ലമന", "വരത", "പടി", "ടിപ", "ഗുരു", "അങ്ങല", "ക്കുമ", "മങ്ങ", "ശമ", "ഷമ", "സമ", "ലപ", "പത", "തര", "നവ", "മരപ", "വനത", "രനമ", "കതര", "പവല"]
@@ -324,7 +324,7 @@ class EvaluationConditions(Fixture):
 
     def test_a_query_from_a_reference_speaker_is_refused(self):
         bank = self.bank_with_speaker("P1")
-        self.assertEqual(bank.speakers, {"P1"})
+        self.assertEqual(bank.speakers, {ws.speaker_key("P1")})
         words = ws.load_words(self.lex)
         qs = [("കമല", self.query("കമല", seed=1), "P1"), ("നവ", self.query("നവ", seed=2), "P2")]
         self.assertEqual(ws.speaker_leaks(qs, bank), [("കമല", "P1")])
@@ -395,7 +395,7 @@ class ReferenceMetadata(Fixture):
         d2 = self.folder("meta_ok", [{"word_ml": "ക", "file": "a.wav", "speaker": "P1"}, {"word_ml": "ല", "file": "b.wav", "synthetic": True, "voice": "Parler"}])
         rep = ws.metadata_report(ws.load_bank([d2]))
         self.assertTrue(rep["ok"])
-        self.assertEqual((rep["reference_speakers"], rep["synthetic_clips"]), (["P1"], 1))
+        self.assertEqual((rep["reference_speakers"], rep["synthetic_clips"]), ([ws.speaker_key("P1")], 1))
 
     def test_a_clip_with_no_speaker_and_no_synthetic_mark_is_flagged(self):
         d2 = self.folder("meta_missing", [{"word_ml": "ക", "file": "a.wav"}, {"word_ml": "ല", "file": "b.wav", "synthetic": True}])
@@ -431,7 +431,7 @@ class ReferenceMetadata(Fixture):
         err = io.StringIO()
         with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(ws.main(args), 0)                                   # warns, still runs
-        self.assertIn("unknown provenance", err.getvalue())
+        self.assertIn("provenance is incomplete", err.getvalue())
         err2 = io.StringIO()
         with contextlib.redirect_stderr(err2):
             self.assertEqual(ws.main(args + ["--strict-metadata"]), 4)
