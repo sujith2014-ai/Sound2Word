@@ -24,6 +24,14 @@ In the recorder: start with `--unit-audio-dir ... --dictionary ...` and open **S
 * The recorder joined units with 2 ms fades. It now trims, matches levels and crossfades, and reports the level / spectral / pitch step at every join (`/api/unitjoin?meta=1` → `joins`). Pitch is **not** matched, only measured.
 * Candidate words without a clip for every unit are counted and reported, not silently dropped.
 
+## Before / after (synthetic tones only)
+| | Correct top-1 |
+|---|---|
+| mean-removed MFCC (before) | 28 / 63 (44 %) |
+| mean + variance normalised MFCC (after) | 61 / 63 (97 %) |
+
+63 queries = 21 made-up words x 3 conditions (2 % noise + 15 % slower, 5 % noise, 2 % noise + 15 % faster). This shows the software fix, not accuracy on speech.
+
 ## Limits
 * Unit clips spoken alone have the wrong length (about 0.3 s, against 0.08 s inside words), so cut units out of words where you can.
 * The earlier experiment (`compose_rank.py`) got 0.7 % / 3.6 % top-1 on synthetic audio and the recogniser + dictionary baseline 41 % top-1. Expect composed matching to be the weaker method until the units are regenerated whole and joined properly; run both and look at the per-word table.

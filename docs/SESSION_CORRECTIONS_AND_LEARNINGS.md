@@ -102,3 +102,29 @@ the measurements. Numbers come from experiments recorded in `LOCAL_MODELS_AND_TT
 4. Hand-correct about 25 words with **Save boundaries** to get ground truth, then choose the boundary method by error in milliseconds.
 5. Recognition: rescore the recogniser's top candidates with its own likelihood, add a word-frequency prior, and test on real voices.
 6. Choose one voice for composed words (mixing voices in one word is audible).
+
+## Part 6. Label audit and voice-search build (2026-10-14): findings and measured before/after
+
+All numbers are software checks on made-up data or the example words; none is recognition accuracy on real speech.
+
+### Label audit against real words (86 example words)
+| Finding | Before | After / fix |
+|---|---|---|
+| Example words fully covered by unit labels | 76 / 86 | 86 / 86: added modified forms (sign + anusvara, conjunct + chandrakkala / anusvara / visarga) and 20 more conjuncts |
+| Alphabet entries | 600 | 5,596 (143+ standard conjuncts x 13 forms, plus 2,877 modified forms) |
+| Joined labels spell the word like the recorder rule | n/a | 66 / 86 (the 20 others: final chandrakkala "u", long vowel signs, nasal voicing; unverified) |
+| Duplicate human labels | 2 entries shared "k" (ക് and ൿ) | 0 |
+| ങ്ങ pronounced as /ŋɡ/ ("finger") | wrong (my error) | /ŋː/, a long nasal; Manglish label stays "ngga" |
+| അഃ labelled "aha" but കഃ "kah" | inconsistent | "ah" |
+| `decompose()` split every conjunct by default | ങ്ങ -> ങ് + ങ | `whole=True` default; guard tests `NeverSplitAConjunct` (correction 31) |
+| I changed how words are *typed* (angane -> anggane) | overreach | reverted; typed spelling and sound unit are separate |
+
+### Voice search (docs/VOICE_SEARCH.md)
+| Measurement (synthetic tones, 63 queries: 21 words x 3 noise/speed conditions) | Correct top-1 |
+|---|---|
+| MFCC with mean removal only (before) | 28 / 63 (44 %) |
+| MFCC with mean and variance normalisation (after) | 61 / 63 (97 %) |
+| plus a length penalty | 30 / 63 and 61 / 63 (no real gain) |
+
+* The old recorder join (2 ms fades) is replaced by trim + level match + equal-power crossfade; each join is measured (level, spectral, pitch step). Pitch is measured, not matched.
+* **Not measured:** anything on real speech. The earlier 0.7 % / 3.6 % (glued split units) and 41 % (recogniser + dictionary) were different pipelines on synthetic audio and are not comparable with the table above.
