@@ -381,6 +381,62 @@ class EvaluationConditions(Fixture):
         self.assertEqual(json.loads(out.getvalue())["summary"]["by_condition"]["seen_speaker"]["n"], 1)
 
 
+class ReferenceMetadata(Fixture):
+    def folder(self, name, items):
+        d2 = os.path.join(self.d, name)
+        os.makedirs(d2, exist_ok=True)
+        for it in items:
+            write_wav(os.path.join(d2, it["file"]), tone(it["word_ml"], dur=0.2))
+        with open(os.path.join(d2, "meta.json"), "w", encoding="utf-8") as f:
+            json.dump({"items": items}, f, ensure_ascii=False)
+        return d2
+
+    def test_clean_metadata_is_ok(self):
+        d2 = self.folder("meta_ok", [{"word_ml": "ക", "file": "a.wav", "speaker": "P1"}, {"word_ml": "ല", "file": "b.wav", "synthetic": True, "voice": "Parler"}])
+        rep = ws.metadata_report(ws.load_bank([d2]))
+        self.assertTrue(rep["ok"])
+        self.assertEqual((rep["reference_speakers"], rep["synthetic_clips"]), (["P1"], 1))
+
+    def test_a_clip_with_no_speaker_and_no_synthetic_mark_is_flagged(self):
+        d2 = self.folder("meta_missing", [{"word_ml": "ക", "file": "a.wav"}, {"word_ml": "ല", "file": "b.wav", "synthetic": True}])
+        rep = ws.metadata_report(ws.load_bank([d2]))
+        self.assertFalse(rep["ok"])
+        self.assertEqual((rep["unattributed_clips"], rep["unattributed_units"]), (1, ["ക"]))
+
+    def test_a_clip_that_is_both_synthetic_and_a_person_is_a_conflict(self):
+        d2 = self.folder("meta_conflict", [{"word_ml": "ക", "file": "a.wav", "speaker": "P1", "synthetic": True}])
+        rep = ws.metadata_report(ws.load_bank([d2]))
+        self.assertFalse(rep["ok"])
+        self.assertEqual(rep["conflicting_clips"], 1)
+
+    def test_generated_voices_never_become_speakers(self):
+        d2 = self.folder("meta_tts", [{"word_ml": "ക", "file": "a.wav", "synthetic": True, "voice": "Anjali"}])
+        bank = ws.load_bank([d2])
+        self.assertEqual(bank.speakers, set())
+        self.assertEqual(ws.speaker_leaks([("കമല", "x.wav", "Anjali")], bank), [])
+
+    def test_the_summary_carries_the_metadata_report_and_the_cli_can_be_strict(self):
+        import contextlib
+        import io
+        d2 = self.folder("meta_cli", [{"word_ml": w, "file": "u%d.wav" % i} for i, w in enumerate(SYLL)])         # no speaker, not synthetic
+        words = ws.load_words(self.lex)
+        qdir = os.path.join(self.d, "queries_meta")
+        os.makedirs(qdir, exist_ok=True)
+        shutil.copy(self.query("കമല", seed=1), os.path.join(qdir, "q.wav"))
+        with open(os.path.join(qdir, "meta.json"), "w", encoding="utf-8") as f:
+            json.dump({"items": [{"word_ml": "കമല", "file": "q.wav", "speaker": "P9"}]}, f, ensure_ascii=False)
+        summary, _rows = ws.evaluate([("കമല", self.query("കമല", seed=1), "P9")], ws.load_bank([d2]), words)
+        self.assertFalse(summary["reference_metadata"]["ok"])
+        args = ["eval", "--queries", qdir, "--units", d2, "--lexicon", self.lex]
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(ws.main(args), 0)                                   # warns, still runs
+        self.assertIn("unknown provenance", err.getvalue())
+        err2 = io.StringIO()
+        with contextlib.redirect_stderr(err2):
+            self.assertEqual(ws.main(args + ["--strict-metadata"]), 4)
+
+
 class RecorderIntegration(Fixture):
     def test_voice_search_through_the_recorder_and_its_http_api(self):
         import s2w_recorder as r

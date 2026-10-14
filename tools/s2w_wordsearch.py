@@ -123,6 +123,9 @@ class Bank(dict):
         self.in_word = set()
         self.dirs = []
         self.speakers = set()                                     # people whose recordings are in the bank (meta field "speaker"); TTS voices are not people
+        self.synthetic = 0                                        # clips marked synthetic (meta "synthetic": true) - generated voices, never speakers
+        self.unattributed = []                                    # clips with neither a speaker nor a synthetic mark: provenance unknown
+        self.conflicts = []                                       # clips marked both synthetic and with a speaker
 
 
 def load_bank(unit_dirs, use_in_word=True):
@@ -140,6 +143,12 @@ def load_bank(unit_dirs, use_in_word=True):
             u = norm(it["word_ml"])
             if it.get("speaker"):
                 bank.speakers.add(str(it["speaker"]))
+            if it.get("synthetic"):
+                bank.synthetic += 1
+            if it.get("synthetic") and it.get("speaker"):
+                bank.conflicts.append(u)
+            if not it.get("synthetic") and not it.get("speaker"):
+                bank.unattributed.append(u)
             cut = "cut from word" in str(it.get("voice", "")) or bool(it.get("in_word"))
             if cut and not use_in_word:
                 continue
@@ -392,6 +401,14 @@ class SpeakerLeak(ValueError):
     """A query was spoken by someone whose recording is also a reference clip in the bank."""
 
 
+def metadata_report(bank):
+    """What the speaker classification rests on. A reference clip with no speaker and no synthetic mark could be a person: any query from that person
+    would be wrongly called unseen, so `unattributed` and `conflicts` must be empty for a trustworthy unseen-speaker result."""
+    return {"reference_speakers": sorted(getattr(bank, "speakers", set())), "synthetic_clips": getattr(bank, "synthetic", 0),
+            "unattributed_clips": len(getattr(bank, "unattributed", [])), "unattributed_units": sorted(set(getattr(bank, "unattributed", [])))[:20],
+            "conflicting_clips": len(getattr(bank, "conflicts", [])), "ok": not getattr(bank, "unattributed", []) and not getattr(bank, "conflicts", [])}
+
+
 def speaker_leaks(queries, bank):
     """[(word, speaker)] for every query whose speaker also supplied a reference clip (queries without a speaker cannot be checked)."""
     ref = getattr(bank, "speakers", set())
@@ -455,6 +472,7 @@ def evaluate(queries, bank, words, heard=None, shortlist=150, rescore_top=200, c
             if rs:
                 cond[c][m] = {"top1": round(sum(1 for r in rs if r[m] == 1) / len(rs), 3), "top5": round(sum(1 for r in rs if r[m] and r[m] <= 5) / len(rs), 3)}
     summary["by_condition"] = cond
+    summary["reference_metadata"] = metadata_report(bank)
     out_dict = [r["word"] for r in rows if not r["in_dictionary"]]
     if out_dict:
         summary["not_in_dictionary"] = {"n": len(out_dict), "words": sorted(set(out_dict)), "note": "cannot be recognised by construction; excluded from by_condition"}
@@ -504,6 +522,7 @@ def main(argv=None):
     e.add_argument("--heard-file", help="JSON {word: recognised text}")
     e.add_argument("--limit", type=int)
     e.add_argument("--allow-same-speaker", action="store_true", help="evaluate queries spoken by a person who also supplied reference clips; they are reported separately as seen_speaker, never mixed into the unseen-speaker result")
+    e.add_argument("--strict-metadata", action="store_true", help="refuse when a reference clip has no speaker and no synthetic mark, or has both (exit 4)")
     e.add_argument("--compare-configs", action="store_true", help="run all four duration-rule / smoothing configurations and report each")
     for q in (s, e):
         q.add_argument("--duration", choices=("none", "cut", "squeeze"), default="none", help="duration rule for isolated non-final units (default none)")
@@ -517,6 +536,13 @@ def main(argv=None):
             r = search_with(a.query, Composer(bank, smooth_ms=a.smooth_ms, duration=a.duration), words, a.heard, a.top, rescore_top=a.rescore_top)
             print(json.dumps(r, ensure_ascii=False, indent=1))
             return 0
+        meta = metadata_report(bank)
+        if not meta["ok"]:
+            msg = "reference clips with unknown provenance: %d unattributed (no speaker, not marked synthetic), %d conflicting; unseen-speaker status may be wrong" % (meta["unattributed_clips"], meta["conflicting_clips"])
+            if a.strict_metadata:
+                print("refused: " + msg, file=sys.stderr)
+                return 4
+            print("warning: " + msg, file=sys.stderr)
         heard = json.load(open(a.heard_file, encoding="utf-8")) if a.heard_file else None
         qs = [(norm(it["word_ml"]), os.path.join(a.queries, it["file"]), it.get("speaker")) for it in _meta_items(a.queries) if it.get("file")]
         if a.compare_configs:

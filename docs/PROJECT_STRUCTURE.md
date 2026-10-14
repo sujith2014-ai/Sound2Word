@@ -53,7 +53,7 @@ recordings --> recorder (QA, segments) --> evaluation/ (C) once Gates A/B/C pass
 
 ## Tests
 `make test` (C), `make test-review` (C tools plus all Python suites: viewer, recorder, lexicon, alphabet, wordsearch, pilot/consent/review),
-`node tools/test_*_browser.js` (needs Playwright + Chromium). Current: 56 alphabet, 36 recorder, 23 wordsearch, 25 viewer, 15 lexicon tests;
+`node tools/test_*_browser.js` (needs Playwright + Chromium). Current: 56 alphabet, 36 recorder, 46 wordsearch, 25 viewer, 15 lexicon tests;
 browser checks 48 (recorder), 35 (sidebar), 31 (alphabet), 32 (viewer).
 
 ## Documents (`docs/`)

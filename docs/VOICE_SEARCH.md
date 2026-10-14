@@ -51,6 +51,14 @@ Six configurations (plain, audio cut, feature squeeze, smoothing, cut + smoothin
 ### Two evaluation conditions: known word, unseen speaker
 `eval` labels every query: **unseen_speaker** (the speaker did not supply any reference clip), **seen_speaker** (they did), or **speaker_unknown**. Reference clips carry a speaker when their meta item has a `speaker` field (TTS voices are not people). A query whose speaker also supplied a reference clip is **refused** (exit code 3, "not an unseen-speaker test") unless `--allow-same-speaker` is given; then it is reported under `by_condition.seen_speaker` and never mixed into the unseen-speaker figures. Queries whose word is not in the dictionary are counted separately (`not_in_dictionary`) because they cannot be recognised by construction. `--units` accepts several folders. With only eight words any figure is preliminary: expand the vocabulary and the speakers before broader claims.
 
+### Reference metadata must be trustworthy
+The seen / unseen classification is only as good as the metadata on the reference clips. Each reference clip must be either **a person** (`speaker`: a stable, anonymised participant ID) or **generated** (`"synthetic": true`, with the voice named in `voice`). `eval` reports `reference_metadata` in its summary (speakers, synthetic clips, unattributed clips, conflicting clips) and:
+* **unattributed** (no speaker, not synthetic): a person's clip could hide here, so their queries would be wrongly called unseen. `eval` prints a warning; `--strict-metadata` refuses (exit 4).
+* **conflicting** (marked synthetic *and* given a speaker): same handling.
+* Generated voices never become speakers, so a query labelled with a TTS voice name is not a leak.
+* The check covers every folder passed to `--units`; pass **all** human reference folders together, or a speaker whose clips are in a folder you left out will look unseen.
+* A word missing from the dictionary is reported with its count (`not_in_dictionary`) and never silently dropped from a denominator; `by_condition` figures cover in-dictionary words only, so quote both numbers.
+
 ### Measured on made-up tones only (21 words, noise 0.03, top-1 / top-5 of the composed ranking)
 | configuration | query units 0.11 s (like in-word syllables) | query units 0.22 s (like isolated clips) |
 |---|---|---|
