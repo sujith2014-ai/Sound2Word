@@ -87,7 +87,7 @@ function wav(file, hz, sec, rate) { const n = Math.floor(sec * rate), b = Buffer
 
   rec('the Unicode section partitions the block', /118/.test(await page.evaluate(() => document.getElementById('uni').textContent)) && /chillu letters/.test(await page.evaluate(() => document.getElementById('uni').textContent)));
   const csv = await (await fetch(`http://127.0.0.1:${PORT}/api/alphabet/export.csv`)).text();
-  rec('the CSV export has one row per entry plus the header', csv.trim().split('\n').length === 1 + 576 + 16 + 2 + 6 && /U\+0D36/.test(csv));
+  rec('the CSV export has one row per entry plus the header', csv.trim().split('\n').length === 1 + 576 + 16 + 2 + 6 + 13 * 143 && /U\+0D36/.test(csv));
   rec('no page errors', perr.length === 0, perr.join('|')); rec('no console errors', cerr.length === 0, cerr.join('|')); rec('no failed requests', bad.length === 0, bad.join('|'));
   await browser.close(); srv.kill('SIGTERM'); for (let i = 0; i < 60 && code === null; i++) await sleep(100);
   rec('server exits cleanly', code === 0, 'exit=' + code + (err ? ' stderr=' + err.slice(0, 120) : '')); rec('port released', await refused(PORT));

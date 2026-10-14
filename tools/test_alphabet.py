@@ -174,6 +174,39 @@ class Inventory(unittest.TestCase):
         self.assertNotIn("Traceback", bad.stderr)
 
 
+class Conjuncts(unittest.TestCase):
+    def setUp(self):
+        self.by = {i["text"]: i for i in al.build_inventory()}
+
+    def test_ngga_is_its_own_sound_not_nga_twice(self):
+        x = self.by["ങ്ങ"]
+        self.assertEqual((x["group"], x["manglish"]), ("conjunct", "ngga"))
+        self.assertNotEqual(x["manglish"], self.by["ങ"]["manglish"] * 2)
+        self.assertEqual(x["ipa"], "ŋɡa")
+        self.assertEqual(self.by["ങ്ങാ"]["manglish"], "nggaa")
+        self.assertEqual(self.by["ങ്ക"]["manglish"], "ngka")
+
+    def test_doubled_consonants_are_held_sounds(self):
+        self.assertEqual(self.by["ക്ക"]["manglish"], "kka")
+        self.assertEqual(self.by["ക്ക"]["ipa"], "kːa")
+        self.assertEqual(self.by["ന്ന"]["label"], "nna (dental)")
+        self.assertEqual(self.by["ണ്ണ"]["label"], "nna (retroflex)")
+
+    def test_every_conjunct_has_13_forms_and_unique_ids(self):
+        items = al.build_inventory()
+        cj = [i for i in items if i["group"] == "conjunct"]
+        self.assertEqual(len(cj), 13 * len(al.CONJUNCTS))
+        self.assertEqual(len(al.CONJUNCTS), len(set(al.CONJUNCTS)))
+        self.assertEqual(len({i["sound_id"] for i in items}), len(items))
+        self.assertTrue(all(i["manglish"] and i["voice_label"] for i in cj))
+
+    def test_same_manglish_conjuncts_get_different_tags(self):
+        a, b = self.by["ല്ല"], self.by["ള്ള"]
+        self.assertEqual(a["manglish"], b["manglish"])
+        self.assertNotEqual(a["sound_id"], b["sound_id"])
+        self.assertNotEqual(a["label"], b["label"])
+
+
 class LabelDocument(unittest.TestCase):
     def test_committed_markdown_is_up_to_date_and_complete(self):
         doc = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "MALAYALAM_ALPHABET_LABELS.md")

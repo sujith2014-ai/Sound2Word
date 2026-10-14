@@ -128,6 +128,73 @@ PLAIN_EXAMPLES = {
     "അ": ("അമ്മ", "mother (amma)"), "ആ": ("ആന", "elephant (aana)"), "ഇ": ("ഇല", "leaf (ila)"), "ഈ": ("ഈച്ച", "fly (eecha)"), "ഉ": ("ഉപ്പ്", "salt (uppu)"),
     "ഊ": ("ഊഞ്ഞാൽ", "swing (oonjaal)"), "ഋ": ("ഋതു", "season (ruthu)"), "ഐ": ("ഐക്യം", "unity (aikyam)"), "ഔ": ("ഔഷധം", "medicine (aushadham)"),
 }
+# ---------------------------------------------------------------- conjunct consonants (written with the chandrakkala: ങ്ങ, ക്ക, ന്ത ...)
+# The standard conjuncts of Malayalam writing, each its OWN sound (ങ്ങ is not ങ twice: it is "ngga", a nasal followed by g).
+# Chosen from the usual textbook sets; a dictionary (--lexicon) adds the ones it really contains. Not every pair is a real conjunct.
+CONJUNCTS = ("ക്ക ക്ത ക്ല ക്ര ക്ഷ ക്ഷ്മ ക്ഷ്യ ക്വ ഖ്യ ഗ്ഗ ഗ്ന ഗ്മ ഗ്ല ഗ്ര ഗ്വ ഘ്ന ങ്ക ങ്ങ ങ്ഖ ച്ച ച്ഛ ച്യ ജ്ജ ജ്ഞ ജ്യ ജ്വ ഞ്ച ഞ്ഞ ഞ്ജ ഞ്ഝ "
+             "ട്ട ട്ഠ ഡ്ഡ ഢ്ഢ ണ്ട ണ്ഡ ണ്ണ ണ്മ ണ്യ ത്ത ത്ഥ ത്ന ത്മ ത്യ ത്ര ത്വ ദ്ദ ദ്ധ ദ്ന ദ്മ ദ്യ ദ്ര ദ്വ ധ്യ ധ്ര ധ്വ ന്ത ന്ഥ ന്ദ ന്ധ ന്ന ന്മ ന്യ ന്വ ന്റ ന്ത്ര "
+             "പ്പ പ്ത പ്ന പ്ല പ്ര പ്യ പ്സ ബ്ബ ബ്ദ ബ്ധ ബ്യ ബ്ര ബ്ല ഭ്യ ഭ്ര മ്പ മ്ബ മ്ഭ മ്മ മ്യ മ്ര മ്ല മ്വ യ്യ യ്വ ല്പ ല്മ ല്ല ല്യ ല്ക ല്വ വ്വ വ്യ വ്ര വ്ല "
+             "ശ്ച ശ്ന ശ്മ ശ്യ ശ്ര ശ്ല ശ്വ ശ്ശ ഷ്ട ഷ്ഠ ഷ്ണ ഷ്പ ഷ്മ ഷ്യ ഷ്വ സ്ക സ്ഖ സ്ത സ്ഥ സ്ന സ്പ സ്ഫ സ്മ സ്യ സ്ര സ്ല സ്വ സ്സ ഹ്ന ഹ്മ ഹ്യ ഹ്ര ഹ്ല ഹ്വ "
+             "ള്ള ള്ക ള്പ ള്മ ള്യ റ്റ ര്യ ര്വ").split()
+# pairs whose spelling in Manglish / IPA is not just the two letters side by side: (manglish, ipa)
+CONJ_OVERRIDE = {"ങ്ങ": ("ngga", "ŋɡ"), "ങ്ക": ("ngka", "ŋk"), "ങ്ഖ": ("ngkha", "ŋkʰ"), "ഞ്ച": ("ncha", "ɲtʃ"), "ഞ്ഞ": ("nnja", "ɲː"), "ഞ്ജ": ("njja", "ɲdʒ"),
+                 "ഞ്ഝ": ("njjha", "ɲdʒʱ"), "ണ്ട": ("nda", "ɳɖ"), "ണ്ഡ": ("nda", "ɳɖ"), "ന്റ": ("nra", "n̺r"), "റ്റ": ("tta", "tː"), "ക്ഷ": ("ksha", "kʂ"), "ജ്ഞ": ("jnja", "dʒɲ"),
+                 "ശ്ശ": ("ssha", "ɕː"), "ഷ്ട": ("shta", "ʂʈ"), "ഷ്ഠ": ("shtha", "ʂʈʰ"), "ഷ്ണ": ("shna", "ʂɳ")}
+CONJ_TAG = {"ണ്ട": "retroflex", "ണ്ഡ": "retroflex-dha", "ന്ദ": "dental", "ണ്ണ": "retroflex", "ന്ന": "dental", "ല്ല": "plain", "ള്ള": "retroflex", "ട്ട": "retroflex", "റ്റ": "trill"}
+CONJ_NOTES = {  # conjunct -> (how to say it, example word, meaning); curated, unverified
+    "ങ്ങ": ("ng-g as in 'finger': the nasal ŋ and a g, ONE sound (not ങ twice)", "അങ്ങനെ", "like that (angane)"),
+    "ങ്ക": ("ng-k as in 'think': the nasal ŋ and a k", "ശങ്ക", "doubt (shanka)"),
+    "ക്ക": ("long k, held for two beats", "മക്കൾ", "children (makkal)"), "ച്ച": ("long ch, held for two beats", "പച്ച", "green (pachcha)"),
+    "ട്ട": ("long retroflex t, held", "പട്ടി", "dog (patti)"), "ത്ത": ("long dental th, held", "പത്ത്", "ten (patthu)"),
+    "പ്പ": ("long p, held", "അപ്പം", "appam (appam)"), "മ്മ": ("long m, held", "അമ്മ", "mother (amma)"), "മ്പ": ("m then p", "അമ്പ്", "arrow (ambu)"),
+    "ന്ത": ("dental n then t", "ചന്ത", "market (chantha)"), "ന്ദ": ("dental n then d", "ആനന്ദം", "joy (aanandam)"), "ന്ന": ("long dental n, held", "അന്നം", "food (annam)"),
+    "ണ്ണ": ("long retroflex n, held", "കണ്ണ്", "eye (kannu)"), "ണ്ട": ("retroflex n then d", "കണ്ടു", "saw (kandu)"), "ഞ്ച": ("palatal n then ch", "അഞ്ച്", "five (anchu)"),
+    "ഞ്ഞ": ("long palatal n, held", "പഞ്ഞി", "cotton (panji)"), "ല്ല": ("long plain l, held", "നല്ല", "good (nalla)"), "ള്ള": ("long retroflex l, held", "കള്ളം", "lie (kallam)"),
+    "യ്യ": ("long y, held", "അയ്യോ", "oh no (ayyo)"), "റ്റ": ("long trilled r, spoken like tt", "കുറ്റം", "fault (kuttam)"), "ക്ഷ": ("k then retroflex sh", "ക്ഷമ", "patience (kshama)"),
+    "ഷ്ട": ("retroflex sh then retroflex t", "കഷ്ടം", "hardship (kashtam)"), "സ്ഥ": ("s then aspirated th", "സ്ഥലം", "place (sthalam)"), "ത്ര": ("th then r", "പത്രം", "newspaper (pathram)"),
+    "ത്യ": ("th then y", "സത്യം", "truth (sathyam)"), "പ്ര": ("p then r", "പ്രണയം", "love (pranayam)"), "ശ്ര": ("soft sh then r", "ശ്രമം", "effort (shramam)"),
+    "ന്ത്ര": ("n, th, r", "യന്ത്രം", "machine (yanthram)"), "ദ്ധ": ("long dental d, breathy", "യുദ്ധം", "war (yuddham)"), "ജ്ഞ": ("j then palatal n (often 'gna')", "ജ്ഞാനം", "knowledge (jnaanam)"),
+    "സ്വ": ("s then v", "സ്വപ്നം", "dream (svapnam)"),
+}
+
+
+def conj_chain(text):
+    """('ങ്ങ' + sign) -> (['ങ','ങ'], sign): the consonant letters of a conjunct and whatever vowel sign / anusvara follows it."""
+    chain, i = [], 0
+    while i < len(text) and text[i] in CONS:
+        chain.append(text[i])
+        i += 1
+        if i < len(text) and text[i] == VIR and i + 1 < len(text) and text[i + 1] in CONS:
+            i += 1
+        else:
+            break
+    return chain, text[i:]
+
+
+def conj_base(chain):
+    """-> (manglish ending in 'a', ipa of the consonants) for a conjunct, e.g. ngga for ങ്ങ."""
+    key = VIR.join(chain)
+    if key in CONJ_OVERRIDE:
+        return CONJ_OVERRIDE[key]
+    cores = [CONS[c][0][:-1] for c in chain]
+    ipas = [CONS[c][1] for c in chain]
+    if len(chain) == 2 and chain[0] == chain[1]:
+        return cores[0][0] + cores[0] + "a", ipas[0] + "ː"
+    return "".join(cores) + "a", "".join(ipas)
+
+
+def conj_tag(chain):
+    key = VIR.join(chain)
+    if key in CONJ_TAG:
+        return CONJ_TAG[key]
+    seen = []
+    for c in chain:
+        n = LETTER_NOTES.get(c)
+        if n and n[0] and n[0] not in seen:
+            seen.append(n[0])
+    return "-".join(seen)
+
+
 # acoustic neighbours (easy to confuse even when the Manglish differs)
 NEIGHBOURS = [("sibilants: ശ ഷ സ", "ശഷസ"), ("nasals: ന ണ ങ ഞ", "നണങഞ"), ("rhotics: ര റ", "രറ"), ("laterals: ല ള ഴ", "ലളഴ"), ("t: ത ട ഥ ഠ", "തടഥഠ"), ("d: ദ ഡ ധ ഢ", "ദഡധഢ")]
 
@@ -185,6 +252,13 @@ def build_inventory(lexicon_path=None, clusters_top=450):
     for ch in sorted(CHILLU):
         m, ipa, desc = CHILLU[ch]
         add(ch, "chillu", manglish=m, ipa=ipa, desc=desc, rare=ch == "ൿ")
+    for cl in CONJUNCTS:
+        chain = cl.split(VIR)
+        m, ipa = conj_base(chain)
+        for sign in [""] + [x for x in SIGNS if x]:
+            base = m[:-1] if sign else m
+            add(cl + sign, "conjunct", form=sign, manglish=(base + SIGNS[sign][0]) if sign else m, ipa=ipa + SIGNS[sign][1],
+                desc="conjunct %s + %s" % (" + ".join(CONS[c][2] for c in chain), SIGNS[sign][2]))
     if lexicon_path:
         known = {i["text"] for i in items}
         for text, n in clusters_from_lexicon(lexicon_path, clusters_top):
@@ -201,7 +275,9 @@ def build_inventory(lexicon_path=None, clusters_top=450):
         label = it["manglish"]
         if same:
             tag = DISAMBIG.get(it["consonant"] or it["text"]) if it["group"] != "cv" or not it["consonant"] else DISAMBIG.get(it["consonant"])
-            sg = SIGN_DISAMBIG.get(it["form"]) if it["group"] == "cv" else None
+            if it["group"] == "conjunct":
+                tag = conj_tag(conj_chain(it["text"])[0]).replace("-", " ")
+            sg = SIGN_DISAMBIG.get(it["form"]) if it["group"] in ("cv", "conjunct") else None
             tags = [t for t in (tag, sg) if t]
             label = "%s (%s)" % (it["manglish"], ", ".join(tags)) if tags else it["manglish"]
         it["label"] = label
@@ -227,6 +303,23 @@ def add_voice_label(it):
     cons, form = it["consonant"], it["form"]
     letter = cons or it["text"]
     tags = []
+    if it["group"] == "conjunct":
+        chain = conj_chain(it["text"])[0]
+        if it["lookalike"]:
+            tags.append(conj_tag(chain))
+            if SIGN_NOTES.get(form):
+                tags.append(SIGN_NOTES[form][0])
+        it["sound_id"] = "ml-" + _slug("-".join("%04x" % ord(c) for c in it["text"]), it["manglish"], *tags)
+        n = CONJ_NOTES.get(VIR.join(chain))
+        say = n[0] if n else " + ".join(CONS[c][2] for c in chain) + (" (held, doubled)" if len(chain) == 2 and chain[0] == chain[1] else " (joined)")
+        ex = ex_gloss = ""
+        if form:
+            say = "%s + %s" % (say, SIGNS[form][2])
+        elif n:
+            ex, ex_gloss = n[1], n[2]
+        it["say_as"], it["example"], it["example_gloss"] = say, ex, ex_gloss
+        it["voice_label"] = " · ".join(x for x in (it["text"], it["label"], "/%s/" % it["ipa"], say, ("as in %s = %s" % (ex, ex_gloss)) if ex else "") if x)
+        return
     if it["lookalike"]:
         n = LETTER_NOTES.get(letter)
         if n and n[0]:
@@ -284,6 +377,12 @@ def carriers_from_lexicon(path, wanted):
 
 def su_manglish(text):
     """Best-effort Manglish for a conjunct cluster (consonant letters from the curated table, virama joins, vowel sign last)."""
+    chain, tail = conj_chain(text)
+    if len(chain) >= 2 and tail in ("",) + tuple(x for x in SIGNS if x) + (ANU, VIS):
+        m = conj_base(chain)[0]
+        if tail in SIGNS and tail:
+            return m[:-1] + SIGNS[tail][0]
+        return m + {ANU: "m", VIS: "h"}.get(tail, "")
     out = []
     for ch in text:
         if ch in CONS:
@@ -600,9 +699,9 @@ const TOKEN='__TOKEN__',$=id=>document.getElementById(id),esc=s=>String(s??'').r
 let D=null,tab='cv',cur=null,curK=0,audio=new Audio(),peakCache={},rv='';
 try{rv=localStorage.getItem('s2w_reviewer')||''}catch(e){}
 async function api(u,o){const r=await fetch(u,o);const d=await r.json().catch(()=>({error:'bad response'}));if(!r.ok||d.error)throw new Error(d.error||('HTTP '+r.status));return d}
-const TABS=[['cv','Consonant × 16 forms'],['vowel','Vowels'],['chillu','Chillu'],['cluster','Conjuncts'],['look','Look-alikes (same Manglish)']];
+const TABS=[['cv','Consonant × 16 forms'],['vowel','Vowels'],['chillu','Chillu'],['conjunct','Conjuncts (ങ്ങ ക്ക ന്ത ...)'],['cluster','More from dictionary'],['look','Look-alikes (same Manglish)']];
 async function init(){D=await api('/api/alphabet');const u=await api('/api/alphabet/unicode');
- const c=D.counts;$('summary').innerHTML=`<b>${D.total}</b> entries: ${Object.entries(c).map(([k,v])=>v+' '+({cv:'consonant forms',vowel:'vowel letters','vowel+sign':'vowel+sign',chillu:'chillu',cluster:'conjuncts'}[k]||k)).join(' · ')}. Audio for <b>${D.with_audio}</b>. Look-alikes: <b>${D.items.filter(i=>i.lookalike).length}</b>.`;
+ const c=D.counts;$('summary').innerHTML=`<b>${D.total}</b> entries: ${Object.entries(c).map(([k,v])=>v+' '+({cv:'consonant forms',vowel:'vowel letters','vowel+sign':'vowel+sign',chillu:'chillu',conjunct:'conjunct forms',cluster:'dictionary clusters'}[k]||k)).join(' · ')}. Audio for <b>${D.with_audio}</b>. Look-alikes: <b>${D.items.filter(i=>i.lookalike).length}</b>.`;
  $('uni').innerHTML=`<p>Unicode ${esc(u.unicode_version)}: <b>${u.assigned}</b> assigned code points in U+0D00&ndash;0D7F, split into groups that add up exactly. A code point is not a letter, and a written syllable is not a sound: this page counts <b>entries</b> by the definitions below.</p><table class="m">${u.groups.map(g=>`<tr><td>${g.count}</td><td>${esc(g.name)}</td></tr>`).join('')}</table>
  <p>Entries here: independent vowels, <b>consonant × 16 forms</b> (virama, inherent a, 12 vowel signs, anusvara, visarga), chillu letters, and conjunct clusters taken from a dictionary (not every consonant+virama+consonant pair is a real syllable). Look-alike = the same Manglish for a different letter.</p>`;
  $('tabs').innerHTML=TABS.map(([k,t])=>`<span class="tab${k===tab?' sel':''}" data-t="${k}">${t}</span>`).join('');
@@ -616,7 +715,7 @@ function cell(i){return `<div class="cell${i.lookalike?' look':''}${i.clips.leng
 function render(){const items=D.items.filter(match);let h='';
  if(tab==='cv'){const cons=[...new Set(items.filter(i=>i.group==='cv').map(i=>i.consonant))];
   h=`<div class="grid">${cons.map(c=>{const row=D.items.filter(i=>i.group==='cv'&&i.consonant===c);const first=row[1]||row[0];return `<div class="rowh"><div class="g" style="font-size:24px">${esc(c)}</div><div>${esc(first.label.split(' (')[0].replace(/a$/,''))}</div></div>`+row.map(i=>match(i)?cell(i):'<div></div>').join('')}).join('')}</div>`}
- else if(tab==='look'){const byM={};items.filter(i=>i.lookalike&&(i.group!=='cv'||i.form===''||'ീേൂോ'.includes(i.form))).forEach(i=>(byM[i.manglish]=byM[i.manglish]||[]).push(i));
+ else if(tab==='look'){const byM={};items.filter(i=>i.lookalike&&(!['cv','conjunct'].includes(i.group)||i.form===''||'ീേൂോ'.includes(i.form))).forEach(i=>(byM[i.manglish]=byM[i.manglish]||[]).push(i));
   h=Object.entries(byM).map(([m,l])=>`<div style="margin-bottom:10px"><b>${esc(m)}</b> &mdash; ${l.length} different letters, same Manglish<div class="list">${l.map(cell).join('')}</div></div>`).join('')||'<div class="mut">None match.</div>'}
  else{const l=items.filter(i=>tab==='vowel'?(i.group==='vowel'||i.group==='vowel+sign'):i.group===tab);h=`<div class="list">${l.map(cell).join('')||'<div class="mut">'+(tab==='cluster'?'No conjunct list: start the recorder with --alphabet-lexicon FILE (a dictionary) to rank the real clusters.':'None match.')+'</div>'}</div>`}
  $('body').innerHTML=h;document.querySelectorAll('.cell').forEach(e=>e.onclick=()=>select(e.dataset.x));
@@ -668,7 +767,7 @@ def to_markdown(items):
          "listening (use the verdict buttons on the recorder's `/alphabet` page). Machine-generated audio is not evidence of any of it.", "",
          "## What is counted", "",
          "- %d entries: %s." % (len(items), ", ".join("%d %s" % (c, {"vowel": "independent vowel letters", "vowel+sign": "vowel + anusvara/visarga", "cv": "consonant forms (36 modern consonant letters x 16 forms: "
-                                                                  "virama, inherent a, 12 vowel signs, anusvara, visarga)", "chillu": "chillu letters", "cluster": "conjunct clusters"}.get(g, g)) for g, c in cnt.items()),),
+                                                                  "virama, inherent a, 12 vowel signs, anusvara, visarga)", "chillu": "chillu letters", "conjunct": "conjunct consonants x 13 forms (ങ്ങ = ngga, ക്ക = kka, ...)", "cluster": "further conjuncts from the dictionary"}.get(g, g)) for g, c in cnt.items()),),
          "- Identity is the Malayalam text / code points. `sound_id` = `ml-` + code points + Manglish + a tag when the Manglish is shared, so it is unique for every entry.",
          "- %d entries share their Manglish with a different letter. The 13 base groups are below; every consonant+vowel form of a group collides too." % sum(1 for i in items if i["lookalike"]), "",
          "## Same Manglish, different letters", "", "| Manglish | letters | exact labels |", "|---|---|---|"]
@@ -690,15 +789,26 @@ def to_markdown(items):
     L += ["## Consonant letters x 16 forms", ""]
     for c in CONS:
         L += ["### %s  (%s, %s)" % (c, CONS[c][0], CONS[c][2]), "", head] + [row(i) for i in items if i["group"] == "cv" and i["consonant"] == c] + [""]
+    seen = []
+    for i in items:
+        if i["group"] == "conjunct" and not i["form"]:
+            seen.append(i["text"])
+    if seen:
+        L += ["## Conjunct consonants (one sound each, e.g. ങ്ങ = ngga, not ങ twice)", "",
+              "Each conjunct below is shown with inherent a and the 12 vowel signs. The list is the standard textbook set plus the dictionary's extras; "
+              "it is not every possible pair of consonants.", ""]
+        for t in seen:
+            n = chain_text = conj_chain(t)[0]
+            L += ["### %s  (%s)" % (t, [i for i in items if i["text"] == t][0]["manglish"]), "", head] + [row(i) for i in items if i["group"] == "conjunct" and conj_chain(i["text"])[0] == n] + [""]
     cl = [i for i in items if i["group"] == "cluster"]
     if cl:
-        L += ["## Conjunct clusters (from the dictionary, most frequent first)", "", head] + [row(i) for i in cl] + [""]
+        L += ["## Further conjuncts from the dictionary (most frequent first)", "", head] + [row(i) for i in cl] + [""]
     return "\n".join(L) + "\n"
 
 # ---------------------------------------------------------------- CLI
 def write_inventory(out_dir, items):
     os.makedirs(out_dir, exist_ok=True)
-    kinds = {"vowel": "vowel", "vowel+sign": "vowel", "chillu": "chillu", "cluster": "cluster"}
+    kinds = {"vowel": "vowel", "vowel+sign": "vowel", "chillu": "chillu", "cluster": "cluster", "conjunct": "cluster"}
     inv = [{"id": i, "text": it["text"], "kind": (su.kind(it["text"]) if it["group"] == "cv" else kinds.get(it["group"], "syllable")), "uses": it["uses"],
             "manglish": it["manglish"], "label": it["label"], "group": it["group"], "sound_id": it["sound_id"], "say_as": it["say_as"], "example": it["example"],
             "carrier_word": it["carrier_word"], "carrier_index": it["carrier_index"]} for i, it in enumerate(items)]
@@ -750,7 +860,7 @@ def main():
     if args.cmd == "labels":
         try:
             for it in build_inventory():
-                base = it["lookalike"] and (it["group"] in ("vowel", "chillu") or (it["group"] == "cv" and it["form"] == ""))
+                base = it["lookalike"] and (it["group"] in ("vowel", "chillu") or (it["group"] in ("cv", "conjunct") and it["form"] == ""))
                 sign = it["lookalike"] and it["group"] == "cv" and it["consonant"] == "ക" and it["form"] in SIGN_NOTES      # the sign collisions, shown once on ക
                 if base or sign:
                     print("%-26s %s" % (it["sound_id"], it["voice_label"]))
@@ -781,10 +891,10 @@ def main():
     print("wrote %d entries to %s" % (n, args.out))
     for g, c in cnt.items():
         print("  %4d  %s" % (c, {"vowel": "independent vowel letters", "vowel+sign": "vowel + anusvara/visarga", "cv": "consonant x 16 forms (virama, inherent a, 12 vowel signs, anusvara, visarga)",
-                                  "chillu": "chillu letters", "cluster": "conjunct clusters from the dictionary (frequency-ranked)"}.get(g, g)))
+                                  "chillu": "chillu letters", "conjunct": "conjunct consonants (ങ്ങ, ക്ക, ന്ത ... x 13 forms)", "cluster": "further conjuncts from the dictionary (frequency-ranked)"}.get(g, g)))
     print("%d entries share their Manglish with a different letter (look-alikes); see the label column" % look)
     if not args.lexicon:
-        print("note: no --lexicon, so no conjunct clusters (only a dictionary tells which clusters are real).")
+        print("note: no --lexicon, so only the standard conjunct set is included; a dictionary adds the further conjuncts it contains.")
     return 0
 
 
