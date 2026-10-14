@@ -48,6 +48,9 @@ Sources: Kahn, Rabiner & Rosenberg 1984 (demisyllable duration and smoothing rul
 ### What `eval --compare-configs` reports (so each effect is separate)
 Six configurations (plain, audio cut, feature squeeze, smoothing, cut + smoothing, squeeze + smoothing), plus one **ablation with isolated clips only** whenever the bank has cut-out clips. Per method: top-1, top-5, MRR, not-found, **mean ms per query**, top-1 **per speaker** (if the query meta has `speaker`), and every query as a row. `shortlist_recall` gives how often the right word is inside the label method's top 10 / 50 / 100 / 200: rescoring can never recover a word outside its shortlist, so read `rescored` against that number.
 
+### Two evaluation conditions: known word, unseen speaker
+`eval` labels every query: **unseen_speaker** (the speaker did not supply any reference clip), **seen_speaker** (they did), or **speaker_unknown**. Reference clips carry a speaker when their meta item has a `speaker` field (TTS voices are not people). A query whose speaker also supplied a reference clip is **refused** (exit code 3, "not an unseen-speaker test") unless `--allow-same-speaker` is given; then it is reported under `by_condition.seen_speaker` and never mixed into the unseen-speaker figures. Queries whose word is not in the dictionary are counted separately (`not_in_dictionary`) because they cannot be recognised by construction. `--units` accepts several folders. With only eight words any figure is preliminary: expand the vocabulary and the speakers before broader claims.
+
 ### Measured on made-up tones only (21 words, noise 0.03, top-1 / top-5 of the composed ranking)
 | configuration | query units 0.11 s (like in-word syllables) | query units 0.22 s (like isolated clips) |
 |---|---|---|

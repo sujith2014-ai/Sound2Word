@@ -313,6 +313,74 @@ class DurationAndSmoothing(Fixture):
         self.assertEqual(ws.load_bank([self.units, d2], use_in_word=False).in_word, set())
 
 
+class EvaluationConditions(Fixture):
+    def bank_with_speaker(self, speaker):
+        d2 = os.path.join(self.d, "units_spk_" + speaker)
+        os.makedirs(d2, exist_ok=True)
+        write_wav(os.path.join(d2, "k.wav"), tone("ക", dur=0.2))
+        with open(os.path.join(d2, "meta.json"), "w", encoding="utf-8") as f:
+            json.dump({"items": [{"word_ml": "ക", "file": "k.wav", "speaker": speaker}]}, f, ensure_ascii=False)
+        return ws.load_bank([self.units, d2])
+
+    def test_a_query_from_a_reference_speaker_is_refused(self):
+        bank = self.bank_with_speaker("P1")
+        self.assertEqual(bank.speakers, {"P1"})
+        words = ws.load_words(self.lex)
+        qs = [("കമല", self.query("കമല", seed=1), "P1"), ("നവ", self.query("നവ", seed=2), "P2")]
+        self.assertEqual(ws.speaker_leaks(qs, bank), [("കമല", "P1")])
+        with self.assertRaises(ws.SpeakerLeak):
+            ws.evaluate(qs, bank, words)
+        with self.assertRaises(ws.SpeakerLeak):
+            ws.compare_configs(qs, bank, words)
+
+    def test_allowed_leak_is_reported_apart_from_the_unseen_speaker_result(self):
+        bank = self.bank_with_speaker("P1")
+        words = ws.load_words(self.lex)
+        qs = [("കമല", self.query("കമല", seed=1), "P1"), ("നവ", self.query("നവ", seed=2), "P2"), ("തര", self.query("തര", seed=3), "P2")]
+        summary, rows = ws.evaluate(qs, bank, words, allow_same_speaker=True)
+        self.assertEqual({r["word"]: r["condition"] for r in rows}, {"കമല": "seen_speaker", "നവ": "unseen_speaker", "തര": "unseen_speaker"})
+        self.assertEqual(summary["by_condition"]["seen_speaker"]["n"], 1)
+        self.assertEqual(summary["by_condition"]["unseen_speaker"]["n"], 2)
+
+    def test_no_reference_speakers_means_every_named_speaker_is_unseen(self):
+        words = ws.load_words(self.lex)
+        qs = [("കമല", self.query("കമല", seed=1), "P7")]
+        summary, rows = ws.evaluate(qs, self.bank, words)
+        self.assertEqual(rows[0]["condition"], "unseen_speaker")
+        self.assertEqual(summary["by_condition"]["unseen_speaker"]["n"], 1)
+        rows2 = ws.evaluate([("കമല", self.query("കമല", seed=1))], self.bank, words)[1]
+        self.assertEqual(rows2[0]["condition"], "speaker_unknown")
+
+    def test_words_outside_the_dictionary_are_counted_not_mixed_in(self):
+        words = ws.load_words(self.lex)
+        qs = [("കമല", self.query("കമല", seed=1), "P7"), ("ഗുരു", self.query("ഗുരു", seed=2), "P7")]
+        summary, rows = ws.evaluate(qs, self.bank, words)
+        self.assertNotIn("ഗുരു", {w for w, _u in words})
+        self.assertEqual(summary["not_in_dictionary"], {"n": 1, "words": ["ഗുരു"], "note": summary["not_in_dictionary"]["note"]})
+        known = [r for r in rows if r["in_dictionary"]]
+        self.assertEqual(summary["by_condition"]["unseen_speaker"]["n"], len(known))
+
+    def test_cli_refuses_a_leak_with_exit_3_and_allows_it_on_request(self):
+        import contextlib
+        import io
+        self.bank_with_speaker("P1")
+        qdir = os.path.join(self.d, "queries_leak")
+        os.makedirs(qdir, exist_ok=True)
+        shutil.copy(self.query("കമല", seed=1), os.path.join(qdir, "q.wav"))
+        with open(os.path.join(qdir, "meta.json"), "w", encoding="utf-8") as f:
+            json.dump({"items": [{"word_ml": "കമല", "file": "q.wav", "speaker": "P1"}]}, f, ensure_ascii=False)
+        units2 = os.path.join(self.d, "units_spk_P1")
+        args = ["eval", "--queries", qdir, "--units", self.units, units2, "--lexicon", self.lex]
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(ws.main(args), 3)
+        self.assertIn("not an unseen-speaker test", err.getvalue())
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(ws.main(args + ["--allow-same-speaker"]), 0)
+        self.assertEqual(json.loads(out.getvalue())["summary"]["by_condition"]["seen_speaker"]["n"], 1)
+
+
 class RecorderIntegration(Fixture):
     def test_voice_search_through_the_recorder_and_its_http_api(self):
         import s2w_recorder as r

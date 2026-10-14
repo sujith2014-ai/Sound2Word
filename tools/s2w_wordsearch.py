@@ -122,6 +122,7 @@ class Bank(dict):
         super().__init__()
         self.in_word = set()
         self.dirs = []
+        self.speakers = set()                                     # people whose recordings are in the bank (meta field "speaker"); TTS voices are not people
 
 
 def load_bank(unit_dirs, use_in_word=True):
@@ -137,6 +138,8 @@ def load_bank(unit_dirs, use_in_word=True):
             if not (os.path.realpath(p).startswith(os.path.realpath(unit_dir) + os.sep) and os.path.exists(p)):
                 continue
             u = norm(it["word_ml"])
+            if it.get("speaker"):
+                bank.speakers.add(str(it["speaker"]))
             cut = "cut from word" in str(it.get("voice", "")) or bool(it.get("in_word"))
             if cut and not use_in_word:
                 continue
@@ -385,14 +388,31 @@ def _rank_of(r, word):
 RECALL_AT = (10, 50, 100, 200)
 
 
-def evaluate(queries, bank, words, heard=None, shortlist=150, rescore_top=200, composer=None):
+class SpeakerLeak(ValueError):
+    """A query was spoken by someone whose recording is also a reference clip in the bank."""
+
+
+def speaker_leaks(queries, bank):
+    """[(word, speaker)] for every query whose speaker also supplied a reference clip (queries without a speaker cannot be checked)."""
+    ref = getattr(bank, "speakers", set())
+    return [(q[0], q[2]) for q in queries if len(q) > 2 and q[2] and str(q[2]) in ref]
+
+
+def evaluate(queries, bank, words, heard=None, shortlist=150, rescore_top=200, composer=None, allow_same_speaker=False):
     """queries: [(word, wav path[, speaker])]; heard: {word: recognised text}.
     -> (summary, rows). summary has top1 / top5 / MRR / not_found per method, `shortlist_recall` (how often the right word is inside the label
     method's top 10/50/100/200: rescoring can never recover a word outside its shortlist), mean milliseconds per method and, when speakers are
     given, the same top-1 per speaker. Every query is a row, failures included."""
     import time
+    leaks = speaker_leaks(queries, bank)
+    if leaks and not allow_same_speaker:
+        raise SpeakerLeak("%d query(ies) are spoken by a person who also supplied reference clips (%s): this is not an unseen-speaker test. "
+                          "Remove them, or pass allow_same_speaker / --allow-same-speaker to report them separately as 'seen_speaker'."
+                          % (len(leaks), ", ".join(sorted({sp for _w, sp in leaks}))))
     comp = composer or Composer(bank)
     wlist = [w for w, _u in words]
+    in_dict = set(wlist)
+    ref_speakers = {str(x) for x in getattr(bank, "speakers", set())}
     rows = []
     for q in queries:
         word, path = q[0], q[1]
@@ -401,7 +421,9 @@ def evaluate(queries, bank, words, heard=None, shortlist=150, rescore_top=200, c
         qf = mfcc(x, rate)
         t0 = time.time()
         composed, _n, _m = rank_composed(qf, comp, wlist, shortlist)
-        row = {"word": word, "speaker": speaker, "composed": _rank_of(composed, word), "ms_composed": round(1000 * (time.time() - t0), 1)}
+        row = {"word": word, "speaker": speaker, "in_dictionary": word in in_dict,
+               "condition": "seen_speaker" if (speaker and str(speaker) in ref_speakers) else ("unseen_speaker" if speaker else "speaker_unknown"),
+               "composed": _rank_of(composed, word), "ms_composed": round(1000 * (time.time() - t0), 1)}
         if heard and word in heard:
             t1 = time.time()
             lab = rank_labels(heard[word], words)
@@ -424,6 +446,18 @@ def evaluate(queries, bank, words, heard=None, shortlist=150, rescore_top=200, c
             spk = sorted({r["speaker"] for r in rs if r["speaker"]})
             if spk:
                 summary[m]["top1_by_speaker"] = {sp: round(sum(1 for r in rs if r["speaker"] == sp and r[m] == 1) / max(1, sum(1 for r in rs if r["speaker"] == sp)), 3) for sp in spk}
+    cond = {}
+    for c in sorted({r["condition"] for r in rows}):
+        sub = [r for r in rows if r["condition"] == c and r["in_dictionary"]]
+        cond[c] = {"n": len(sub)}
+        for m in ("composed", "labels", "fused", "rescored"):
+            rs = [r for r in sub if m in r]
+            if rs:
+                cond[c][m] = {"top1": round(sum(1 for r in rs if r[m] == 1) / len(rs), 3), "top5": round(sum(1 for r in rs if r[m] and r[m] <= 5) / len(rs), 3)}
+    summary["by_condition"] = cond
+    out_dict = [r["word"] for r in rows if not r["in_dictionary"]]
+    if out_dict:
+        summary["not_in_dictionary"] = {"n": len(out_dict), "words": sorted(set(out_dict)), "note": "cannot be recognised by construction; excluded from by_condition"}
     lr = [r for r in rows if "labels" in r]
     if lr:
         summary["shortlist_recall"] = {"n": len(lr), **{"top%d" % k: round(sum(1 for r in lr if r["labels"] and r["labels"] <= k) / len(lr), 3) for k in RECALL_AT}}
@@ -438,17 +472,17 @@ CONFIGS = {"plain (default: no duration rule, no smoothing)": dict(duration="non
            "feature squeeze + smoothing 60 ms": dict(duration="squeeze", smooth_ms=60)}
 
 
-def compare_configs(queries, bank, words, heard=None, shortlist=150, rescore_top=200):
+def compare_configs(queries, bank, words, heard=None, shortlist=150, rescore_top=200, allow_same_speaker=False):
     """Run EVERY planned configuration on the same queries and report all of them, including the ones that do worse (CLAUDE.md rule 5).
     When the bank has clips cut out of words, one more run uses isolated clips only, to isolate the effect of the in-word clips. Rescoring is
     reported as its own method in every summary (next to the plain composed ranking and the shortlist recall), so its effect is also separate."""
     out = {}
     for name, kw in CONFIGS.items():
-        summary, rows = evaluate(queries, bank, words, heard, shortlist, rescore_top, composer=Composer(bank, **kw))
+        summary, rows = evaluate(queries, bank, words, heard, shortlist, rescore_top, composer=Composer(bank, **kw), allow_same_speaker=allow_same_speaker)
         out[name] = {"summary": summary, "per_word": rows}
     if getattr(bank, "in_word", None) and bank.dirs:
         iso = load_bank(bank.dirs, use_in_word=False)
-        summary, rows = evaluate(queries, iso, words, heard, shortlist, rescore_top, composer=Composer(iso))
+        summary, rows = evaluate(queries, iso, words, heard, shortlist, rescore_top, composer=Composer(iso), allow_same_speaker=allow_same_speaker)
         out["ablation: plain, isolated clips only (clips cut from words ignored)"] = {"summary": summary, "per_word": rows}
     return out
 
@@ -458,17 +492,18 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("search")
     s.add_argument("--query", required=True)
-    s.add_argument("--units", required=True)
+    s.add_argument("--units", required=True, nargs="+", help="one or more unit folders; the first folder wins unless a later one has a clip cut out of a word")
     s.add_argument("--lexicon", required=True)
     s.add_argument("--heard", help="what a recogniser heard, in Malayalam script")
     s.add_argument("--top", type=int, default=5)
     s.add_argument("--limit", type=int, help="only use the first N lexicon words")
     e = sub.add_parser("eval")
     e.add_argument("--queries", required=True)
-    e.add_argument("--units", required=True)
+    e.add_argument("--units", required=True, nargs="+")
     e.add_argument("--lexicon", required=True)
     e.add_argument("--heard-file", help="JSON {word: recognised text}")
     e.add_argument("--limit", type=int)
+    e.add_argument("--allow-same-speaker", action="store_true", help="evaluate queries spoken by a person who also supplied reference clips; they are reported separately as seen_speaker, never mixed into the unseen-speaker result")
     e.add_argument("--compare-configs", action="store_true", help="run all four duration-rule / smoothing configurations and report each")
     for q in (s, e):
         q.add_argument("--duration", choices=("none", "cut", "squeeze"), default="none", help="duration rule for isolated non-final units (default none)")
@@ -485,14 +520,17 @@ def main(argv=None):
         heard = json.load(open(a.heard_file, encoding="utf-8")) if a.heard_file else None
         qs = [(norm(it["word_ml"]), os.path.join(a.queries, it["file"]), it.get("speaker")) for it in _meta_items(a.queries) if it.get("file")]
         if a.compare_configs:
-            res = compare_configs(qs, bank, words, heard, rescore_top=a.rescore_top)
+            res = compare_configs(qs, bank, words, heard, rescore_top=a.rescore_top, allow_same_speaker=a.allow_same_speaker)
             print(json.dumps({"configurations": res, "chance_top1": round(1.0 / max(1, len(words)), 5), "words": len(words), "units_with_clips": len(bank),
                               "units_cut_from_words": len(getattr(bank, "in_word", ()))}, ensure_ascii=False, indent=1))
             return 0
-        summary, rows = evaluate(qs, bank, words, heard, rescore_top=a.rescore_top, composer=Composer(bank, smooth_ms=a.smooth_ms, duration=a.duration))
+        summary, rows = evaluate(qs, bank, words, heard, rescore_top=a.rescore_top, composer=Composer(bank, smooth_ms=a.smooth_ms, duration=a.duration), allow_same_speaker=a.allow_same_speaker)
         print(json.dumps({"summary": summary, "per_word": rows, "chance_top1": round(1.0 / max(1, len(words)), 5), "words": len(words),
                           "units_with_clips": len(bank)}, ensure_ascii=False, indent=1))
         return 0
+    except SpeakerLeak as ex:
+        print("refused: %s" % ex, file=sys.stderr)
+        return 3
     except (OSError, ValueError, KeyError) as ex:
         print("error: %s" % ex, file=sys.stderr)
         return 2
