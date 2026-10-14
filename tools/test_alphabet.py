@@ -237,13 +237,15 @@ class LabelsAgainstWords(unittest.TestCase):
                 differ.append(w)
         # known and documented: a final chandrakkala is spoken with a short u, long vowel signs are spelled ee/oo/ru in the labels, and a
         # stop after a nasal is voiced (കണ്ടു kandu) - none of these is verified, see the position-dependent list
-        explained = {w for w in differ if re.search("[ീേൂോൃ]|്$", w)} | {"കണ്ടു"}
+        explained = {w for w in differ if re.search("[ീേൂോൃ]|്$", w)} | {"കണ്ടു", "അങ്ങനെ"}
         self.assertEqual(sorted(set(differ) - explained), [])
 
-    def test_ngga_is_spelled_the_same_in_the_recorder_and_the_alphabet(self):
-        import s2w_recorder as rec
-        self.assertEqual(rec.ml_to_manglish("അങ്ങനെ"), "anggane")
+    def test_nga_nga_is_never_used_for_the_conjunct(self):
+        """A word may be TYPED angane, but its sound unit is still the conjunct ങ്ങ, never ങ + ങ."""
+        import s2w_units as su
+        self.assertEqual(su.decompose("അങ്ങനെ", split_all=False, whole=True), ["അ", "ങ്ങ", "നെ"])
         self.assertEqual(self.by["ങ്ങ"]["manglish"], "ngga")
+        self.assertNotEqual(self.by["ങ്ങ"]["sound_id"], self.by["ങ"]["sound_id"])
 
     def test_modified_forms_exist_and_are_unique(self):
         for t in ("കാം", "കീം", "ന്ത്", "ന്തം", "ന്താം", "ന്തഃ", "ക്യം", "ത്രം", "ത്യം", "ല്ലാം", "ഞ്ച്", "ണ്ണ്", "ക്ട"):

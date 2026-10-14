@@ -381,9 +381,9 @@ VIRAMA = "\u0d4d"
 
 def ml_to_manglish(word):
     """Malayalam script -> a SUGGESTED ASCII Manglish spelling (consonant + inherent 'a', vowel signs, virama, chillu, final
-    virama -> 'u'; the geminate RRa 'റ്റ' -> tt; 'ങ്ങ' -> ngga, not nga). It cannot know voicing (പടി -> pati, not padi) or o/oo length: a reviewer must
+    virama -> 'u'; the geminate RRa 'റ്റ' -> tt). Word spelling is a convention: ങ്ങ is typed 'ng' (തേങ്ങ -> thenga); the alphabet still keeps ങ്ങ as ONE unit, labelled ngga. It cannot know voicing (പടി -> pati, not padi) or o/oo length: a reviewer must
     check it. Characters it does not know are dropped."""
-    w = word.replace("\u200c", "").replace("\u200d", "").replace("റ്റ", "ട്ട").replace("ങ്ങ", "ങ്ഗ")
+    w = word.replace("\u200c", "").replace("\u200d", "").replace("റ്റ", "ട്ട").replace("ങ്ങ", "ങ")
     out, i, n = [], 0, len(w)
     while i < n:
         c = w[i]
@@ -439,7 +439,7 @@ def ipa_units(phonemes):
         else:
             return None
         if out and out[-1][0] == u and u == "ng" and not out[-1][1]:
-            out[-1] = ("ngg", True)                       # ങ്ങ: one unit "ngg" (Manglish ngga), the same spelling the alphabet uses
+            out[-1] = ("ng", True)                        # ങ്ങ: kept as one 'ng' unit (a 4-letter ngng is not a Manglish habit)
         elif out and out[-1][0] == u and u[-1] not in "aeiou" and len(u) <= 2 and not out[-1][1]:
             out[-1] = ((u[0] + u) if u[-1] == "h" else (u + u), True)      # geminate: tt, mm; for aspirate-like units tth, llh, ssh
         else:

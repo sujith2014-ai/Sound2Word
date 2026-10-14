@@ -87,7 +87,7 @@ def write_file(path, text):
 class PureLexicon(unittest.TestCase):
     def test_ml_to_manglish(self):
         for ml, rom in (("കലം", "kalam"), ("കാലം", "kaalam"), ("പട്ടി", "patti"), ("പടി", "pati"), ("മഴ", "mazha"), ("ആന", "aana"), ("ചെവി", "chevi"),
-                        ("പുസ്തകം", "pusthakam"), ("വള്ളം", "vallam"), ("കുറ്റി", "kutti"), ("കാട്", "kaatu"), ("അമ്മ", "amma"), ("തേങ്ങ", "thengga"), ("ചക്ക", "chakka"),
+                        ("പുസ്തകം", "pusthakam"), ("വള്ളം", "vallam"), ("കുറ്റി", "kutti"), ("കാട്", "kaatu"), ("അമ്മ", "amma"), ("തേങ്ങ", "thenga"), ("ചക്ക", "chakka"),
                         ("ആകാശം", "aakaasham"), ("വിദ്യാലയം", "vidyaalayam"), ("ഓണം", "onam")):
             self.assertEqual(r.ml_to_manglish(ml), rom, ml)
         self.assertEqual(r.ml_to_manglish("abc ക"), "abcka")      # unknown characters never crash
@@ -99,7 +99,7 @@ class PureLexicon(unittest.TestCase):
         self.assertEqual(U("p a ʈ i"), ["p", "a", "t", "i"])
         self.assertEqual(U("k oː ʈ i"), ["k", "oo", "t", "i"])
         self.assertEqual(U("k o ʈ i"), ["k", "o", "t", "i"])
-        self.assertEqual(U("t̪ eː ŋ ŋ a"), ["th", "ee", "ngg", "a"])
+        self.assertEqual(U("t̪ eː ŋ ŋ a"), ["th", "ee", "ng", "a"])
         self.assertEqual(U("k u ṯ ṯ i"), ["k", "u", "tt", "i"])
         self.assertEqual(U("ai̯ k j a m"), ["ai", "k", "y", "a", "m"])
         self.assertEqual(U("bʱ a"), ["bh", "a"])
