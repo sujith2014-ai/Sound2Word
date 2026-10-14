@@ -11,7 +11,10 @@ import wave
 
 import numpy as np
 
-DEFAULTS = {"trim_db": -40.0, "pad_ms": 6.0, "xfade_ms": 12.0, "end_fade_ms": 12.0, "max_gain": 4.0}
+# xfade: audio crossfade (capped at a quarter of the shorter clip, so a short unit is never swallowed). smooth_ms: the window over which the
+# FEATURES of a template are smoothed at each join; Kahn et al. (1984) found 60-90 ms best for demisyllable joins, and little loss without it.
+# iso_min_s / iso_scale: duration rule for units spoken ALONE (Kahn: about half their isolated length in non-final position).
+DEFAULTS = {"trim_db": -40.0, "pad_ms": 6.0, "xfade_ms": 30.0, "end_fade_ms": 12.0, "max_gain": 4.0, "smooth_ms": 60.0, "iso_min_s": 0.2, "iso_scale": 0.5, "min_keep_s": 0.1}
 # a join is flagged when the level jumps by more than this many dB, or the spectral distance exceeds this (see measure_joins)
 OK_RMS_DB = 6.0
 OK_SPECTRAL = 2.5
@@ -87,11 +90,36 @@ def match_levels(clips, max_gain=None):
     return [c * min(mg, max(1.0 / mg, target / v)) if v > 0 else c for c, v in zip(clips, lv)]
 
 
-def join(clips, rate, xfade_ms=None, end_fade_ms=None, trim_db=None, do_trim=True, do_levels=True):
-    """-> (audio float32, edges in seconds). edges[0] = 0, edges[i] = the middle of the crossfade between unit i-1 and i, edges[-1] = end."""
+def shorten(x, rate, scale=None, min_keep_s=None, xfade_ms=10.0):
+    """Duration rule for a unit spoken alone: cut the sustained middle so that about `scale` of its length remains (never below `min_keep_s`),
+    keeping the onset and the offset and crossfading the cut. Resampling is NOT used: it would move the formants."""
+    scale = DEFAULTS["iso_scale"] if scale is None else scale
+    keep = max(int(rate * (DEFAULTS["min_keep_s"] if min_keep_s is None else min_keep_s)), int(len(x) * scale))
+    if keep >= len(x) - 8:
+        return x
+    k = int(rate * xfade_ms / 1000.0)
+    keep = min(len(x) - 1, keep + k)                          # the crossfade overlaps k samples, so add them back: the result is `keep` long
+    head = int(keep * 0.45)
+    tail = keep - head
+    k = min(k, head // 2, tail // 2)
+    a, b = x[:head], x[len(x) - tail:]
+    if k <= 0:
+        return np.concatenate([a, b]).astype(np.float32)
+    t = (np.arange(k) + 0.5) / k
+    mix = a[-k:] * np.cos(t * np.pi / 2) + b[:k] * np.sin(t * np.pi / 2)
+    return np.concatenate([a[:-k], mix, b[k:]]).astype(np.float32)
+
+
+def join(clips, rate, xfade_ms=None, end_fade_ms=None, trim_db=None, do_trim=True, do_levels=True, isolated=None):
+    """-> (audio float32, edges in seconds). edges[0] = 0, edges[i] = the middle of the crossfade between unit i-1 and i, edges[-1] = end.
+    `isolated` = a list of booleans (one per clip): clips spoken alone longer than DEFAULTS["iso_min_s"] are shortened (see shorten) unless they are
+    the LAST unit of the word; clips cut out of real words are left alone."""
     xf_ms = DEFAULTS["xfade_ms"] if xfade_ms is None else xfade_ms
     ef_ms = DEFAULTS["end_fade_ms"] if end_fade_ms is None else end_fade_ms
     parts = [trim(c, rate, trim_db) if do_trim else c for c in clips]
+    if isolated is not None:
+        last = max([i for i, p in enumerate(parts) if len(p)] or [0])
+        parts = [shorten(p, rate) if (isolated[i] and i != last and len(p) > rate * DEFAULTS["iso_min_s"]) else p for i, p in enumerate(parts)]
     parts = [p for p in parts if len(p)]
     if not parts:
         return np.zeros(0, dtype=np.float32), [0.0]
@@ -99,8 +127,9 @@ def join(clips, rate, xfade_ms=None, end_fade_ms=None, trim_db=None, do_trim=Tru
         parts = match_levels(parts)
     out = parts[0].astype(np.float32)
     edges = [0.0]
+    prev_len = len(parts[0])
     for p in parts[1:]:
-        k = min(int(rate * xf_ms / 1000.0), len(out) // 2, len(p) // 2)
+        k = min(int(rate * xf_ms / 1000.0), min(prev_len, len(p)) // 4)          # never more than a quarter of the shorter unit
         if k > 0:
             t = (np.arange(k) + 0.5) / k
             fo, fi = np.cos(t * np.pi / 2), np.sin(t * np.pi / 2)            # equal power
@@ -110,6 +139,7 @@ def join(clips, rate, xfade_ms=None, end_fade_ms=None, trim_db=None, do_trim=Tru
         else:
             edges.append(len(out) / float(rate))
             out = np.concatenate([out, p])
+        prev_len = len(p)
     f = min(len(out) // 2, int(rate * ef_ms / 1000.0))
     if f:
         out[-f:] *= np.linspace(1.0, 0.0, f, dtype=np.float32)
@@ -159,4 +189,19 @@ def measure_joins(audio, edges, rate, win_ms=25.0):
         jump = abs(fa - fb) if fa and fb else None
         out.append({"at": e, "rms_db": round(float(db), 2), "spectral": round(sp, 3), "f0_jump_hz": None if jump is None else round(float(jump), 1),
                     "ok": abs(db) <= OK_RMS_DB and sp <= OK_SPECTRAL and (jump is None or jump <= OK_F0_HZ)})
+    return out
+
+
+def smooth_features(feat, edges, rate_hz=50.0, win_ms=None):
+    """Smooth a template's feature frames (rows, one per 20 ms) around each inner join with a triangular window of `win_ms` (default 60 ms).
+    Frames far from a join are untouched."""
+    win_ms = DEFAULTS["smooth_ms"] if win_ms is None else win_ms
+    half = max(1, int(round(win_ms / 1000.0 * rate_hz / 2)))
+    out = feat.copy()
+    for e in edges[1:-1]:
+        c = int(round(e * rate_hz))
+        for i in range(max(0, c - half), min(len(feat), c + half + 1)):
+            w = 1.0 - abs(i - c) / float(half + 1)
+            lo, hi = max(0, i - half), min(len(feat), i + half + 1)
+            out[i] = (1 - w) * feat[i] + w * feat[lo:hi].mean(axis=0)
     return out

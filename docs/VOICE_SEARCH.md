@@ -32,6 +32,29 @@ In the recorder: start with `--unit-audio-dir ... --dictionary ...` and open **S
 
 63 queries = 21 made-up words x 3 conditions (2 % noise + 15 % slower, 5 % noise, 2 % noise + 15 % faster). This shows the software fix, not accuracy on speech.
 
+## Changes taken from the literature (2026-10-14) and what they measured
+Sources: Kahn, Rabiner & Rosenberg 1984 (demisyllable duration and smoothing rules); De Wachter et al. 2002 and Sun & Zhao 2014 (template matching, rescoring).
+
+| change | where | note |
+|---|---|---|
+| duration rule: a unit spoken alone, longer than 0.2 s and not last in the word, is cut to about half (middle removed, onset + offset kept, no resampling) | `s2w_joiner.shorten`, `Composer(duration_rule=True)` | Kahn: about half of the isolated length |
+| join smoothing: template features smoothed over 60 ms around each join; audio crossfade 30 ms, never more than a quarter of the shorter unit | `s2w_joiner.smooth_features`, `join` | Kahn: 60-90 ms best, little loss without |
+| clips **cut out of real words** win over isolated clips and are never shortened (`voice` contains "cut from word") | `s2w_wordsearch.load_bank` (accepts several folders) | both template papers use real segments with context |
+| rescoring: composed DTW only on the label method's top 200 candidates | `search_with(rescore_top)`, result key `rescored`, shown on `/search` | Sun & Zhao: recogniser first, templates rescore |
+| the length filter now uses the **shortened** duration estimate | `Composer.est_duration` | otherwise long isolated words would be dropped before DTW |
+| `eval --compare-configs` runs all four configurations and reports each | `s2w_wordsearch.compare_configs` | CLAUDE.md rule 5: every configuration, including the worse ones |
+
+**Measured on made-up tones only** (21 words, noise 0.03; top-1 / top-5 of the composed ranking; the tones are stationary, so they cannot show a real duration effect):
+
+| configuration | query units 0.11 s (like in-word syllables) | query units 0.22 s (like isolated clips) |
+|---|---|---|
+| plain | 0.95 / 0.95 | 0.95 / 1.00 |
+| duration rule only | 0.86 / 1.00 | 0.86 / 0.95 |
+| smoothing only | 0.95 / 0.95 | 0.95 / 1.00 |
+| duration rule + smoothing (default) | 0.95 / 1.00 | 0.81 / 1.00 |
+
+Reading: no gain in top-1 on tones, a small top-5 gain with in-word-length queries, and a loss when the query is as long as the isolated clips (expected: the rule removes that length). **These tones cannot confirm the papers' result; run `eval --compare-configs` on real recordings before keeping or dropping the defaults.** The recorder's own "composed word" playback still joins the clips without the duration rule.
+
 ## Limits
 * Unit clips spoken alone have the wrong length (about 0.3 s, against 0.08 s inside words), so cut units out of words where you can.
 * The earlier experiment (`compose_rank.py`) got 0.7 % / 3.6 % top-1 on synthetic audio and the recogniser + dictionary baseline 41 % top-1. Expect composed matching to be the weaker method until the units are regenerated whole and joined properly; run both and look at the per-word table.

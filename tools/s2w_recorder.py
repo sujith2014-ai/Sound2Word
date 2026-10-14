@@ -1619,7 +1619,7 @@ function table(title,rows,truth){if(!rows||!rows.length)return `<h3>${title}</h3
 $('go').onclick=async()=>{$('msg').textContent='Searching...';$('out').innerHTML='';
  try{const q=new URLSearchParams({word:$('w').value,take:$('t').value,heard:$('h').value});const r=await fetch('/api/search?'+q);const j=await r.json();if(!r.ok)throw new Error(j.error||r.status);
   $('msg').textContent=`${j.candidates_with_clips} of ${j.dictionary_words} dictionary words had plausible length and every unit clip (${j.words_without_all_unit_clips} had a missing unit clip). ${j.note||''}`;
-  $('out').innerHTML=`<div class="card">${table('Composed from unit clips (DTW distance, lower is better)',j.composed)}${j.labels&&j.labels.length?table('From the recogniser text (edit distance)',j.labels)+table('Fused',j.fused):''}</div>`}
+  $('out').innerHTML=`<div class="card">${table('Composed from unit clips (DTW distance, lower is better)',j.composed)}${j.labels&&j.labels.length?table('From the recogniser text (edit distance)',j.labels)+table('Fused',j.fused)+table('Rescored: composed DTW on the recogniser text\'s top '+j.rescore_candidates+' candidates',j.rescored):''}</div>`}
  catch(e){$('msg').textContent='Cannot search: '+e.message}};
 </script></body></html>"""
 

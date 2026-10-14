@@ -497,7 +497,7 @@ class Sidebar(Base):
         wav, texts, edges = rec.unit_join("kala")
         self.assertEqual(texts, ["ക", "ല"])
         self.assertEqual(len(edges), 3)
-        self.assertLess(abs(edges[-1] - 0.4), 0.03)                          # two 0.2 s clips minus a 12 ms crossfade (trim may shave a little)
+        self.assertTrue(0.33 < edges[-1] <= 0.4)                            # two 0.2 s clips minus the 30 ms crossfade (trim may shave a little)
         self.assertEqual(len(rec.last_join_report), 1)                      # every join is measured
         self.assertEqual(r.validate_wav(wav)[0], 16000)
         self.assertGreater(len(rec.unit_audio("kala", 1)), 100)
