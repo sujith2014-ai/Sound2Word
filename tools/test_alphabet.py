@@ -265,6 +265,39 @@ class LabelsAgainstWords(unittest.TestCase):
         self.assertEqual(self.by["കഃ"]["manglish"], "kah")
 
 
+class NeverSplitAConjunct(unittest.TestCase):
+    """Regression guard (owner's rule): a written conjunct is ONE sound unit. ങ്ങ must never become ങ + ങ, ക്കു never ക് + കു, in ANY tool's default."""
+
+    def test_every_conjunct_form_is_one_unit_by_default(self):
+        import s2w_units as su
+        items = al.build_inventory()
+        for i in items:
+            if i["group"] in ("cv", "conjunct", "mod"):
+                self.assertEqual(su.decompose(i["text"]), [i["text"]], i["text"])
+                self.assertEqual(su.decompose(i["text"], split_all=False), [i["text"]], i["text"])
+
+    def test_words_keep_their_conjuncts(self):
+        import s2w_units as su
+        for w, units in (("അങ്ങനെ", ["അ", "ങ്ങ", "നെ"]), ("ക്കു", ["ക്കു"]), ("കണ്ണ്", ["ക", "ണ്ണ്"]), ("പത്ത്", ["പ", "ത്ത്"]), ("അമ്മ", ["അ", "മ്മ"]),
+                         ("തേങ്ങ", ["തേ", "ങ്ങ"]), ("കുറ്റം", ["കു", "റ്റം"])):
+            self.assertEqual(su.decompose(w), units, w)
+
+    def test_the_unit_inventory_builder_does_not_split_either(self):
+        import importlib.util
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model_eval", "build_unit_inventory.py")
+        spec = importlib.util.spec_from_file_location("build_unit_inventory", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        for u in ("ങ്ങ", "ക്കു", "ന്ത", "പ്ര", "ണ്ണ്"):
+            self.assertEqual(mod.split_akshara(u), [u], u)
+
+    def test_no_default_argument_in_tools_re_enables_splitting(self):
+        import inspect
+        import s2w_units as su
+        self.assertTrue(inspect.signature(su.decompose).parameters["whole"].default is True)
+        self.assertTrue(inspect.signature(su.split_akshara).parameters["whole"].default is True)
+
+
 class LabelDocument(unittest.TestCase):
     def test_committed_markdown_is_up_to_date_and_complete(self):
         doc = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "MALAYALAM_ALPHABET_LABELS.md")

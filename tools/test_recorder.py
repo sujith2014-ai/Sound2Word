@@ -476,7 +476,8 @@ class Sidebar(Base):
     def test_sound_units_of_a_word(self):
         import s2w_units as su
         self.assertEqual(su.decompose("അംഗകം"), ["അം", "ഗ", "കം"])
-        self.assertEqual(su.decompose("ക്കു"), ["ക്", "കു"])                       # a doubled cluster = hold + syllable
+        self.assertEqual(su.decompose("ക്കു"), ["ക്കു"])                          # a conjunct is ONE unit, never hold + syllable
+        self.assertEqual(su.decompose("ക്കു", whole=False), ["ക്", "കു"])          # only an explicit experiment splits it
         self.assertEqual(su.decompose("ആൾ"), ["ആ", "ൾ"])
         self.assertIsNone(su.decompose("abc"))
         d = os.path.join(self.tmp, "units")

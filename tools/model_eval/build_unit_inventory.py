@@ -4,8 +4,7 @@ usage: build_unit_inventory.py [LEXICON.csv] [OUT_DIR]
 
 Units (all written in Malayalam script, so they are unambiguous):
   * a syllable: consonant + vowel sign (ക, കാ, കി ...), a standalone vowel (അ, ആ ...), a chillu (ൻ, ർ ...)
-  * a HOLD: the first consonant of a doubled / nasal+stop cluster written with the chandrakkala (ക്, ന്, ത് ...)
-  * an ONSET CLUSTER kept whole when the second consonant is ya/ra/la/va (പ്ര, ത്ര, സ്വ, വ്യ ...) with its vowel sign
+  * a CONJUNCT is ONE unit with its vowel sign (ങ്ങ, ക്ക, ന്ത, പ്ര, ത്ര, സ്വ ...); it is never split. S2W_SPLIT_ALL=1 (experiments only) splits into holds + syllable.
   * anusvara / visarga stay attached to the syllable they follow (കം, കഃ)
 Outputs (in OUT_DIR): inventory.json (id, text, kind, uses), labels.csv (word_ml,unit_ids), labels.bin (uint16 ids, uint32 offsets),
 stats.json. Every word is rebuilt from its unit ids and compared with the original text."""
@@ -29,7 +28,9 @@ VIR = "\u0d4d"
 ZWJ, ZWNJ = "\u200d", "\u200c"
 AKS = re.compile("(?:[%s](?:%s[%s])*(?:[%s]|%s)?|[%s]|[%s])[\u0d02\u0d03]?" % (CONS, VIR, CONS, SIGN, VIR, VOW, CHILLU))
 OLD_CHILLU = {"ണ" + VIR + ZWJ: "ൺ", "ന" + VIR + ZWJ: "ൻ", "ര" + VIR + ZWJ: "ർ", "ല" + VIR + ZWJ: "ൽ", "ള" + VIR + ZWJ: "ൾ", "ക" + VIR + ZWJ: "ൿ"}
-LIQ = set("യരലവ") if os.environ.get("S2W_SPLIT_ALL") != "1" else set()      # S2W_SPLIT_ALL=1: split EVERY cluster into hold + syllable
+# RULE (owner): a written conjunct is ONE unit - ങ്ങ is never ങ + ങ, ക്കു is never ക് + കു. Splitting exists only for the comparison experiments below.
+SPLIT = os.environ.get("S2W_SPLIT_ALL") == "1"                    # S2W_SPLIT_ALL=1: split EVERY cluster into hold + syllable (experiment only)
+LIQ = set("യരലവ") if os.environ.get("S2W_SPLIT_ALL") != "1" else set()
 
 
 def normalise(w):
@@ -44,6 +45,8 @@ def normalise(w):
 
 
 def split_akshara(u):
+    if not SPLIT:
+        return [u]
     m = re.fullmatch("([%s](?:%s[%s])+)([%s])?([\u0d02\u0d03])?" % (CONS, VIR, CONS, SIGN), u)
     if not m:
         return [u]

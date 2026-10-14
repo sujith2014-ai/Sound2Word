@@ -104,7 +104,7 @@ def dtw(a, b, band=0.3):
 
 
 cand_units = {w: [nf(s["unit"]) for s in W[w]["units"]] for w in W}               # whole-akshara units (A)
-cand_split = {w: [nf(u) for u in su.decompose(w, split_all=True) or []] for w in W}  # split-all units (B)
+cand_split = {w: [nf(u) for u in su.decompose(w, split_all=True, whole=False) or []] for w in W}  # split-all units (B)
 queries = sorted(W)[:nq]
 res = {"A in-word cut (leave-one-out)": [], "B spoken alone": []}
 for qi, q in enumerate(queries):

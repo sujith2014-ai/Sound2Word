@@ -38,6 +38,7 @@ the measurements. Numbers come from experiments recorded in `LOCAL_MODELS_AND_TT
 | 28 | "Why can't you apply the **same technology to our voice recognition / matching**?" | Neural recogniser + nearest dictionary word beat unit matching about 12 to 1. | Done |
 | 29 | "Still **ഗേ**, not **ga**: why?" | Formants show the Parler Anjali clip really contains an "e"; the LFM clip is a true "a". The recorder now chooses per unit among several voices. | Done |
 | 30 | **List all my corrections and the learnings as a doc.** | This document. | Done |
+| 31 | "Do not use ങ ങ instead of ങ്ങ" (they sound different; the word may still be typed *angane*). | A written conjunct is ONE unit everywhere: `s2w_units.decompose` and `build_unit_inventory.py` no longer split by default (`whole=True`); the alphabet has 163 conjuncts and their modified forms as their own entries; `NeverSplitAConjunct` tests guard it. Splitting only by an explicit `whole=False` / `S2W_SPLIT_ALL=1` for comparison experiments. | Done; unit clips must be re-generated from the whole-unit inventory |
 
 ## Part 2. What we learned (measured)
 
@@ -90,6 +91,7 @@ the measurements. Numbers come from experiments recorded in `LOCAL_MODELS_AND_TT
 * I presented an isolated-letter prompt as if a TTS could be forced to say an exact letter.
 * I stated "the TTS says it long" as fact; it was an inference (a transcript plus a measured length). I cannot play audio.
 * I joined units with 2 ms fades and called the result a word.
+* I let tools split a conjunct into letter + letter by default (ങ്ങ -> ങ് + ങ), and later "fixed" it by changing how words are *typed*; the rule is: the unit is the conjunct, the typed spelling is a separate convention. See correction 31 and the `NeverSplitAConjunct` tests.
 
 ## Part 5. Open items
 

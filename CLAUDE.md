@@ -31,3 +31,10 @@ These rules apply to the real-speech normalisation experiment defined in
 
 8. **Minimal changes.** Do not add new tooling or expand scope unless the user explicitly requests it and the experiment
    evidence justifies it.
+
+## Sound units: never split a conjunct
+
+A written conjunct is ONE sound unit: ങ്ങ is never ങ + ങ, ക്കു is never ക് + കു, ന്ത is never ന് + ത. This holds in every tool's default
+(`tools/s2w_units.py`, `tools/model_eval/build_unit_inventory.py`, the recorder, the alphabet). How a word is *typed* in Manglish (angane,
+thenga) is a separate convention and must not change the units. Splitting is allowed only as an explicit, labelled comparison experiment
+(`whole=False`, `S2W_SPLIT_ALL=1`). The tests in `tools/test_alphabet.py::NeverSplitAConjunct` must keep passing.

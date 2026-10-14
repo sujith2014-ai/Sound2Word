@@ -156,7 +156,7 @@ Script: `tools/model_eval/akshara_coverage.py` (plus the splitting analysis in t
 
 ## Part F. The unit inventory built and tested (2026-10-13)
 
-Tool: `tools/model_eval/build_unit_inventory.py` (set `S2W_SPLIT_ALL=1` to split every cluster into hold + syllable). Output folder
+Tool: `tools/model_eval/build_unit_inventory.py` (a conjunct is ONE unit and is never split by default; `S2W_SPLIT_ALL=1` splits every cluster into hold + syllable for comparison experiments only). Output folder
 `data\private\units\` (git-ignored): `inventory.json`, `labels.csv`, `labels.bin`, `stats.json`.
 
 **Can the units represent the whole dictionary?** Yes, losslessly, for 99.8% of it. 257,119 of 257,684 words are rebuilt exactly from unit ids
